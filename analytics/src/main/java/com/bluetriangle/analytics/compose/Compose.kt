@@ -2,8 +2,13 @@ package com.bluetriangle.analytics.compose
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.Event.ON_CREATE
 import androidx.lifecycle.Lifecycle.Event.ON_RESUME
@@ -11,11 +16,17 @@ import androidx.lifecycle.Lifecycle.Event.ON_START
 import androidx.lifecycle.Lifecycle.Event.ON_STOP
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation3.scene.SceneState
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.lifecycle.LifecycleRegistry
 import com.bluetriangle.analytics.model.Screen
 import com.bluetriangle.analytics.model.ScreenType
+import com.bluetriangle.analytics.screenTracking.BTTScreenTracker
 import com.bluetriangle.analytics.screenTracking.ScreenLifecycleTracker
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 @NonRestartableComposable
@@ -31,6 +42,65 @@ fun BttTimerEffect(screenName: String) {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+}
+
+@Composable
+@NonRestartableComposable
+fun NavHostController.withBttNavigationTracker(): NavHostController {
+    val currentLocationTracker = remember { mutableStateOf<BTTScreenTracker?>(null) }
+    val loadTracker = ScreenLoadTracker(LocalView.current)
+
+    DisposableEffect(this) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, arguments ->
+            val screenName = (destination.label ?: destination.route
+                ?.substringBefore("/")?.substringAfterLast(".")) ?: "unknown"
+
+            currentLocationTracker.value?.onViewEnded()
+            currentLocationTracker.value = BTTScreenTracker(screenName.toString())
+            currentLocationTracker.value?.onLoadStarted()
+            loadTracker.trackScreenLoad {
+                currentLocationTracker.value?.onLoadEnded()
+            }
+        }
+
+        this@withBttNavigationTracker.addOnDestinationChangedListener(listener)
+
+        onDispose {
+            currentLocationTracker.value?.onViewEnded()
+            this@withBttNavigationTracker.removeOnDestinationChangedListener(listener)
+        }
+    }
+
+    return this
+}
+
+@Composable
+@NonRestartableComposable
+fun <T: Any> SceneState<T>.bttTrackBackStack():SceneState<T> {
+    val currentLocationTracker = remember { mutableStateOf<BTTScreenTracker?>(null) }
+    val loadTracker = ScreenLoadTracker(LocalView.current)
+
+    LaunchedEffect(this) {
+        snapshotFlow {
+            entries.lastOrNull()?.contentKey
+        }
+        .distinctUntilChanged()
+        .collectLatest { key ->
+            val screenName = when (key) {
+                null -> "unknown"
+                is String -> key
+                else -> key::class.java.simpleName
+            }
+
+            currentLocationTracker.value?.onViewEnded()
+            currentLocationTracker.value = BTTScreenTracker(screenName.toString())
+            currentLocationTracker.value?.onLoadStarted()
+            loadTracker.trackScreenLoad {
+                currentLocationTracker.value?.onLoadEnded()
+            }
+        }
+    }
+    return this
 }
 
 internal class ComposableLifecycleObserver(
