@@ -1,5 +1,6 @@
 package com.bluetriangle.analytics.compose
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -52,9 +53,9 @@ fun NavHostController.withBttNavigationTracker(): NavHostController {
 
     DisposableEffect(this) {
         val listener = NavController.OnDestinationChangedListener { _, destination, arguments ->
-            val screenName = (destination.label ?: destination.route
-                ?.substringBefore("/")?.substringAfterLast(".")) ?: "unknown"
+            val screenName = (destination.label ?: destination.route) ?: "unknown"
 
+            Log.i("withBttNavigationTracker", "Label=${destination.label}, Route=${destination.route}, ScreenName= $screenName")
             currentLocationTracker.value?.onViewEnded()
             currentLocationTracker.value = BTTScreenTracker(screenName.toString())
             currentLocationTracker.value?.onLoadStarted()
