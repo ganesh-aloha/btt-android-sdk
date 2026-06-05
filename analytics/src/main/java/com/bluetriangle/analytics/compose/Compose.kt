@@ -186,19 +186,29 @@ object VoyagerHook {
     @JvmStatic
     fun bttTrackNavigator(navigator: Any) {
         try {
-            val lastItem = navigator.javaClass.methods
+            val methods = navigator.javaClass.methods
+                .filter { it.parameterCount == 0 }
+                .map { it.name }
+            Log.d("BTT", "Navigator methods: $methods")
+
+            val getLastItem = navigator.javaClass.methods
                 .firstOrNull { it.name == "getLastItem" && it.parameterCount == 0 }
-                ?.invoke(navigator) ?: return
 
-            val screenName = lastItem.javaClass.simpleName ?: "Unknown"
+            Log.d("BTT", "getLastItem found: $getLastItem")
+
+            val screen = getLastItem?.invoke(navigator)
+            Log.d("BTT", "screen: $screen, class: ${screen?.javaClass?.name}")
+
+            val screenName = screen?.javaClass?.simpleName ?: "Unknown"
+            Log.d("BTT", "screenName=$screenName lastScreenName=$lastScreenName")
+
             if (screenName == lastScreenName) return
-
             lastScreenName = screenName
             currentTracker?.onViewEnded()
             currentTracker = BTTScreenTracker(screenName)
             currentTracker?.onLoadStarted()
-        } catch (_: Exception) {
-
+        } catch (e: Exception) {
+            Log.e("BTT", "bttTrackNavigator failed", e)
         }
     }
 }
