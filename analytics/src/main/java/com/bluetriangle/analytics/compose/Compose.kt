@@ -136,7 +136,7 @@ object DecomposeHook {
     fun bttTrackStack(stack: Value<*>) {
         @Suppress("UNCHECKED_CAST")
         val childStackValue = stack as? Value<ChildStack<Any, Any>> ?: return
-        childStackValue.subscribe {
+        childStackValue.observe {
             val screenName = it.active.configuration.javaClass.simpleName ?: "Unknown"
             currentLocationTracker?.onViewEnded()
             currentLocationTracker = BTTScreenTracker(screenName)
