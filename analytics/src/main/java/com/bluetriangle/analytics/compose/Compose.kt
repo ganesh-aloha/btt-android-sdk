@@ -106,7 +106,7 @@ fun <T: Any> SceneState<T>.bttTrackBackStack():SceneState<T> {
     return this
 }
 
-object DecomposeHook {
+object ExDecomposeHookEx {
     @Composable
     @NonRestartableComposable
     fun bttTrackStack(stack: Value<*>) {
@@ -125,6 +125,22 @@ object DecomposeHook {
             loadTracker.trackScreenLoad {
                 currentLocationTracker.value?.onLoadEnded()
             }
+        }
+    }
+}
+
+object DecomposeHook {
+    private var currentLocationTracker: BTTScreenTracker? = null
+
+    @JvmStatic
+    fun bttTrackStack(stack: Value<*>) {
+        @Suppress("UNCHECKED_CAST")
+        val childStackValue = stack as? Value<ChildStack<Any, Any>> ?: return
+        childStackValue.subscribe {
+            val screenName = it.active.configuration.javaClass.simpleName ?: "Unknown"
+            currentLocationTracker?.onViewEnded()
+            currentLocationTracker = BTTScreenTracker(screenName)
+            currentLocationTracker?.onLoadStarted()
         }
     }
 }
