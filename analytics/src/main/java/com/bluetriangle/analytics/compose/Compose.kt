@@ -1,4 +1,6 @@
 package com.bluetriangle.analytics.compose
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.value.Value
 
 import android.util.Log
 import androidx.compose.runtime.Composable
@@ -102,6 +104,29 @@ fun <T: Any> SceneState<T>.bttTrackBackStack():SceneState<T> {
         }
     }
     return this
+}
+
+object DecomposeHook {
+    @Composable
+    @NonRestartableComposable
+    fun bttTrackStack(stack: Value<*>) {
+        val currentLocationTracker = remember { mutableStateOf<BTTScreenTracker?>(null) }
+        val loadTracker = ScreenLoadTracker(LocalView.current)
+
+        @Suppress("UNCHECKED_CAST")
+        val childStackValue = stack as? Value<ChildStack<Any, Any>> ?: return
+
+        childStackValue.subscribe {
+            val screenName = it.active.configuration.javaClass.simpleName ?: "Unknown"
+
+            currentLocationTracker.value?.onViewEnded()
+            currentLocationTracker.value = BTTScreenTracker(screenName)
+            currentLocationTracker.value?.onLoadStarted()
+            loadTracker.trackScreenLoad {
+                currentLocationTracker.value?.onLoadEnded()
+            }
+        }
+    }
 }
 
 internal class ComposableLifecycleObserver(
