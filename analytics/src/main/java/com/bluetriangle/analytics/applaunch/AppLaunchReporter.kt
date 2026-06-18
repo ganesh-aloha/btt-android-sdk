@@ -30,7 +30,6 @@ internal class AppLaunchReporter(
     }
 
     fun start() {
-        Log.e("GANESH", "AppLaunchReporter.start")
         forceRestartTracker?.start()
     }
 
