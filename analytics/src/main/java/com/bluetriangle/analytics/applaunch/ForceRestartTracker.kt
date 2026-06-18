@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.Logger
 import com.bluetriangle.analytics.Timer.Companion.FIELD_CONTENT_GROUP_NAME
@@ -47,12 +48,14 @@ internal class ForceRestartTracker(
     }
 
     private fun checkAppPreviousExit(currentTime: Long, lastForegroundTime: Long) {
+        Log.e("GANESH", "checkAppPreviousExit - lastForegroundTime=$lastForegroundTime")
         if (lastForegroundTime == 0L) return
 
         // If the app was restarted within 10 seconds, we assume it was died unexpectedly
         val diedUnexpectedly = (currentTime - lastForegroundTime) < _forceRestartDuration
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Log.e("GANESH", "checkAppPreviousExit - Support ApplicationExitInfo")
             val activityManager =
                 context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
 
@@ -60,13 +63,16 @@ internal class ForceRestartTracker(
             val exitList =
                 activityManager.getHistoricalProcessExitReasons(context.packageName, 0, 1)
             if (exitList.isNotEmpty()) {
+                Log.e("GANESH", "checkAppPreviousExit - Process Exist Info is Not Empty $exitList")
                 val lastExit = exitList[0]
+                Log.e("GANESH", "checkAppPreviousExit - Process Exist Reason:${lastExit.reason} Status: ${lastExit.status}, Description: ${lastExit.description}")
 
                 val isUnexpectedReason = when (lastExit.reason) {
                     ApplicationExitInfo.REASON_USER_REQUESTED -> true
 
                     else -> false
                 }
+                Log.e("GANESH", "checkAppPreviousExit - diedUnexpectedly $diedUnexpectedly")
 
                 if (diedUnexpectedly && isUnexpectedReason) {
                     reportForceKill()
@@ -75,6 +81,8 @@ internal class ForceRestartTracker(
                         "ForceRestartTracker → App Unexpectedly Exit at ${lastExit.timestamp}, Status: ${lastExit.status}, Description: ${lastExit.description}"
                     )
                 }
+            } else {
+                Log.e("GANESH", "checkAppPreviousExit - Process Exist Info is Empty")
             }
         } else if (diedUnexpectedly) {
             //reportForceKill()

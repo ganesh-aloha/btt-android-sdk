@@ -245,6 +245,7 @@ class Tracker private constructor(
         }
 
         if (configuration.isForceRestartEnable) {
+            Log.e("GANESH", "Tracker.enable")
             appLaunchReporter.setForceRestartDuration(sessionData.forceRestartDuration)
             startAppLaunchReporter()
         }
@@ -317,10 +318,12 @@ class Tracker private constructor(
     }
 
     private fun startAppLaunchReporter() {
+        Log.e("GANESH", "Tracker.startAppLaunchReporter")
         appLaunchReporter.start()
     }
 
     private fun stopAppLaunchReporter() {
+        Log.e("GANESH", "Tracker.stopAppLaunchReporter")
         appLaunchReporter.stop()
     }
 
@@ -974,6 +977,7 @@ class Tracker private constructor(
         if (configuration.isForceRestartEnable != sessionData.enableForceRestart) {
             changes.append("\nenableForceRestart: ${configuration.isForceRestartEnable} -> ${sessionData.enableForceRestart}")
             configuration.isForceRestartEnable = sessionData.enableForceRestart
+            Log.e("GANESH", "Tracker.updateSession")
             if (configuration.isForceRestartEnable) {
                 startAppLaunchReporter()
             } else {
