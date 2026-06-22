@@ -123,6 +123,7 @@ object DecomposeHook {
 //        }
 //    }
 
+    @JvmStatic
     fun bttTrackStack(stack: Any) {
         try {
             val subscribeMethod = stack.javaClass.methods
