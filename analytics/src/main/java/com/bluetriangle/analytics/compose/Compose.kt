@@ -1,6 +1,4 @@
 package com.bluetriangle.analytics.compose
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.value.Value
 
 import android.util.Log
 import androidx.compose.runtime.Composable
@@ -109,27 +107,22 @@ fun <T: Any> SceneState<T>.bttTrackBackStack():SceneState<T> {
 object DecomposeHook {
     private var currentLocationTracker: BTTScreenTracker? = null
 
-    @JvmStatic
-    fun bttTrackStack(stack: Value<*>) {
-        try {
-            @Suppress("UNCHECKED_CAST")
-            val childStackValue = stack as? Value<ChildStack<Any, Any>> ?: return
-            childStackValue.subscribe {
-                val screenName = it.active.configuration.javaClass.simpleName ?: "Unknown"
-                currentLocationTracker?.onViewEnded()
-                currentLocationTracker = BTTScreenTracker(screenName)
-                currentLocationTracker?.onLoadStarted()
-            }
-        } catch (_: Exception) {
+//    @JvmStatic
+//    fun bttTrackStack(stack: Value<*>) {
+//        try {
+//            @Suppress("UNCHECKED_CAST")
+//            val childStackValue = stack as? Value<ChildStack<Any, Any>> ?: return
+//            childStackValue.subscribe {
+//                val screenName = it.active.configuration.javaClass.simpleName ?: "Unknown"
+//                currentLocationTracker?.onViewEnded()
+//                currentLocationTracker = BTTScreenTracker(screenName)
+//                currentLocationTracker?.onLoadStarted()
+//            }
+//        } catch (_: Exception) {
+//
+//        }
+//    }
 
-        }
-    }
-}
-
-object DecomposeHookEx {
-    private var currentLocationTracker: BTTScreenTracker? = null
-
-    @JvmStatic
     fun bttTrackStack(stack: Any) {
         try {
             val subscribeMethod = stack.javaClass.methods
@@ -161,7 +154,7 @@ object DecomposeHookEx {
 
             subscribeMethod.invoke(stack, observer)
         } catch (e: Exception) {
-            // silent fail — don't crash the app
+            Log.e("BTT", "DecomposeHook.bttTrackStack failed", e)
         }
     }
 
@@ -189,18 +182,13 @@ object VoyagerHook {
             val methods = navigator.javaClass.methods
                 .filter { it.parameterCount == 0 }
                 .map { it.name }
-            Log.d("BTT", "Navigator methods: $methods")
 
             val getLastItem = navigator.javaClass.methods
                 .firstOrNull { it.name == "getLastItem" && it.parameterCount == 0 }
 
-            Log.d("BTT", "getLastItem found: $getLastItem")
-
             val screen = getLastItem?.invoke(navigator)
-            Log.d("BTT", "screen: $screen, class: ${screen?.javaClass?.name}")
 
             val screenName = screen?.javaClass?.simpleName ?: "Unknown"
-            Log.d("BTT", "screenName=$screenName lastScreenName=$lastScreenName")
 
             if (screenName == lastScreenName) return
             lastScreenName = screenName
@@ -208,7 +196,7 @@ object VoyagerHook {
             currentTracker = BTTScreenTracker(screenName)
             currentTracker?.onLoadStarted()
         } catch (e: Exception) {
-            Log.e("BTT", "bttTrackNavigator failed", e)
+            Log.e("BTT", "VoyagerHook.bttTrackNavigator failed", e)
         }
     }
 }
