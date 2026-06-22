@@ -53,7 +53,7 @@ class BlueTriangleConfiguration {
     var debugLevel = Log.DEBUG
     var logger: Logger? = null
         get() {
-            if (field == null && isDebug) {
+            if (BuildConfig.DEBUG && field == null && isDebug) {
                 field = AndroidLogger(debugLevel)
             }
             return field
