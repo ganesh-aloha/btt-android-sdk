@@ -55,7 +55,10 @@ class BTTConfigurationRepositoryTest {
         true,
         CheckoutConfig.DEFAULT,
         BreadcrumbsConfig.DEFAULT,
-        ""
+        "",
+        true,
+        true,
+        10.0
     )
 
     @Before
@@ -104,7 +107,10 @@ class BTTConfigurationRepositoryTest {
             true,
             CheckoutConfig.DEFAULT,
             BreadcrumbsConfig.DEFAULT,
-            ""
+            "",
+            true,
+            true,
+            10.0
         )
         val repositoryInput = BTTConfigurationRepository(mockLogger, mockContext, siteId, defaultConfig)
         val repositoryOutput = BTTConfigurationRepository(mockLogger, mockContext, siteId, defaultConfig)
@@ -149,7 +155,10 @@ class BTTConfigurationRepositoryTest {
             true,
             CheckoutConfig.DEFAULT,
             BreadcrumbsConfig.DEFAULT,
-            ""
+            "",
+            true,
+            true,
+            10.0
         )
         repository.save(config)
 

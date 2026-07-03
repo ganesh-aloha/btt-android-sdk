@@ -146,6 +146,26 @@ fun UserProfileScreen() {
     // ...
 }
 ```
+OR Compose screens tracking can be instrumented using Blue Triangle Gradle Plugin, which inject bytecode at build time to track screen navigation. Requires SDK 2.19.6 or above.
+
+Add the plugin to your application's build.gradle file:
+
+```groovy
+plugins {
+//...
+id("com.github.blue-triangle-tech.btt-gradle-plugin") version "1.0.0"
+}
+```
+
+To enable/disable screen tracking for Compose Screen add following configuration to your application's build.gradle file:
+
+```groovy
+bttOptions {
+composeNavigationInjectionEnabled = true
+}
+```
+
+For more information on Plugin, visit the [**Official Help Doc**](https://help.bluetriangle.com/hc/en-us/articles/52918531791507-Android-Compose-SDK-Instrumentation-Automated-Screen-Tracking)
 
 If your app is using both Composables and Fragments, then for those composables which are added to a fragment it is not necessary to call BttTimerEffect, because the fragment is automatically tracked.
 

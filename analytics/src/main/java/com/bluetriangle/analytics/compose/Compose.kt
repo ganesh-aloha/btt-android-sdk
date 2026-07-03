@@ -1,9 +1,15 @@
 package com.bluetriangle.analytics.compose
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.Event.ON_CREATE
 import androidx.lifecycle.Lifecycle.Event.ON_RESUME
@@ -11,11 +17,17 @@ import androidx.lifecycle.Lifecycle.Event.ON_START
 import androidx.lifecycle.Lifecycle.Event.ON_STOP
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation3.scene.SceneState
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.lifecycle.LifecycleRegistry
 import com.bluetriangle.analytics.model.Screen
 import com.bluetriangle.analytics.model.ScreenType
+import com.bluetriangle.analytics.screenTracking.BTTScreenTracker
 import com.bluetriangle.analytics.screenTracking.ScreenLifecycleTracker
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 @NonRestartableComposable
@@ -29,6 +41,163 @@ fun BttTimerEffect(screenName: String) {
         onDispose {
             LifecycleRegistry.onLeaveComposition(screenName)
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+}
+
+@Composable
+@NonRestartableComposable
+fun NavHostController.withBttNavigationTracker(): NavHostController {
+    val currentLocationTracker = remember { mutableStateOf<BTTScreenTracker?>(null) }
+    val loadTracker = ScreenLoadTracker(LocalView.current)
+
+    DisposableEffect(this) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, arguments ->
+            val screenName = (destination.label ?: destination.route) ?: "unknown"
+
+            Log.i("withBttNavigationTracker", "Label=${destination.label}, Route=${destination.route}, ScreenName= $screenName")
+            currentLocationTracker.value?.onViewEnded()
+            currentLocationTracker.value = BTTScreenTracker(screenName.toString())
+            currentLocationTracker.value?.onLoadStarted()
+            loadTracker.trackScreenLoad {
+                currentLocationTracker.value?.onLoadEnded()
+            }
+        }
+
+        this@withBttNavigationTracker.addOnDestinationChangedListener(listener)
+
+        onDispose {
+            currentLocationTracker.value?.onViewEnded()
+            this@withBttNavigationTracker.removeOnDestinationChangedListener(listener)
+        }
+    }
+
+    return this
+}
+
+@Composable
+@NonRestartableComposable
+fun <T: Any> SceneState<T>.bttTrackBackStack():SceneState<T> {
+    val currentLocationTracker = remember { mutableStateOf<BTTScreenTracker?>(null) }
+    val loadTracker = ScreenLoadTracker(LocalView.current)
+
+    LaunchedEffect(this) {
+        snapshotFlow {
+            entries.lastOrNull()?.contentKey
+        }
+        .distinctUntilChanged()
+        .collectLatest { key ->
+            val screenName = when (key) {
+                null -> "unknown"
+                is String -> key
+                else -> key::class.java.simpleName
+            }
+
+            currentLocationTracker.value?.onViewEnded()
+            currentLocationTracker.value = BTTScreenTracker(screenName.toString())
+            currentLocationTracker.value?.onLoadStarted()
+            loadTracker.trackScreenLoad {
+                currentLocationTracker.value?.onLoadEnded()
+            }
+        }
+    }
+    return this
+}
+
+object DecomposeHook {
+    private var currentLocationTracker: BTTScreenTracker? = null
+
+//    @JvmStatic
+//    fun bttTrackStack(stack: Value<*>) {
+//        try {
+//            @Suppress("UNCHECKED_CAST")
+//            val childStackValue = stack as? Value<ChildStack<Any, Any>> ?: return
+//            childStackValue.subscribe {
+//                val screenName = it.active.configuration.javaClass.simpleName ?: "Unknown"
+//                currentLocationTracker?.onViewEnded()
+//                currentLocationTracker = BTTScreenTracker(screenName)
+//                currentLocationTracker?.onLoadStarted()
+//            }
+//        } catch (_: Exception) {
+//
+//        }
+//    }
+
+    @JvmStatic
+    fun bttTrackStack(stack: Any) {
+        try {
+            val subscribeMethod = stack.javaClass.methods
+                .firstOrNull { it.name == "subscribe" && it.parameterCount == 1 }
+                ?: return
+
+            val paramType = subscribeMethod.parameterTypes[0]
+
+            val observer: Any = when {
+                paramType.isAssignableFrom(Function1::class.java) -> {
+                    { value: Any ->
+                        // Older Decompose: subscribe(Function1)
+                        processChildStack(value)
+                    }
+                }
+
+                paramType.isInterface -> {
+                    // Newer Decompose: subscribe(Observer) SAM
+                    java.lang.reflect.Proxy.newProxyInstance(
+                        paramType.classLoader,
+                        arrayOf(paramType)
+                    ) { _, _, args ->
+                        args?.firstOrNull()?.let { processChildStack(it) }
+                        null
+                    }
+                }
+                else -> return
+            }
+
+            subscribeMethod.invoke(stack, observer)
+        } catch (e: Exception) {
+            Log.e("BTT", "DecomposeHook.bttTrackStack failed", e)
+        }
+    }
+
+    private fun processChildStack(childStack: Any) {
+        try {
+            val active = childStack.javaClass.getMethod("getActive").invoke(childStack) ?: return
+            val config = active.javaClass.getMethod("getConfiguration").invoke(active) ?: return
+            val screenName = config.javaClass.simpleName ?: "Unknown"
+            currentLocationTracker?.onViewEnded()
+            currentLocationTracker = BTTScreenTracker(screenName)
+            currentLocationTracker?.onLoadStarted()
+        } catch (_: Exception) {
+
+        }
+    }
+}
+
+object VoyagerHook {
+    private var currentTracker: BTTScreenTracker? = null
+    private var lastScreenName: String? = null
+
+    @JvmStatic
+    fun bttTrackNavigator(navigator: Any) {
+        try {
+            val methods = navigator.javaClass.methods
+                .filter { it.parameterCount == 0 }
+                .map { it.name }
+
+            val getLastItem = navigator.javaClass.methods
+                .firstOrNull { it.name == "getLastItem" && it.parameterCount == 0 }
+
+            val screen = getLastItem?.invoke(navigator)
+
+            val screenName = screen?.javaClass?.simpleName ?: "Unknown"
+
+            if (screenName == lastScreenName) return
+            lastScreenName = screenName
+            currentTracker?.onViewEnded()
+            currentTracker = BTTScreenTracker(screenName)
+            currentTracker?.onLoadStarted()
+        } catch (e: Exception) {
+            Log.e("BTT", "VoyagerHook.bttTrackNavigator failed", e)
         }
     }
 }

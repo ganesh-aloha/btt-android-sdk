@@ -22,6 +22,7 @@ internal object MetadataReader {
     private const val CACHE_MEMORY_LIMIT = "com.blue-triangle.cache.memory-limit"
     private const val CACHE_EXPIRY = "com.blue-triangle.cache.expiry"
     private const val TRACK_NETWORK_STATE_ENABLE = "com.blue-triangle.track-network-state.enable"
+    private const val BTT_PLUGIN_VERSION = "com.blue-triangle.plugin.version"
     private const val APP_INSTALL_ENABLE = "com.blue-triangle.app-install.enable"
     private const val FORCE_RESTART_ENABLE = "com.blue-triangle.force-restart.enable"
     private const val FORCE_RESTART_DURATION_SECONDS = "com.blue-triangle.force-restart.duration-sec"
@@ -76,6 +77,8 @@ internal object MetadataReader {
                 )
                 configuration.isTrackNetworkStateEnabled =
                     readBool(metadata, TRACK_NETWORK_STATE_ENABLE, configuration.isTrackNetworkStateEnabled)
+                configuration.bttPluginVersion = readString(metadata, BTT_PLUGIN_VERSION, configuration.bttPluginVersion)
+                configuration.logger?.debug("bttPluginVersion: ${configuration.bttPluginVersion}")
                 configuration.isAppInstallEnabled =
                     readBool(metadata, APP_INSTALL_ENABLE, configuration.isAppInstallEnabled)
                 configuration.isForceRestartEnable =

@@ -53,7 +53,7 @@ class BlueTriangleConfiguration {
     var debugLevel = Log.DEBUG
     var logger: Logger? = null
         get() {
-            if (field == null && isDebug) {
+            if (BuildConfig.DEBUG && field == null && isDebug) {
                 field = AndroidLogger(debugLevel)
             }
             return field
@@ -182,6 +182,8 @@ class BlueTriangleConfiguration {
 
     internal val shouldDetectTap: Boolean
         get() = isGroupingEnabled && isGroupingTapDetectionEnabled
+
+    internal var bttPluginVersion: String? = null
 
     /**
      * Enable or disable App Install sending reports to the server.

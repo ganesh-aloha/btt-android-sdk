@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.Logger
 import com.bluetriangle.analytics.Timer.Companion.FIELD_CONTENT_GROUP_NAME
@@ -47,10 +48,16 @@ internal class ForceRestartTracker(
     }
 
     private fun checkAppPreviousExit(currentTime: Long, lastForegroundTime: Long) {
-        if (lastForegroundTime == 0L) return
+        if (lastForegroundTime == 0L) {
+            logger?.debug("ForceRestartTracker::checkAppPreviousExit lastForegroundTime=0, so it's first launch after install")
+            return
+        }
 
         // If the app was restarted within 10 seconds, we assume it was died unexpectedly
-        val diedUnexpectedly = (currentTime - lastForegroundTime) < _forceRestartDuration
+        val reLaunchTime = currentTime - lastForegroundTime
+        val diedUnexpectedly = reLaunchTime < _forceRestartDuration
+
+        logger?.debug("ForceRestartTracker::checkAppPreviousExit - Relaunch Time Interval = $reLaunchTime ms")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val activityManager =
@@ -61,7 +68,6 @@ internal class ForceRestartTracker(
                 activityManager.getHistoricalProcessExitReasons(context.packageName, 0, 1)
             if (exitList.isNotEmpty()) {
                 val lastExit = exitList[0]
-
                 val isUnexpectedReason = when (lastExit.reason) {
                     ApplicationExitInfo.REASON_USER_REQUESTED -> true
 
@@ -69,22 +75,23 @@ internal class ForceRestartTracker(
                 }
 
                 if (diedUnexpectedly && isUnexpectedReason) {
+                    logger?.debug("ForceRestartTracker::checkAppPreviousExit App Unexpectedly Exit at ${lastExit.timestamp}, Status: ${lastExit.status}, Description: ${lastExit.description}")
                     reportForceKill()
-
-                    logger?.debug(
-                        "ForceRestartTracker → App Unexpectedly Exit at ${lastExit.timestamp}, Status: ${lastExit.status}, Description: ${lastExit.description}"
-                    )
+                } else {
+                    logger?.debug("ForceRestartTracker::checkAppPreviousExit - Process Exist Reason:${lastExit.reason} Status: ${lastExit.status}, Description: ${lastExit.description}")
                 }
+            } else {
+                logger?.debug("ForceRestartTracker::checkAppPreviousExit - Last process exit reasons is empty")
             }
         } else if (diedUnexpectedly) {
             //reportForceKill()
-            logger?.debug(
-                "ForceRestartTracker → App Unexpectedly Exit - lastAliveTime=$lastForegroundTime"
-            )
+            logger?.debug("ForceRestartTracker::checkAppPreviousExit App Unexpectedly Exit - lastForegroundTime=$lastForegroundTime")
         }
     }
 
     private fun reportForceKill() {
+        logger?.debug("ForceRestartTracker::reportForceKill")
+
         val prefs =
             context.getSharedPreferences(Tracker.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
 
