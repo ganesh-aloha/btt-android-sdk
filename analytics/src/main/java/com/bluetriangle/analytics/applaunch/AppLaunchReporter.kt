@@ -1,6 +1,7 @@
 package com.bluetriangle.analytics.applaunch
 
 import android.content.Context
+import android.util.Log
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Logger

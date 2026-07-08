@@ -49,15 +49,53 @@ class BTTConfigurationUpdaterTest {
     fun `When update is called before anything is stored in cache should fetch configuration from API`() {
         runBlocking {
             whenever(repository.get()).thenAnswer {
-                BTTSavedRemoteConfiguration(0.05, emptyList(), true, true, true, 2, true, true, true, true, true, true, true,
+                BTTSavedRemoteConfiguration(
+                    0.05,
+                    emptyList(),
+                    true,
+                    true,
+                    true,
+                    2,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
                     CheckoutConfig.DEFAULT,
-                    BreadcrumbsConfig.DEFAULT, "",
-                    System.currentTimeMillis())
+                    BreadcrumbsConfig.DEFAULT,
+                    "",
+                    System.currentTimeMillis(),
+                    true,
+                    true,
+                    10.0
+                )
             }
             whenever(fetcher.fetch()).thenAnswer {
-                BTTConfigFetchResult.Success(BTTRemoteConfiguration(1.0, emptyList(), true, true, true, 2, true, true, true, true, true, true, true,
-                    CheckoutConfig.DEFAULT,
-                    BreadcrumbsConfig.DEFAULT, ""))
+                BTTConfigFetchResult.Success(
+                    BTTRemoteConfiguration(
+                        1.0,
+                        emptyList(),
+                        true,
+                        true,
+                        true,
+                        2,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        CheckoutConfig.DEFAULT,
+                        BreadcrumbsConfig.DEFAULT,
+                        "",
+                        true,
+                        true,
+                        10.0
+                    )
+                )
             }
             updater.update()
             verify(fetcher).fetch()
@@ -68,12 +106,55 @@ class BTTConfigurationUpdaterTest {
     fun `When update is called after cache refresh duration should fetch new configuration from API`() {
         runBlocking {
             val sampleRatePercent = Math.random()
-            whenever(fetcher.fetch()).thenReturn(BTTConfigFetchResult.Success(BTTRemoteConfiguration(sampleRatePercent, emptyList(), true, true, true, 2, true, true, true, true, true, true, true,
-                CheckoutConfig.DEFAULT,
-                BreadcrumbsConfig.DEFAULT, "")))
-            whenever(repository.get()).thenReturn(BTTSavedRemoteConfiguration(sampleRatePercent, emptyList(), true, true, true, 2, true, true, true, true, true, true, true,
-                CheckoutConfig.DEFAULT,
-                BreadcrumbsConfig.DEFAULT, "", System.currentTimeMillis()))
+            whenever(fetcher.fetch()).thenReturn(
+                BTTConfigFetchResult.Success(
+                    BTTRemoteConfiguration(
+                        sampleRatePercent,
+                        emptyList(),
+                        true,
+                        true,
+                        true,
+                        2,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        true,
+                        CheckoutConfig.DEFAULT,
+                        BreadcrumbsConfig.DEFAULT,
+                        "",
+                        true,
+                        true,
+                        10.0
+                    )
+                )
+            )
+            whenever(repository.get()).thenReturn(
+                BTTSavedRemoteConfiguration(
+                    sampleRatePercent,
+                    emptyList(),
+                    true,
+                    true,
+                    true,
+                    2,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    true,
+                    CheckoutConfig.DEFAULT,
+                    BreadcrumbsConfig.DEFAULT,
+                    "",
+                    System.currentTimeMillis(),
+                    true,
+                    true,
+                    10.0
+                )
+            )
             Thread.sleep(210)
             updater.update()
             verify(fetcher).fetch()

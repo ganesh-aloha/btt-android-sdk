@@ -1403,7 +1403,7 @@ class Tracker private constructor(
         private fun initializeLogger(
             configuration: BlueTriangleConfiguration
         ) {
-            if (configuration.isDebug) {
+            if (BuildConfig.DEBUG && configuration.isDebug) {
                 configuration.logger = AndroidLogger(configuration.debugLevel)
             }
         }
