@@ -5,7 +5,7 @@ plugins {
     id 'kotlin-parcelize'
 }
 
-version = "2.19.5"
+version = "2.19.6"
 
 android {
     namespace 'com.bluetriangle.analytics'
