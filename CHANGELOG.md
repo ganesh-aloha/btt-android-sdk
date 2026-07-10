@@ -1,5 +1,10 @@
-# Blue Triangle 2.19.5 Latest, May 22 2026
-### New Features and Bug Fixes
+# Blue Triangle 2.19.6 Latest, July 08 2026
+### New Improvements
+- Automatic screen tracking for Compose using btt-gradle-plugin plugin. Added support for btt-gradle-plugin to track Compose screens automatically.
+- SDK logs are only emitted in DEBUG mode(BuildConfig.DEBUG).
+
+# Blue Triangle 2.19.5, May 22 2026
+### New Features
 - App installs tracking: BlueTriangle can now track new app installs.
 - App Force Restart Tracking: If the user force restarts the app, kills it, and restarts immediately, BlueTriangle tracks it as Force Restart. User has a tendency to force restart the app if something on the current screen is not working. BlueTriangle can now track this as an error.
 
