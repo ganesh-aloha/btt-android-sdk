@@ -5,7 +5,7 @@ plugins {
     id 'kotlin-parcelize'
 }
 
-version = "2.19.6"
+version = "2.19.7"
 
 android {
     namespace 'com.bluetriangle.analytics'
@@ -92,7 +92,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.blue-triangle-tech'
                 artifactId = 'btt-android-sdk'
-                version = "2.19.5"
+                version = "2.19.7"
             }
         }
     }
