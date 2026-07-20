@@ -1,4 +1,9 @@
-# Blue Triangle 2.19.6 Latest, July 08 2026
+# Blue Triangle 2.19.7 Latest, July 20 2026
+### New Improvements
+- SDK logging is not working in debug mode with previous change of BuildConfig.DEBUG.
+- Make `androidx.navigation:navigation-compose` dependency compileOnly to avoid version conflict in consuming app.
+
+# Blue Triangle 2.19.6, July 08 2026
 ### New Improvements
 - Automatic screen tracking for Compose using btt-gradle-plugin plugin. Added support for btt-gradle-plugin to track Compose screens automatically.
 - SDK logs are only emitted in DEBUG mode(BuildConfig.DEBUG).
