@@ -360,7 +360,7 @@ class Timer : Parcelable {
         if (tracker != null) {
             tracker.submitTimer(this)
         } else {
-            Log.e("BlueTriangle", "Tracker not initialized")
+            logger?.error("Tracker not initialized")
         }
     }
 

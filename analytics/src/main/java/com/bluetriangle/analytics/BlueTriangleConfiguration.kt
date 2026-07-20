@@ -249,7 +249,8 @@ class BlueTriangleConfiguration {
             groupingIdleTime : $groupingIdleTime,
             isAppInstallEnabled : $isAppInstallEnabled,
             isForceRestartEnable : $isForceRestartEnable,
-            forceRestartDuration : $forceRestartDuration
+            forceRestartDuration : $forceRestartDuration,
+            bttPluginVersion : $bttPluginVersion
         }
         """.trimIndent()
     }
