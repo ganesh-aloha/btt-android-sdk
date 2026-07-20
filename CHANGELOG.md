@@ -1,6 +1,6 @@
 # Blue Triangle 2.19.7 Latest, July 20 2026
-### New Improvements
-- SDK logging is not working in debug mode with previous change of BuildConfig.DEBUG.
+### Bug Fixes and New Improvements
+- SDK logging was not printing in logcat in app debug mode; needed sdk debug mode issue fixed.
 - Make `androidx.navigation:navigation-compose` dependency compileOnly to avoid version conflict in consuming app.
 
 # Blue Triangle 2.19.6, July 08 2026
