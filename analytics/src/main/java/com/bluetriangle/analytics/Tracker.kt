@@ -23,6 +23,7 @@ import com.bluetriangle.analytics.Timer.Companion.FIELD_CONTENT_GROUP_NAME
 import com.bluetriangle.analytics.Timer.Companion.FIELD_PAGE_NAME
 import com.bluetriangle.analytics.Timer.Companion.FIELD_SESSION_ID
 import com.bluetriangle.analytics.Timer.Companion.FIELD_TRAFFIC_SEGMENT_NAME
+import com.bluetriangle.analytics.Utils.isDebuggable
 import com.bluetriangle.analytics.anrwatchdog.ANRReporter
 import com.bluetriangle.analytics.anrwatchdog.AnrManager
 import com.bluetriangle.analytics.applaunch.AppLaunchReporter
@@ -1343,6 +1344,9 @@ class Tracker private constructor(
             if (!validateAndInitializeConfiguration(application, configuration)) {
                 return null
             }
+
+            val isInDebugMode = isDebuggable(application)
+            if (!isInDebugMode) configuration.isDebug = false
 
             val defaultConfig = BTTRemoteConfiguration(
                 networkSampleRate = configuration.networkSampleRate,

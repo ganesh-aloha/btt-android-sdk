@@ -55,7 +55,7 @@ fun NavHostController.withBttNavigationTracker(): NavHostController {
         val listener = NavController.OnDestinationChangedListener { _, destination, arguments ->
             val screenName = (destination.label ?: destination.route) ?: "unknown"
 
-            Log.i("withBttNavigationTracker", "Label=${destination.label}, Route=${destination.route}, ScreenName= $screenName")
+            Tracker.instance?.configuration?.logger?.info("withBttNavigationTracker - Label=${destination.label}, Route=${destination.route}, ScreenName= $screenName")
             currentLocationTracker.value?.onViewEnded()
             currentLocationTracker.value = BTTScreenTracker(screenName.toString())
             currentLocationTracker.value?.onLoadStarted()
@@ -155,7 +155,7 @@ object DecomposeHook {
 
             subscribeMethod.invoke(stack, observer)
         } catch (e: Exception) {
-            Log.e("BTT", "DecomposeHook.bttTrackStack failed", e)
+            Tracker.instance?.configuration?.logger?.error("DecomposeHook.bttTrackStack failed ${e.message}")
         }
     }
 
@@ -197,7 +197,7 @@ object VoyagerHook {
             currentTracker = BTTScreenTracker(screenName)
             currentTracker?.onLoadStarted()
         } catch (e: Exception) {
-            Log.e("BTT", "VoyagerHook.bttTrackNavigator failed", e)
+            Tracker.instance?.configuration?.logger?.error("VoyagerHook.bttTrackNavigator failed ${e.message}")
         }
     }
 }

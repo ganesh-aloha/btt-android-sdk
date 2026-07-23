@@ -50,10 +50,16 @@ class BlueTriangleConfiguration {
     var shouldSampleNetwork = false
 
     var isDebug = false
+        set(value) {
+            field = value
+            if (!field)
+                logger = null
+        }
+
     var debugLevel = Log.DEBUG
     var logger: Logger? = null
         get() {
-            if (BuildConfig.DEBUG && field == null && isDebug) {
+            if (field == null && isDebug) {
                 field = AndroidLogger(debugLevel)
             }
             return field
@@ -243,7 +249,8 @@ class BlueTriangleConfiguration {
             groupingIdleTime : $groupingIdleTime,
             isAppInstallEnabled : $isAppInstallEnabled,
             isForceRestartEnable : $isForceRestartEnable,
-            forceRestartDuration : $forceRestartDuration
+            forceRestartDuration : $forceRestartDuration,
+            bttPluginVersion : $bttPluginVersion
         }
         """.trimIndent()
     }
