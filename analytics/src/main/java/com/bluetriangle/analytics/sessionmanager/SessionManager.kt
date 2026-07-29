@@ -110,7 +110,8 @@ internal class SessionManager(
             getNewExpiration(),
             config.enableAppInstall,
             config.enableForceRestart,
-            config.forceRestartDuration
+            config.forceRestartDuration,
+            config.enableJankTracking
         )
     }
 
@@ -153,7 +154,8 @@ internal class SessionManager(
                 getNewExpiration(),
                 it.enableAppInstall,
                 it.enableForceRestart,
-                it.forceRestartDuration
+                it.forceRestartDuration,
+                it.enableJankTracking
             )
             sessionStore.storeSessionData(
                 newExpirySession
@@ -209,7 +211,8 @@ internal class SessionManager(
                                 session.expiration,
                                 config.enableAppInstall,
                                 config.enableForceRestart,
-                                config.forceRestartDuration
+                                config.forceRestartDuration,
+                                config.enableJankTracking
                             )
                             Tracker.instance?.updateSession(sessionData)
                             sessionStore.storeSessionData(

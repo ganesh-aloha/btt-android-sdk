@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
 import com.bluetriangle.analytics.eventhub.sdkeventhub.SDKEventHub
+import com.bluetriangle.analytics.jank.JankMetrics
 import com.bluetriangle.analytics.model.NativeAppProperties
 import com.bluetriangle.analytics.performancemonitor.PerformanceSpan
 import com.bluetriangle.analytics.utility.getNumberOfCPUCores
@@ -163,6 +164,9 @@ class Timer : Parcelable {
     }
 
     fun generateNativeAppProperties() {
+        // Carry frame health metrics across regeneration - they're stamped when the screen is
+        // hidden, which can happen before this rebuild (e.g. Tracker.prepareTimerRunnable).
+        val stampedJankMetrics = nativeAppProperties.jankMetrics
         nativeAppProperties = NativeAppProperties(
             null,
             null,
@@ -170,7 +174,8 @@ class Timer : Parcelable {
             null,
             getNumberOfCPUCores(),
             appVersion = tracker?.appVersion,
-            sdkVersion = BuildConfig.SDK_VERSION
+            sdkVersion = BuildConfig.SDK_VERSION,
+            jankMetrics = stampedJankMetrics
         )
         Tracker.instance?.networkTimelineTracker?.let {
             val networkSlice = it.sliceStats(
@@ -602,6 +607,29 @@ class Timer : Parcelable {
     fun setPerformanceReportFields(performanceReport: Map<String, String>): Timer {
         synchronized(fields) { fields.putAll(performanceReport) }
         return this
+    }
+
+    /**
+     * Stamps the per-screen frame health metrics captured while this screen was visible (set by
+     * [com.bluetriangle.analytics.screenTracking.BTTScreenLifecycleTracker] when a Fragment/Activity
+     * is hidden) onto [nativeAppProperties], where they ship inside the NATIVEAPP beacon field.
+     * Metrics already stamped are never overwritten.
+     */
+    internal fun setJankReportFields(metrics: JankMetrics): Timer {
+        if (nativeAppProperties.jankMetrics == null) {
+            nativeAppProperties.jankMetrics = metrics
+        }
+        return this
+    }
+
+    /**
+     * A grouped screen's own Timer is never submitted directly - only the synthetic group Timer
+     * is - so [com.bluetriangle.analytics.screenTracking.grouping.BTTTimerGroup] uses this to carry
+     * jank/hitch/hang numbers from a chosen member Timer (the one with the most observed frames)
+     * onto the group Timer that actually gets submitted.
+     */
+    internal fun copyJankReportFieldsFrom(other: Timer) {
+        other.nativeAppProperties.jankMetrics?.let { setJankReportFields(it) }
     }
 
     /**

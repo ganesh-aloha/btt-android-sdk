@@ -196,6 +196,15 @@ internal class BTTTimerGroup(
         groupTimer.nativeAppProperties.grouped = true
         groupTimer.nativeAppProperties.groupingCause = groupingCause.name
         groupTimer.nativeAppProperties.groupingCauseInterval = groupingCause.timeInterval
+
+        // groupTimer is the one actually submitted, not any individual screen's Timer. Prefer the
+        // member with the most observed frames (often a Fragment/Compose content screen) over the
+        // last-named timer, which can be a zeroed host under lifecycle ordering.
+        timers.map { it.second }
+            .filter { it.nativeAppProperties.jankMetrics != null }
+            .maxByOrNull {
+                it.nativeAppProperties.jankMetrics?.totalFrames ?: 0L
+            }?.let { groupTimer.copyJankReportFieldsFrom(it) }
     }
 
     private fun calculateGroupPgTm(loadTimes: List<Pair<Long, Long>>): Long {

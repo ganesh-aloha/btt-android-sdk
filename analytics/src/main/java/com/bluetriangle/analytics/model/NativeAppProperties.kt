@@ -22,8 +22,22 @@ import com.bluetriangle.analytics.Constants.NETWORK_TYPE_WIFI
 import com.bluetriangle.analytics.Constants.NUMBER_OF_CPU_CORES
 import com.bluetriangle.analytics.Constants.SCREEN_TYPE
 import com.bluetriangle.analytics.Constants.SDK_VERSION
+import com.bluetriangle.analytics.Constants.TOTAL_FRAME_COUNT
+import com.bluetriangle.analytics.Constants.JANK_FRAME_COUNT
+import com.bluetriangle.analytics.Constants.TOTAL_JANK_DURATION
+import com.bluetriangle.analytics.Constants.JANK_TIME_RATIO
+import com.bluetriangle.analytics.Constants.LONGEST_JANK
+import com.bluetriangle.analytics.Constants.HITCH_COUNT
+import com.bluetriangle.analytics.Constants.TOTAL_HITCH_DURATION
+import com.bluetriangle.analytics.Constants.HITCH_TIME_RATIO
+import com.bluetriangle.analytics.Constants.LONGEST_HITCH
+import com.bluetriangle.analytics.Constants.HANG_COUNT
+import com.bluetriangle.analytics.Constants.TOTAL_HANG_DURATION
+import com.bluetriangle.analytics.Constants.HANG_TIME_RATIO
+import com.bluetriangle.analytics.Constants.LONGEST_HANG
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
+import com.bluetriangle.analytics.jank.JankMetrics
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
 import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD_DEVICE_MODEL
 import com.bluetriangle.analytics.networkstate.BTTNetworkState
@@ -61,7 +75,8 @@ internal data class NativeAppProperties(
     var event: BTTEvent? = null,
     var autoCheckout: Boolean? = null,
     var configKey: String? = null,
-    var installTime: Long? = null
+    var installTime: Long? = null,
+    var jankMetrics: JankMetrics? = null
 ) : Parcelable {
 
     private val cellularTotal
@@ -106,6 +121,22 @@ internal data class NativeAppProperties(
         obj.put(FIELD_DEVICE_MODEL, deviceModel)
         obj.put(CONFIDENCE_RATE, confidenceRate)
         obj.put(CONFIDENCE_MSG, confidenceMsg)
+
+        jankMetrics?.let {
+            obj.put(TOTAL_FRAME_COUNT, it.totalFrames)
+            obj.put(JANK_FRAME_COUNT, it.jankFrameCount)
+            obj.put(TOTAL_JANK_DURATION, it.totalJankDurationMs)
+            obj.put(JANK_TIME_RATIO, it.jankTimeRatio)
+            obj.put(LONGEST_JANK, it.longestJankMs)
+            obj.put(HITCH_COUNT, it.hitchCount)
+            obj.put(TOTAL_HITCH_DURATION, it.totalHitchDurationMs)
+            obj.put(HITCH_TIME_RATIO, it.hitchTimeRatio)
+            obj.put(LONGEST_HITCH, it.longestHitchMs)
+            obj.put(HANG_COUNT, it.hangCount)
+            obj.put(TOTAL_HANG_DURATION, it.totalHangDurationMs)
+            obj.put(HANG_TIME_RATIO, it.hangTimeRatio)
+            obj.put(LONGEST_HANG, it.longestHangMs)
+        }
 
         return obj
     }

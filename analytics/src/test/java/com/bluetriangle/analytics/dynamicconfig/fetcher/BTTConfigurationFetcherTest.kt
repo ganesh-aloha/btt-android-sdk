@@ -115,7 +115,8 @@ class BTTConfigurationFetcherTest {
                 "",
                 true,
                 true,
-                10.0
+                10.0,
+                true
             )
             val result = fetcher.fetch()
 

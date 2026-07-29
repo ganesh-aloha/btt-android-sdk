@@ -206,6 +206,13 @@ class BlueTriangleConfiguration {
      */
     var forceRestartDuration: Double = 10.0
 
+    /**
+     * Enable or disable jank frame and hitch rate tracking via AndroidX [androidx.metrics.performance.JankStats].
+     * On API 24+ JankStats uses the platform FrameMetrics API; below API 24 it falls back to an
+     * OnPreDrawListener-based approximation (minSdk is 21), so this is not a hard no-op on older devices.
+     */
+    var isJankTrackingEnabled: Boolean = true
+
     companion object {
         const val DEFAULT_TRACKER_URL = "https://d.btttag.com/analytics.rcv"
         const val DEFAULT_ERROR_REPORTING_URL = "https://d.btttag.com/err.rcv"
@@ -251,6 +258,7 @@ class BlueTriangleConfiguration {
             isForceRestartEnable : $isForceRestartEnable,
             forceRestartDuration : $forceRestartDuration,
             bttPluginVersion : $bttPluginVersion
+            isJankTrackingEnabled : $isJankTrackingEnabled
         }
         """.trimIndent()
     }

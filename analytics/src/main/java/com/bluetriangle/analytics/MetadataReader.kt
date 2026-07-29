@@ -26,6 +26,7 @@ internal object MetadataReader {
     private const val APP_INSTALL_ENABLE = "com.blue-triangle.app-install.enable"
     private const val FORCE_RESTART_ENABLE = "com.blue-triangle.force-restart.enable"
     private const val FORCE_RESTART_DURATION_SECONDS = "com.blue-triangle.force-restart.duration-sec"
+    private const val JANK_TRACKING_ENABLE = "com.blue-triangle.jank-tracking.enable"
 
     fun applyMetadata(context: Context, configuration: BlueTriangleConfiguration) {
         try {
@@ -85,6 +86,8 @@ internal object MetadataReader {
                     readBool(metadata, FORCE_RESTART_ENABLE, configuration.isForceRestartEnable)
                 configuration.forceRestartDuration = readDouble(
                     metadata, FORCE_RESTART_DURATION_SECONDS, configuration.forceRestartDuration)
+                configuration.isJankTrackingEnabled =
+                    readBool(metadata, JANK_TRACKING_ENABLE, configuration.isJankTrackingEnabled)
             }
         } catch (e: Throwable) {
             configuration.logger?.error(e, "Error reading metadata configuration")

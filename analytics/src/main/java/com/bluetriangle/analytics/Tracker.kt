@@ -46,6 +46,7 @@ import com.bluetriangle.analytics.eventhub.sdkeventhub.SDKEventHub
 import com.bluetriangle.analytics.globalproperties.CustomCategory
 import com.bluetriangle.analytics.globalproperties.GlobalPropertiesStore
 import com.bluetriangle.analytics.hybrid.BTTWebViewTracker
+import com.bluetriangle.analytics.jank.JankFrameMonitor
 import com.bluetriangle.analytics.launchtime.LaunchMonitor
 import com.bluetriangle.analytics.launchtime.LaunchReporter
 import com.bluetriangle.analytics.lifecycle.LifecycleRegistry
@@ -131,6 +132,9 @@ class Tracker private constructor(
         @Synchronized set
 
     internal var networkStateMonitor: NetworkStateMonitor? = null
+        @Synchronized set
+
+    internal var jankFrameMonitor: JankFrameMonitor? = null
         @Synchronized set
 
     internal var deviceInfoProvider: IDeviceInfoProvider
@@ -236,6 +240,9 @@ class Tracker private constructor(
         if(configuration.isLaunchTimeEnabled) {
             enableLaunchMonitor()
         }
+        if(configuration.isJankTrackingEnabled) {
+            initializeJankTracking()
+        }
         initializeNetworkStateTracking()
 
         (context.get()?.applicationContext as? Application)?.let {
@@ -301,10 +308,25 @@ class Tracker private constructor(
         stopTrackCrashes()
         deInitializeNetworkStateTracking()
         disableLaunchMonitor()
+        deInitializeJankTracking()
         LifecycleRegistry.uninstall()
         disableBreadcrumbs()
         stopAppLaunchReporter()
         configuration.logger?.debug("SDK is disabled.")
+    }
+
+    @Synchronized
+    private fun initializeJankTracking() {
+        if (jankFrameMonitor != null) return
+        val application = context.get()?.applicationContext as? Application ?: return
+        jankFrameMonitor = JankFrameMonitor(configuration).also { it.start(application) }
+    }
+
+    @Synchronized
+    private fun deInitializeJankTracking() {
+        // JankFrameMonitor retains the Application from start(); stop() works even if our weak context is cleared.
+        jankFrameMonitor?.stop(context.get()?.applicationContext as? Application)
+        jankFrameMonitor = null
     }
 
     private fun startPerformanceMonitoring() {
@@ -982,6 +1004,16 @@ class Tracker private constructor(
             }
         }
 
+        if(configuration.isJankTrackingEnabled != sessionData.enableJankTracking) {
+            changes.append("\nenableJankTracking: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableJankTracking}")
+            configuration.isJankTrackingEnabled = sessionData.enableJankTracking
+            if(configuration.isJankTrackingEnabled) {
+                initializeJankTracking()
+            } else {
+                deInitializeJankTracking()
+            }
+        }
+
         if(configuration.isWebViewStitchingEnabled != sessionData.enableWebViewStitching) {
             changes.append("\nenableWebViewStitching: ${configuration.isWebViewStitchingEnabled} -> ${sessionData.enableWebViewStitching}")
             configuration.isWebViewStitchingEnabled = sessionData.enableWebViewStitching
@@ -1367,7 +1399,8 @@ class Tracker private constructor(
                 configKey = DEFAULT_CONFIG_KEY,
                 enableAppInstall = configuration.isAppInstallEnabled,
                 enableForceRestart = configuration.isForceRestartEnable,
-                forceRestartDuration = configuration.forceRestartDuration
+                forceRestartDuration = configuration.forceRestartDuration,
+                enableJankTracking = configuration.isJankTrackingEnabled
             )
 
             initializeConfigurationUpdater(application, configuration, defaultConfig)
@@ -1505,6 +1538,7 @@ class Tracker private constructor(
             isAppInstallEnabled = sessionData.enableAppInstall
             isForceRestartEnable = sessionData.enableForceRestart
             forceRestartDuration = sessionData.forceRestartDuration
+            isJankTrackingEnabled = sessionData.enableJankTracking
         }
 
         private lateinit var configurationRepository: IBTTConfigurationRepository

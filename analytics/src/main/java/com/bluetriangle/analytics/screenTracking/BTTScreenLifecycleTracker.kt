@@ -64,6 +64,13 @@ internal class BTTScreenLifecycleTracker(
         if (!screenTrackingEnabled) return
         if (shouldIgnore(screen.pageName(grouped(automated)))) return
 
+        // Host Activities are isContent=false so frames go to Fragments/Compose when present;
+        // Activity-only screens still receive frames when no content screens are visible.
+        Tracker.instance?.jankFrameMonitor?.onScreenVisible(
+            screen.toString(),
+            isContent = screen.type != ScreenType.Activity
+        )
+
         if (timers[screen.toString()] == null) {
             createTimerAndCaptureLoadStartTime(screen, grouped(automated))
         }
@@ -101,6 +108,14 @@ internal class BTTScreenLifecycleTracker(
         val timer = timers[scr] ?: return
 
         generateMetaData(screen, timer)
+
+        // Only stamp per-screen frame health when frames were actually observed - an all-zero
+        // snapshot (e.g. screen hidden before any frame drew) would just report misleading zeros.
+        Tracker.instance?.jankFrameMonitor?.onScreenHidden(scr)?.let { metrics ->
+            if (metrics.totalFrames > 0L) {
+                timer.setJankReportFields(metrics)
+            }
+        }
 
         if(grouped(automated)) {
             timer.end()

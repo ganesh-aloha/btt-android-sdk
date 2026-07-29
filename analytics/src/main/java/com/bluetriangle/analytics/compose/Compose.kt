@@ -59,6 +59,9 @@ fun NavHostController.withBttNavigationTracker(): NavHostController {
             currentLocationTracker.value?.onViewEnded()
             currentLocationTracker.value = BTTScreenTracker(screenName.toString())
             currentLocationTracker.value?.onLoadStarted()
+            // Open the view/jank window immediately so frames during first paint are attributed
+            // to this destination; load-end only finalizes page-load timing.
+            currentLocationTracker.value?.onViewStarted()
             loadTracker.trackScreenLoad {
                 currentLocationTracker.value?.onLoadEnded()
             }
@@ -96,6 +99,9 @@ fun <T: Any> SceneState<T>.bttTrackBackStack():SceneState<T> {
             currentLocationTracker.value?.onViewEnded()
             currentLocationTracker.value = BTTScreenTracker(screenName.toString())
             currentLocationTracker.value?.onLoadStarted()
+            // Open the view/jank window immediately so frames during first paint are attributed
+            // to this destination; load-end only finalizes page-load timing.
+            currentLocationTracker.value?.onViewStarted()
             loadTracker.trackScreenLoad {
                 currentLocationTracker.value?.onLoadEnded()
             }
@@ -167,6 +173,7 @@ object DecomposeHook {
             currentLocationTracker?.onViewEnded()
             currentLocationTracker = BTTScreenTracker(screenName)
             currentLocationTracker?.onLoadStarted()
+            currentLocationTracker?.onViewStarted()
         } catch (_: Exception) {
 
         }
@@ -196,6 +203,7 @@ object VoyagerHook {
             currentTracker?.onViewEnded()
             currentTracker = BTTScreenTracker(screenName)
             currentTracker?.onLoadStarted()
+            currentTracker?.onViewStarted()
         } catch (e: Exception) {
             Tracker.instance?.configuration?.logger?.error("VoyagerHook.bttTrackNavigator failed ${e.message}")
         }
@@ -207,7 +215,13 @@ internal class ComposableLifecycleObserver(
     screenName: String
 ) : LifecycleEventObserver {
 
-    val screen = Screen(screenName.hashCode().toString(), screenName, ScreenType.Composable)
+    // Unique per observer instance so two concurrent BttTimerEffect(sameName) don't collide on the
+    // jank registry / timer map. Name is still the page name; id is identity of this observer.
+    val screen = Screen(
+        id = System.identityHashCode(this).toString(),
+        name = screenName,
+        type = ScreenType.Composable
+    )
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         screenTracker?.apply {

@@ -27,7 +27,8 @@ internal open class BTTRemoteConfiguration(
     val configKey: String,
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
-    val forceRestartDuration: Double
+    val forceRestartDuration: Double,
+    val enableJankTracking: Boolean
 ) {
     override fun equals(other: Any?): Boolean {
         if(other is BTTRemoteConfiguration) {
@@ -49,13 +50,14 @@ internal open class BTTRemoteConfiguration(
                     other.configKey == configKey &&
                     other.enableAppInstall == enableAppInstall &&
                     other.enableForceRestart == enableForceRestart &&
-                    other.forceRestartDuration == forceRestartDuration
+                    other.forceRestartDuration == forceRestartDuration &&
+                    other.enableJankTracking == enableJankTracking
         }
         return false
     }
 
     override fun toString(): String {
-        return "RemoteConfig { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey }"
+        return "RemoteConfig { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey, enableJankTracking: $enableJankTracking }"
     }
 
     override fun hashCode(): Int {
@@ -78,6 +80,7 @@ internal open class BTTRemoteConfiguration(
         result = 31 * result + enableAppInstall.hashCode()
         result = 31 * result + enableForceRestart.hashCode()
         result = 31 * result + forceRestartDuration.hashCode()
+        result = 31 * result + enableJankTracking.hashCode()
         return result
     }
 
