@@ -57,20 +57,16 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
     }
 
     fun snapshot(): JankMetrics {
-        val elapsedMs = (nowMs() - startTimeMs).coerceAtLeast(0L)
         return JankMetrics(
             totalFrames = totalFrames.get(),
             jankFrameCount = jank.count.get(),
             totalJankDurationMs = jank.totalDurationNanos.get().nanosToMs(),
-            jankTimeRatio = timeRatio(jank, elapsedMs),
             longestJankMs = jank.longestDurationNanos.get().nanosToMs(),
             hitchCount = hitch.count.get(),
             totalHitchDurationMs = hitch.totalDurationNanos.get().nanosToMs(),
-            hitchTimeRatio = timeRatio(hitch, elapsedMs),
             longestHitchMs = hitch.longestDurationNanos.get().nanosToMs(),
             hangCount = hang.count.get(),
             totalHangDurationMs = hang.totalDurationNanos.get().nanosToMs(),
-            hangTimeRatio = timeRatio(hang, elapsedMs),
             longestHangMs = hang.longestDurationNanos.get().nanosToMs()
         )
     }

@@ -43,6 +43,7 @@ import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD
 import com.bluetriangle.analytics.networkstate.BTTNetworkState
 import com.bluetriangle.analytics.networkstate.data.BTTNetworkProtocol
 import com.bluetriangle.analytics.event.BTTEvent
+import com.bluetriangle.analytics.utility.roundTo2Decimals
 import com.bluetriangle.analytics.utility.value
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
@@ -122,19 +123,25 @@ internal data class NativeAppProperties(
         obj.put(CONFIDENCE_RATE, confidenceRate)
         obj.put(CONFIDENCE_MSG, confidenceMsg)
 
+        val fullTime = fullTime?.toDouble()?: Double.MAX_VALUE
+
         jankMetrics?.let {
+            val jankRatio = it.totalJankDurationMs.toDouble() / fullTime
+            val hitchRatio = it.totalHitchDurationMs.toDouble() / fullTime
+            val hangRatio = it.totalHangDurationMs.toDouble() / fullTime
+
             obj.put(TOTAL_FRAME_COUNT, it.totalFrames)
             obj.put(JANK_FRAME_COUNT, it.jankFrameCount)
             obj.put(TOTAL_JANK_DURATION, it.totalJankDurationMs)
-            obj.put(JANK_TIME_RATIO, it.jankTimeRatio)
+            obj.put(JANK_TIME_RATIO, jankRatio.roundTo2Decimals())
             obj.put(LONGEST_JANK, it.longestJankMs)
             obj.put(HITCH_COUNT, it.hitchCount)
             obj.put(TOTAL_HITCH_DURATION, it.totalHitchDurationMs)
-            obj.put(HITCH_TIME_RATIO, it.hitchTimeRatio)
+            obj.put(HITCH_TIME_RATIO, hitchRatio.roundTo2Decimals())
             obj.put(LONGEST_HITCH, it.longestHitchMs)
             obj.put(HANG_COUNT, it.hangCount)
             obj.put(TOTAL_HANG_DURATION, it.totalHangDurationMs)
-            obj.put(HANG_TIME_RATIO, it.hangTimeRatio)
+            obj.put(HANG_TIME_RATIO, hangRatio.roundTo2Decimals())
             obj.put(LONGEST_HANG, it.longestHangMs)
         }
 

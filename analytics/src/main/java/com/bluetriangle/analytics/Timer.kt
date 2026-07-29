@@ -616,9 +616,7 @@ class Timer : Parcelable {
      * Metrics already stamped are never overwritten.
      */
     internal fun setJankReportFields(metrics: JankMetrics): Timer {
-        if (nativeAppProperties.jankMetrics == null) {
-            nativeAppProperties.jankMetrics = metrics
-        }
+        nativeAppProperties.jankMetrics = metrics
         return this
     }
 

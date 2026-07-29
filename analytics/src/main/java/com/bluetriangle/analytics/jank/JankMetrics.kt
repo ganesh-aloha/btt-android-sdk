@@ -20,15 +20,12 @@ import kotlinx.parcelize.Parcelize
  * @param totalFrames total number of frames observed
  * @param jankFrameCount frames classified as jank
  * @param totalJankDurationMs cumulative full duration (ms) of jank frames
- * @param jankTimeRatio totalJankDurationMs / elapsed ms
  * @param longestJankMs longest single jank frame (ms)
  * @param hitchCount frames classified as hitches
  * @param totalHitchDurationMs cumulative full duration (ms) of hitch frames
- * @param hitchTimeRatio totalHitchDurationMs / elapsed ms
  * @param longestHitchMs longest single hitch frame (ms)
  * @param hangCount frames classified as hangs
  * @param totalHangDurationMs cumulative full duration (ms) of hang frames
- * @param hangTimeRatio totalHangDurationMs / elapsed ms
  * @param longestHangMs longest single hang frame (ms)
  */
 @Parcelize
@@ -36,14 +33,11 @@ internal data class JankMetrics(
     val totalFrames: Long,
     val jankFrameCount: Long,
     val totalJankDurationMs: Long,
-    val jankTimeRatio: Double,
     val longestJankMs: Long,
     val hitchCount: Long,
     val totalHitchDurationMs: Long,
-    val hitchTimeRatio: Double,
     val longestHitchMs: Long,
     val hangCount: Long,
     val totalHangDurationMs: Long,
-    val hangTimeRatio: Double,
     val longestHangMs: Long
 ) : Parcelable
