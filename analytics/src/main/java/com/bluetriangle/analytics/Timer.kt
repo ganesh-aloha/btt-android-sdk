@@ -623,7 +623,7 @@ class Timer : Parcelable {
     /**
      * A grouped screen's own Timer is never submitted directly - only the synthetic group Timer
      * is - so [com.bluetriangle.analytics.screenTracking.grouping.BTTTimerGroup] uses this to carry
-     * jank/hitch/hang numbers from a chosen member Timer (the one with the most observed frames)
+     * jank/hang numbers from a chosen member Timer (the one with the most observed frames)
      * onto the group Timer that actually gets submitted.
      */
     internal fun copyJankReportFieldsFrom(other: Timer) {

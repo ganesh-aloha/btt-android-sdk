@@ -92,30 +92,19 @@ object Constants {
     internal const val DEFAULT_SCREEN_REFRESH_RATE = 60f
     // Per-screen frame health report fields (see [com.bluetriangle.analytics.jank.JankMetrics])
     internal const val TOTAL_FRAME_COUNT = "totalFrames"
-    internal const val JANK_FRAME_COUNT = "jankFrameCount"
-    internal const val TOTAL_JANK_DURATION = "totalJankDuration"
-    internal const val JANK_TIME_RATIO = "jankTimeRatio"
-    internal const val LONGEST_JANK = "longestJank"
-    internal const val HITCH_COUNT = "hitchCount"
-    internal const val TOTAL_HITCH_DURATION = "totalHitchDuration"
-    internal const val HITCH_TIME_RATIO = "hitchTimeRatio"
-    internal const val LONGEST_HITCH = "longestHitch"
+    internal const val JANK_FRAME_COUNT = "hitchCount"
+    internal const val LONGEST_JANK_DURATION = "longestHitch"
+    internal const val TOTAL_JANK_DURATION = "totalHitchDuration"
+    internal const val JANK_TIME_RATIO = "hitchTimeRatio"
     internal const val HANG_COUNT = "hangCount"
+    internal const val LONGEST_HANG_DURATION = "longestHang"
     internal const val TOTAL_HANG_DURATION = "totalHangDuration"
     internal const val HANG_TIME_RATIO = "hangTimeRatio"
-    internal const val LONGEST_HANG = "longestHang"
-
-    /**
-     * Frames at or above this full duration (but below [HANG_THRESHOLD_MS]) are classified as
-     * hitches - RAIL's "perceptible delay" boundary. Frames JankStats flags as janky but shorter
-     * than this stay in the jank bucket. The three buckets are mutually exclusive.
-     */
-    internal const val HITCH_THRESHOLD_MS = 100L
 
     /**
      * Frames at or above this full duration are classified as hangs (Apple's hang convention).
      */
-    internal const val HANG_THRESHOLD_MS = 250L
+    internal const val HANG_THRESHOLD_MS = 750L
 
     /**
      * Passed to [androidx.metrics.performance.JankStats.jankHeuristicMultiplier]: a frame is only
@@ -124,6 +113,7 @@ object Constants {
      * smooth frames (double/triple-buffered GPU command issue + swap time), so a bare "any
      * overrun" check flags nearly every frame. This is JankStats' own default multiplier, set
      * explicitly here so behavior doesn't silently shift if the library's default ever changes.
+     * Library default is 2.0f, don't change without discussion.
      */
     internal const val JANK_HEURISTIC_MULTIPLIER = 2.0f
 }

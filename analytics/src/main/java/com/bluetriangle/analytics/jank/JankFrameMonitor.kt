@@ -11,7 +11,7 @@ import java.util.Collections
 import java.util.WeakHashMap
 
 /**
- * Tracks per-frame health (jank/hitch/hang buckets - see [JankMetrics]) across all of the app's
+ * Tracks per-frame health (jank/hang buckets - see [JankMetrics]) across all of the app's
  * activities by observing frame durations via AndroidX's [JankStats] library, which uses the
  * platform FrameMetrics API on API 24+ and an [android.view.ViewTreeObserver.OnPreDrawListener]
  * fallback below that - see [Constants.JANK_HEURISTIC_MULTIPLIER] for why raw frame duration isn't
@@ -74,7 +74,7 @@ internal class JankFrameMonitor(
     }
 
     /**
-     * Call when a tracked screen stops being visible. Returns its final jank/hitch snapshot, or
+     * Call when a tracked screen stops being visible. Returns its final jank/hang snapshot, or
      * null if it was never tracked (e.g. jank tracking was off while it was visible).
      */
     fun onScreenHidden(screenKey: String): JankMetrics? {
@@ -106,10 +106,10 @@ internal class JankFrameMonitor(
 
     private fun createJankStats(window: Window): JankStats {
         return JankStats.createAndTrack(window) { frameData ->
-            // Buckets are cut on the frame's full UI duration (see JankMetrics): hang/hitch are
-            // fixed wall-time thresholds, and only sub-hitch frames rely on JankStats' isJank
-            // classification (duration > multiplier × refresh-rate budget).
-            screenAccumulators.recordFrame(frameData.isJank, frameData.frameDurationUiNanos, window.frameBudget)
+            // Buckets are cut on the frame's full UI duration (see JankMetrics): hang are
+            // fixed wall-time threshold, and jank frames rely on JankStats' isJank classification (duration > multiplier × refresh-rate budget).
+            val frame = frameData.copy()
+            screenAccumulators.recordFrame(frame.isJank, frame.frameDurationUiNanos, window.frameBudget)
         }.also { it.jankHeuristicMultiplier = Constants.JANK_HEURISTIC_MULTIPLIER }
     }
 
@@ -119,6 +119,9 @@ internal class JankFrameMonitor(
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {}
 }
+
+val Window.minJankDuration: Long
+    get()  = (frameBudget * Constants.JANK_HEURISTIC_MULTIPLIER).toLong()
 
 val Window.frameBudget: Long
     get() {

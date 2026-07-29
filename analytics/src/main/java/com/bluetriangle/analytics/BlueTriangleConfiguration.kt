@@ -207,7 +207,7 @@ class BlueTriangleConfiguration {
     var forceRestartDuration: Double = 10.0
 
     /**
-     * Enable or disable jank frame and hitch rate tracking via AndroidX [androidx.metrics.performance.JankStats].
+     * Enable or disable jank frame and hang rate tracking via AndroidX [androidx.metrics.performance.JankStats].
      * On API 24+ JankStats uses the platform FrameMetrics API; below API 24 it falls back to an
      * OnPreDrawListener-based approximation (minSdk is 21), so this is not a hard no-op on older devices.
      */

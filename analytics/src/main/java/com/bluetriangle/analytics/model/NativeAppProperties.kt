@@ -22,19 +22,14 @@ import com.bluetriangle.analytics.Constants.NETWORK_TYPE_WIFI
 import com.bluetriangle.analytics.Constants.NUMBER_OF_CPU_CORES
 import com.bluetriangle.analytics.Constants.SCREEN_TYPE
 import com.bluetriangle.analytics.Constants.SDK_VERSION
-import com.bluetriangle.analytics.Constants.TOTAL_FRAME_COUNT
 import com.bluetriangle.analytics.Constants.JANK_FRAME_COUNT
 import com.bluetriangle.analytics.Constants.TOTAL_JANK_DURATION
 import com.bluetriangle.analytics.Constants.JANK_TIME_RATIO
-import com.bluetriangle.analytics.Constants.LONGEST_JANK
-import com.bluetriangle.analytics.Constants.HITCH_COUNT
-import com.bluetriangle.analytics.Constants.TOTAL_HITCH_DURATION
-import com.bluetriangle.analytics.Constants.HITCH_TIME_RATIO
-import com.bluetriangle.analytics.Constants.LONGEST_HITCH
+import com.bluetriangle.analytics.Constants.LONGEST_JANK_DURATION
 import com.bluetriangle.analytics.Constants.HANG_COUNT
 import com.bluetriangle.analytics.Constants.TOTAL_HANG_DURATION
 import com.bluetriangle.analytics.Constants.HANG_TIME_RATIO
-import com.bluetriangle.analytics.Constants.LONGEST_HANG
+import com.bluetriangle.analytics.Constants.LONGEST_HANG_DURATION
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
 import com.bluetriangle.analytics.jank.JankMetrics
@@ -123,26 +118,21 @@ internal data class NativeAppProperties(
         obj.put(CONFIDENCE_RATE, confidenceRate)
         obj.put(CONFIDENCE_MSG, confidenceMsg)
 
-        val fullTime = fullTime?.toDouble()?: Double.MAX_VALUE
+        // fullTime is in milliseconds convert it to seconds
+        val screenTime = (fullTime ?: Long.MAX_VALUE) / 1000
 
         jankMetrics?.let {
-            val jankRatio = it.totalJankDurationMs.toDouble() / fullTime
-            val hitchRatio = it.totalHitchDurationMs.toDouble() / fullTime
-            val hangRatio = it.totalHangDurationMs.toDouble() / fullTime
+            val jankRatio = it.totalJankDurationMs.toDouble() / screenTime
+            val hangRatio = it.totalHangDurationMs.toDouble() / screenTime
 
-            obj.put(TOTAL_FRAME_COUNT, it.totalFrames)
             obj.put(JANK_FRAME_COUNT, it.jankFrameCount)
+            obj.put(LONGEST_JANK_DURATION, it.longestJankMs)
             obj.put(TOTAL_JANK_DURATION, it.totalJankDurationMs)
             obj.put(JANK_TIME_RATIO, jankRatio.roundTo2Decimals())
-            obj.put(LONGEST_JANK, it.longestJankMs)
-            obj.put(HITCH_COUNT, it.hitchCount)
-            obj.put(TOTAL_HITCH_DURATION, it.totalHitchDurationMs)
-            obj.put(HITCH_TIME_RATIO, hitchRatio.roundTo2Decimals())
-            obj.put(LONGEST_HITCH, it.longestHitchMs)
-            obj.put(HANG_COUNT, it.hangCount)
+            obj.put(HANG_COUNT, it.hangFrameCount)
+            obj.put(LONGEST_HANG_DURATION, it.longestHangMs)
             obj.put(TOTAL_HANG_DURATION, it.totalHangDurationMs)
             obj.put(HANG_TIME_RATIO, hangRatio.roundTo2Decimals())
-            obj.put(LONGEST_HANG, it.longestHangMs)
         }
 
         return obj

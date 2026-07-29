@@ -18,11 +18,11 @@ class JankFrameAccumulatorTest {
         assertEquals(0L, snapshot.totalJankDurationMs)
         assertEquals(0.0, snapshot.jankTimeRatio, 0.0)
         assertEquals(0L, snapshot.longestJankMs)
-        assertEquals(0L, snapshot.hitchCount)
-        assertEquals(0L, snapshot.totalHitchDurationMs)
+        assertEquals(0L, snapshot.jankFrameCount)
+        assertEquals(0L, snapshot.totalJankDurationMs)
         assertEquals(0.0, snapshot.hitchTimeRatio, 0.0)
-        assertEquals(0L, snapshot.longestHitchMs)
-        assertEquals(0L, snapshot.hangCount)
+        assertEquals(0L, snapshot.longestJankMs)
+        assertEquals(0L, snapshot.hangFrameCount)
         assertEquals(0L, snapshot.totalHangDurationMs)
         assertEquals(0.0, snapshot.hangTimeRatio, 0.0)
         assertEquals(0L, snapshot.longestHangMs)
@@ -46,12 +46,12 @@ class JankFrameAccumulatorTest {
         assertEquals(60L, snapshot.longestJankMs)
         assertEquals(0.1, snapshot.jankTimeRatio, 0.0001)
 
-        assertEquals(1L, snapshot.hitchCount)
-        assertEquals(120L, snapshot.totalHitchDurationMs)
-        assertEquals(120L, snapshot.longestHitchMs)
+        assertEquals(1L, snapshot.jankFrameCount)
+        assertEquals(120L, snapshot.totalJankDurationMs)
+        assertEquals(120L, snapshot.longestJankMs)
         assertEquals(0.12, snapshot.hitchTimeRatio, 0.0001)
 
-        assertEquals(1L, snapshot.hangCount)
+        assertEquals(1L, snapshot.hangFrameCount)
         assertEquals(300L, snapshot.totalHangDurationMs)
         assertEquals(300L, snapshot.longestHangMs)
         assertEquals(0.3, snapshot.hangTimeRatio, 0.0001)
@@ -65,8 +65,8 @@ class JankFrameAccumulatorTest {
         val snapshot = accumulator.snapshot()
         assertEquals(1L, snapshot.totalFrames)
         assertEquals(0L, snapshot.jankFrameCount)
-        assertEquals(0L, snapshot.hitchCount)
-        assertEquals(1L, snapshot.hangCount)
+        assertEquals(0L, snapshot.jankFrameCount)
+        assertEquals(1L, snapshot.hangFrameCount)
     }
 
     @Test
@@ -79,9 +79,9 @@ class JankFrameAccumulatorTest {
 
         val snapshot = accumulator.snapshot()
         assertEquals(1L, snapshot.jankFrameCount)
-        assertEquals(2L, snapshot.hitchCount)
-        assertEquals(1L, snapshot.hangCount)
-        assertEquals(249L, snapshot.longestHitchMs)
+        assertEquals(2L, snapshot.jankFrameCount)
+        assertEquals(1L, snapshot.hangFrameCount)
+        assertEquals(249L, snapshot.longestJankMs)
         assertEquals(250L, snapshot.longestHangMs)
     }
 
@@ -93,8 +93,8 @@ class JankFrameAccumulatorTest {
 
         val snapshot = accumulator.snapshot()
         assertEquals(0L, snapshot.jankFrameCount)
-        assertEquals(1L, snapshot.hitchCount)
-        assertEquals(1L, snapshot.hangCount)
+        assertEquals(1L, snapshot.jankFrameCount)
+        assertEquals(1L, snapshot.hangFrameCount)
     }
 
     @Test
@@ -144,10 +144,10 @@ class JankFrameAccumulatorTest {
         val snapshot = accumulator.snapshot()
         assertEquals(0L, snapshot.totalFrames)
         assertEquals(0L, snapshot.jankFrameCount)
-        assertEquals(0L, snapshot.hitchCount)
-        assertEquals(0L, snapshot.hangCount)
+        assertEquals(0L, snapshot.jankFrameCount)
+        assertEquals(0L, snapshot.hangFrameCount)
         assertEquals(0L, snapshot.longestJankMs)
-        assertEquals(0L, snapshot.longestHitchMs)
+        assertEquals(0L, snapshot.longestJankMs)
         assertEquals(0L, snapshot.longestHangMs)
         assertEquals(0.0, snapshot.jankTimeRatio, 0.0)
         assertEquals(0.0, snapshot.hitchTimeRatio, 0.0)

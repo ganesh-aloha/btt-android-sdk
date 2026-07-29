@@ -223,6 +223,10 @@ class Tracker private constructor(
 
         checkoutEventReporter = CheckoutEventReporter(sessionData.checkoutConfig)
 
+        if (configuration.isScreenTrackingEnabled && configuration.isJankTrackingEnabled) {
+            initializeJankTracking()
+        }
+
         if(configuration.isScreenTrackingEnabled) {
             initializeScreenTracker()
         }
@@ -240,9 +244,7 @@ class Tracker private constructor(
         if(configuration.isLaunchTimeEnabled) {
             enableLaunchMonitor()
         }
-        if(configuration.isJankTrackingEnabled) {
-            initializeJankTracking()
-        }
+
         initializeNetworkStateTracking()
 
         (context.get()?.applicationContext as? Application)?.let {
@@ -304,11 +306,11 @@ class Tracker private constructor(
 
         stopPerformanceMonitoring()
         deInitializeScreenTracker()
+        deInitializeJankTracking()
         deInitializeANRMonitor()
         stopTrackCrashes()
         deInitializeNetworkStateTracking()
         disableLaunchMonitor()
-        deInitializeJankTracking()
         LifecycleRegistry.uninstall()
         disableBreadcrumbs()
         stopAppLaunchReporter()
@@ -1007,7 +1009,7 @@ class Tracker private constructor(
         if(configuration.isJankTrackingEnabled != sessionData.enableJankTracking) {
             changes.append("\nenableJankTracking: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableJankTracking}")
             configuration.isJankTrackingEnabled = sessionData.enableJankTracking
-            if(configuration.isJankTrackingEnabled) {
+            if (sessionData.enableScreenTracking && configuration.isJankTrackingEnabled) {
                 initializeJankTracking()
             } else {
                 deInitializeJankTracking()
@@ -1027,6 +1029,7 @@ class Tracker private constructor(
                 initializeScreenTracker()
             } else {
                 deInitializeScreenTracker()
+                deInitializeJankTracking() //  If screen tracking is disabled, disable JANK Tracking
             }
         } else if(screenTrackMonitor?.ignoreScreens != sessionData.ignoreScreens) {
             screenTrackMonitor?.ignoreScreens = sessionData.ignoreScreens

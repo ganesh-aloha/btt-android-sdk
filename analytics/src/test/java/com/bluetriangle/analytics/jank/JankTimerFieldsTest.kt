@@ -121,19 +121,14 @@ class JankTimerFieldsTest {
 
         val json = timer.nativeAppProperties.toJSONObject()
 
-        assertEquals(100L, json.getLong(Constants.TOTAL_FRAME_COUNT))
-        assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
-        assertEquals(200L, json.getLong(Constants.TOTAL_JANK_DURATION))
-        assertEquals(0.02, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
-        assertEquals(60L, json.getLong(Constants.LONGEST_JANK))
-        assertEquals(2L, json.getLong(Constants.HITCH_COUNT))
-        assertEquals(260L, json.getLong(Constants.TOTAL_HITCH_DURATION))
-        assertEquals(0.026, json.getDouble(Constants.HITCH_TIME_RATIO), 0.0)
-        assertEquals(140L, json.getLong(Constants.LONGEST_HITCH))
+        assertEquals(2L, json.getLong(Constants.JANK_FRAME_COUNT))
+        assertEquals(260L, json.getLong(Constants.TOTAL_JANK_DURATION))
+        assertEquals(0.026, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(140L, json.getLong(Constants.LONGEST_JANK_DURATION))
         assertEquals(1L, json.getLong(Constants.HANG_COUNT))
         assertEquals(300L, json.getLong(Constants.TOTAL_HANG_DURATION))
         assertEquals(0.03, json.getDouble(Constants.HANG_TIME_RATIO), 0.0)
-        assertEquals(300L, json.getLong(Constants.LONGEST_HANG))
+        assertEquals(300L, json.getLong(Constants.LONGEST_HANG_DURATION))
     }
 
     @Test
@@ -144,7 +139,6 @@ class JankTimerFieldsTest {
 
         assertFalse(json.has(Constants.TOTAL_FRAME_COUNT))
         assertFalse(json.has(Constants.JANK_FRAME_COUNT))
-        assertFalse(json.has(Constants.HITCH_COUNT))
         assertFalse(json.has(Constants.HANG_COUNT))
     }
 

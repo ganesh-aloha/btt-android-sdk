@@ -5,7 +5,7 @@ import com.bluetriangle.analytics.utility.roundTo4Decimals
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Accumulates per-frame data into cumulative jank/hitch/hang counters. Pure Kotlin, no Android
+ * Accumulates per-frame data into cumulative jank/hang counters. Pure Kotlin, no Android
  * dependencies, so it stays unit-testable without Robolectric.
  *
  * Each frame lands in at most one bucket (most severe wins) - see [JankMetrics] for the
@@ -33,7 +33,6 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
 
     private val totalFrames = AtomicLong(0)
     private val jank = Bucket()
-    private val hitch = Bucket()
     private val hang = Bucket()
 
     @Volatile
@@ -41,17 +40,17 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
 
     /**
      * @param isJank whether the platform (via [androidx.metrics.performance.JankStats]) classified
-     * this frame as janky - used only for the jank bucket; hitch/hang are pure duration thresholds
+     * this frame as janky - used only for the jank bucket; hang are pure duration thresholds
      * (any frame long enough for those buckets exceeds the JankStats heuristic anyway).
      * @param frameDurationNanos the frame's full UI duration.
      * @param frameBudgetNanos the frame's budgeted duration.
      */
     fun recordFrame(isJank: Boolean, frameDurationNanos: Long, frameBudgetNanos: Long) {
         totalFrames.incrementAndGet()
-        val durationNanos = frameDurationNanos.coerceAtLeast(0L)
+        val excessTime = frameDurationNanos - frameBudgetNanos
+        val durationNanos = excessTime.coerceAtLeast(0L)
         when {
             durationNanos >= HANG_THRESHOLD_NANOS -> hang.record(durationNanos)
-            durationNanos >= HITCH_THRESHOLD_NANOS -> hitch.record(durationNanos)
             isJank -> jank.record(durationNanos)
         }
     }
@@ -62,10 +61,7 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
             jankFrameCount = jank.count.get(),
             totalJankDurationMs = jank.totalDurationNanos.get().nanosToMs(),
             longestJankMs = jank.longestDurationNanos.get().nanosToMs(),
-            hitchCount = hitch.count.get(),
-            totalHitchDurationMs = hitch.totalDurationNanos.get().nanosToMs(),
-            longestHitchMs = hitch.longestDurationNanos.get().nanosToMs(),
-            hangCount = hang.count.get(),
+            hangFrameCount = hang.count.get(),
             totalHangDurationMs = hang.totalDurationNanos.get().nanosToMs(),
             longestHangMs = hang.longestDurationNanos.get().nanosToMs()
         )
@@ -74,7 +70,6 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
     fun reset() {
         totalFrames.set(0)
         jank.reset()
-        hitch.reset()
         hang.reset()
         startTimeMs = nowMs()
     }
@@ -86,7 +81,6 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
     }
 
     private companion object {
-        const val HITCH_THRESHOLD_NANOS = Constants.HITCH_THRESHOLD_MS * 1_000_000L
         const val HANG_THRESHOLD_NANOS = Constants.HANG_THRESHOLD_MS * 1_000_000L
 
         fun Long.nanosToMs(): Long = this / 1_000_000L
