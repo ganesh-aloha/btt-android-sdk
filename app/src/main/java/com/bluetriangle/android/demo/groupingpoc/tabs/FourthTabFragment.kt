@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bluetriangle.android.demo.R
 import com.bluetriangle.android.demo.compose.ComposeMainActivity
 import com.bluetriangle.android.demo.groupingpoc.QuoteRequestHelper
+import com.bluetriangle.android.demo.kotlin.JankTestActivity
 import com.bluetriangle.android.demo.kotlin.MemoryTestViewModel.MemoryBlock
 
 class FourthTabFragment : Fragment() {
@@ -61,6 +62,10 @@ class FourthTabFragment : Fragment() {
 
         view.findViewById<Button>(R.id.release_memory).setOnClickListener {
             clearMemory()
+        }
+
+        view.findViewById<Button>(R.id.jank_test).setOnClickListener {
+            startActivity(Intent(context, JankTestActivity::class.java))
         }
     }
 }

@@ -73,6 +73,11 @@ class KotlinTestListActivity : AppCompatActivity() {
         binding.memoryTest.setOnClickListener {
             startActivity(Intent(this, MemoryTestActivity::class.java))
         }
+
+        binding.jankTest.setOnClickListener {
+            startActivity(Intent(this, JankTestActivity::class.java))
+        }
+
         binding.buttonLaunchGallery.setOnClickListener {
             startActivity(Intent.createChooser(Intent(Intent.ACTION_PICK).apply {
                 type = "image/*"
