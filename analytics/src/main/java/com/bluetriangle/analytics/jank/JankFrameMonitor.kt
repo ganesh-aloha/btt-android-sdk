@@ -2,8 +2,12 @@ package com.bluetriangle.analytics.jank
 
 import android.app.Activity
 import android.app.Application
+import android.os.Build
 import android.os.Bundle
 import android.view.Window
+import androidx.metrics.performance.FrameData
+import androidx.metrics.performance.FrameDataApi24
+import androidx.metrics.performance.FrameDataApi31
 import androidx.metrics.performance.JankStats
 import com.bluetriangle.analytics.BlueTriangleConfiguration
 import com.bluetriangle.analytics.Constants
@@ -82,6 +86,11 @@ internal class JankFrameMonitor(
         return screenAccumulators.onScreenHidden(screenKey)
     }
 
+    fun getScreenMetrics(screenKey: String): JankMetrics? {
+        if (!isActive) return null
+        return screenAccumulators.getScreenMetrics(screenKey)
+    }
+
     override fun onActivityResumed(activity: Activity) {
         if (!isActive) return
         val window = activity.window ?: return
@@ -105,11 +114,9 @@ internal class JankFrameMonitor(
     }
 
     private fun createJankStats(window: Window): JankStats {
+        val frameBudget = window.frameBudget
         return JankStats.createAndTrack(window) { frameData ->
-            // Buckets are cut on the frame's full UI duration (see JankMetrics): hang are
-            // fixed wall-time threshold, and jank frames rely on JankStats' isJank classification (duration > multiplier × refresh-rate budget).
-            val frame = frameData.copy()
-            screenAccumulators.recordFrame(frame.isJank, frame.frameDurationUiNanos, window.frameBudget)
+            validateFrameData(frameData, frameBudget)
         }.also { it.jankHeuristicMultiplier = Constants.JANK_HEURISTIC_MULTIPLIER }
     }
 
@@ -118,6 +125,31 @@ internal class JankFrameMonitor(
     override fun onActivityStopped(activity: Activity) {}
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {}
+
+    @Synchronized
+    private fun validateFrameData(frameData: FrameData, frameBudget: Long) {
+        val isJank = frameData.isJank
+        val frameDurationUiNanos = frameData.frameDurationUiNanos
+        var frameOverrunNanos = frameData.frameDurationUiNanos - frameBudget
+
+        when {
+            Build.VERSION.SDK_INT >= 31 -> {
+                frameOverrunNanos = (frameData as FrameDataApi31).frameOverrunNanos
+            }
+
+            Build.VERSION.SDK_INT >= 24 -> {
+                frameOverrunNanos =
+                    frameData.frameDurationUiNanos + (frameData as FrameDataApi24).frameDurationCpuNanos
+            }
+
+            else -> {}
+        }
+
+        if (isJank && frameOverrunNanos < 0)
+            frameOverrunNanos = frameData.frameDurationUiNanos
+
+        screenAccumulators.recordFrame(isJank, frameDurationUiNanos, frameBudget, frameOverrunNanos)
+    }
 }
 
 val Window.minJankDuration: Long

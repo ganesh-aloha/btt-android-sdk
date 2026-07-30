@@ -139,6 +139,12 @@ internal class BTTTimerGroup(
             return
         }
 
+        timers.forEach { timer ->
+            Tracker.instance?.jankFrameMonitor?.getScreenMetrics(timer.first.name)?.let { metrics ->
+                timer.second.setJankReportFields(metrics)
+            }
+        }
+
         val groupPageName = (manualGroupName ?: (groupName ?: namingStrategy.getName(timers.map { it.second })))
         groupTimer.setPageName(groupPageName)
 

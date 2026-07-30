@@ -53,18 +53,24 @@ internal class JankScreenAccumulator {
         }
     }
 
+    fun getScreenMetrics(screenKey: String): JankMetrics? {
+        synchronized(lock) {
+            return accumulators[screenKey]?.snapshot()
+        }
+    }
+
     /**
      * Routes a frame to every currently-eligible visible screen:
      * - if any content screen is visible → all content screens
      * - else → all host screens
      */
-    fun recordFrame(isJank: Boolean, frameDurationNanos: Long, frameBudgetNanos: Long) {
+    fun recordFrame(isJank: Boolean, frameDurationNanos: Long, frameBudgetNanos: Long, frameOverrunNanos: Long) {
         synchronized(lock) {
             if (visibleScreens.isEmpty()) return
             val hasContent = visibleScreens.values.any { it }
             for ((key, isContent) in visibleScreens) {
                 if (isContent == hasContent) {
-                    accumulators[key]?.recordFrame(isJank, frameDurationNanos, frameBudgetNanos)
+                    accumulators[key]?.recordFrame(isJank, frameDurationNanos, frameBudgetNanos, frameOverrunNanos)
                 }
             }
         }

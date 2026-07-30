@@ -121,19 +121,25 @@ internal data class NativeAppProperties(
         // fullTime is in milliseconds convert it to seconds
         val screenTime = (fullTime ?: Long.MAX_VALUE) / 1000
 
-        jankMetrics?.let {
-            val jankRatio = it.totalJankDurationMs.toDouble() / screenTime
-            val hangRatio = it.totalHangDurationMs.toDouble() / screenTime
+        val metrics = jankMetrics
 
-            obj.put(JANK_FRAME_COUNT, it.jankFrameCount)
-            obj.put(LONGEST_JANK_DURATION, it.longestJankMs)
-            obj.put(TOTAL_JANK_DURATION, it.totalJankDurationMs)
-            obj.put(JANK_TIME_RATIO, jankRatio.roundTo2Decimals())
-            obj.put(HANG_COUNT, it.hangFrameCount)
-            obj.put(LONGEST_HANG_DURATION, it.longestHangMs)
-            obj.put(TOTAL_HANG_DURATION, it.totalHangDurationMs)
-            obj.put(HANG_TIME_RATIO, hangRatio.roundTo2Decimals())
-        }
+        obj.put(JANK_FRAME_COUNT, metrics?.jankFrameCount ?: 0)
+        obj.put(LONGEST_JANK_DURATION, metrics?.longestJankMs ?: 0)
+        obj.put(TOTAL_JANK_DURATION, metrics?.totalJankDurationMs ?: 0)
+        obj.put(
+            JANK_TIME_RATIO,
+            metrics?.let { (it.totalJankDurationMs.toDouble() / screenTime).roundTo2Decimals() }
+                ?: 0
+        )
+
+        obj.put(HANG_COUNT, metrics?.hangFrameCount ?: 0)
+        obj.put(LONGEST_HANG_DURATION, metrics?.longestHangMs ?: 0)
+        obj.put(TOTAL_HANG_DURATION, metrics?.totalHangDurationMs ?: 0)
+        obj.put(
+            HANG_TIME_RATIO,
+            metrics?.let { (it.totalHangDurationMs.toDouble() / screenTime).roundTo2Decimals() }
+                ?: 0
+        )
 
         return obj
     }

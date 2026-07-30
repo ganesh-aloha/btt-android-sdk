@@ -44,11 +44,11 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
      * (any frame long enough for those buckets exceeds the JankStats heuristic anyway).
      * @param frameDurationNanos the frame's full UI duration.
      * @param frameBudgetNanos the frame's budgeted duration.
+     * @param frameOverrunNanos the frame's overrun duration.
      */
-    fun recordFrame(isJank: Boolean, frameDurationNanos: Long, frameBudgetNanos: Long) {
+    fun recordFrame(isJank: Boolean, frameDurationNanos: Long, frameBudgetNanos: Long, frameOverrunNanos: Long) {
         totalFrames.incrementAndGet()
-        val excessTime = frameDurationNanos - frameBudgetNanos
-        val durationNanos = excessTime.coerceAtLeast(0L)
+        val durationNanos = frameOverrunNanos.coerceAtLeast(0L)
         when {
             durationNanos >= HANG_THRESHOLD_NANOS -> hang.record(durationNanos)
             isJank -> jank.record(durationNanos)

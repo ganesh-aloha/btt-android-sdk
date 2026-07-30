@@ -107,15 +107,11 @@ internal class BTTScreenLifecycleTracker(
         val scr = screen.toString()
         val timer = timers[scr] ?: return
 
-        generateMetaData(screen, timer)
-
-        // Only stamp per-screen frame health when frames were actually observed - an all-zero
-        // snapshot (e.g. screen hidden before any frame drew) would just report misleading zeros.
         Tracker.instance?.jankFrameMonitor?.onScreenHidden(scr)?.let { metrics ->
-            //if (metrics.totalFrames > 0L) {
-                timer.setJankReportFields(metrics)
-            //}
+            timer.setJankReportFields(metrics)
         }
+
+        generateMetaData(screen, timer)
 
         if(grouped(automated)) {
             timer.end()
