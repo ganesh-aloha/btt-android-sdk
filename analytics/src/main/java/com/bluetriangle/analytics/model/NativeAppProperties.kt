@@ -80,7 +80,7 @@ internal data class NativeAppProperties(
             if(it.isEmpty()) 0L else it.reduce(Long::plus)
         }
 
-    fun toJSONObject(): JSONObject {
+    fun toJSONObject(sendResponsiveNess: Boolean = true): JSONObject {
         val obj = JSONObject()
         obj.put(LOAD_TIME, loadTime)
         obj.put(FULL_TIME, fullTime)
@@ -118,28 +118,30 @@ internal data class NativeAppProperties(
         obj.put(CONFIDENCE_RATE, confidenceRate)
         obj.put(CONFIDENCE_MSG, confidenceMsg)
 
-        // fullTime is in milliseconds convert it to seconds
-        val screenTime = (fullTime ?: Long.MAX_VALUE) / 1000
+        if (sendResponsiveNess) {
+            // fullTime is in milliseconds convert it to seconds
+            val screenTime = (fullTime ?: Long.MAX_VALUE) / 1000
 
-        val metrics = jankMetrics
+            val metrics = jankMetrics
 
-        obj.put(JANK_FRAME_COUNT, metrics?.jankFrameCount ?: 0)
-        obj.put(LONGEST_JANK_DURATION, metrics?.longestJankMs ?: 0)
-        obj.put(TOTAL_JANK_DURATION, metrics?.totalJankDurationMs ?: 0)
-        obj.put(
-            JANK_TIME_RATIO,
-            metrics?.let { (it.totalJankDurationMs.toDouble() / screenTime).roundTo2Decimals() }
-                ?: 0
-        )
+            obj.put(JANK_FRAME_COUNT, metrics?.jankFrameCount ?: 0)
+            obj.put(LONGEST_JANK_DURATION, metrics?.longestJankMs ?: 0)
+            obj.put(TOTAL_JANK_DURATION, metrics?.totalJankDurationMs ?: 0)
+            obj.put(
+                JANK_TIME_RATIO,
+                metrics?.let { (it.totalJankDurationMs.toDouble() / screenTime).roundTo2Decimals() }
+                    ?: 0
+            )
 
-        obj.put(HANG_COUNT, metrics?.hangFrameCount ?: 0)
-        obj.put(LONGEST_HANG_DURATION, metrics?.longestHangMs ?: 0)
-        obj.put(TOTAL_HANG_DURATION, metrics?.totalHangDurationMs ?: 0)
-        obj.put(
-            HANG_TIME_RATIO,
-            metrics?.let { (it.totalHangDurationMs.toDouble() / screenTime).roundTo2Decimals() }
-                ?: 0
-        )
+            obj.put(HANG_COUNT, metrics?.hangFrameCount ?: 0)
+            obj.put(LONGEST_HANG_DURATION, metrics?.longestHangMs ?: 0)
+            obj.put(TOTAL_HANG_DURATION, metrics?.totalHangDurationMs ?: 0)
+            obj.put(
+                HANG_TIME_RATIO,
+                metrics?.let { (it.totalHangDurationMs.toDouble() / screenTime).roundTo2Decimals() }
+                    ?: 0
+            )
+        }
 
         return obj
     }
