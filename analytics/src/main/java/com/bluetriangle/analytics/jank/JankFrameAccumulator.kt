@@ -50,7 +50,7 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
         totalFrames.incrementAndGet()
         val durationNanos = frameOverrunNanos.coerceAtLeast(0L)
         when {
-            durationNanos >= HANG_THRESHOLD_NANOS -> hang.record(durationNanos)
+            isJank && durationNanos >= HANG_THRESHOLD_NANOS -> hang.record(durationNanos)
             isJank -> jank.record(durationNanos)
         }
     }
