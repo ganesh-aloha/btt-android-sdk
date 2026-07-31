@@ -11,7 +11,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_APP_INSTALL
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_CRASH_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_FORCE_RESTART
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING
-import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_JANK_TRACKING
+import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_RESPONSIVENESS
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_LAUNCH_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_MEMORY_WARNING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_NETWORK_STATE_TRACKING
@@ -48,7 +48,7 @@ internal object BTTRemoteConfigurationMapper {
     private const val ENABLE_APP_INSTALL = "enableAppInstall"
     private const val ENABLE_FORCE_RESTART = "enableForceRestart"
     private const val FORCE_RESTART_DURATION = "forceRestartDuration"
-    private const val ENABLE_JANK_TRACKING = "enableJankTracking"
+    private const val ENABLE_RESPONSIVENESS = "enableResponsiveness"
 
     fun fromJson(remoteConfigJson: JSONObject): BTTRemoteConfiguration {
         val networkSampleRate = remoteConfigJson.getDoubleOrNull(NETWORK_SAMPLE_RATE)?.div(100.0)
@@ -82,8 +82,8 @@ internal object BTTRemoteConfigurationMapper {
             remoteConfigJson.getBooleanOrNull(ENABLE_FORCE_RESTART) ?: DEFAULT_ENABLE_FORCE_RESTART
         val forceRestartDuration =
             remoteConfigJson.getDoubleOrNull(FORCE_RESTART_DURATION) ?: DEFAULT_FORCE_RESTART_DURATION
-        val enableJankTracking =
-            remoteConfigJson.getBooleanOrNull(ENABLE_JANK_TRACKING) ?: DEFAULT_ENABLE_JANK_TRACKING
+        val enableResponsiveness =
+            remoteConfigJson.getBooleanOrNull(ENABLE_RESPONSIVENESS) ?: DEFAULT_ENABLE_RESPONSIVENESS
         return BTTRemoteConfiguration(
             networkSampleRate,
             ignoreScreens,
@@ -104,7 +104,7 @@ internal object BTTRemoteConfigurationMapper {
             enableAppInstall,
             enableForceRestart,
             forceRestartDuration,
-            enableJankTracking
+            enableResponsiveness
         )
     }
 }

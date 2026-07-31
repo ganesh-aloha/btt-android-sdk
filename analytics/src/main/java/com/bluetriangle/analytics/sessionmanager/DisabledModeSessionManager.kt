@@ -43,7 +43,7 @@ internal class DisabledModeSessionManager(
         enableAppInstall = false,
         enableForceRestart = false,
         forceRestartDuration = 10.0,
-        enableJankTracking = false
+        enableResponsiveness = false
     )
 
     override val sessionData: SessionData

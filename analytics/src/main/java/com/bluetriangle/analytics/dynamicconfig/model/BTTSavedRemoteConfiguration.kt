@@ -29,7 +29,7 @@ internal class BTTSavedRemoteConfiguration(
     enableAppInstall: Boolean,
     enableForceRestart: Boolean,
     forceRestartDuration: Double,
-    enableJankTracking: Boolean
+    enableResponsiveness: Boolean
 ) : BTTRemoteConfiguration(
     networkSampleRate,
     ignoreScreens,
@@ -50,7 +50,7 @@ internal class BTTSavedRemoteConfiguration(
     enableAppInstall,
     enableForceRestart,
     forceRestartDuration,
-    enableJankTracking
+    enableResponsiveness
 ) {
 
     companion object {
@@ -75,7 +75,7 @@ internal class BTTSavedRemoteConfiguration(
             remoteConfig.enableAppInstall,
             remoteConfig.enableForceRestart,
             remoteConfig.forceRestartDuration,
-            remoteConfig.enableJankTracking
+            remoteConfig.enableResponsiveness
         )
     }
 

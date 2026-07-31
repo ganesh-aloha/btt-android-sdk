@@ -1006,9 +1006,9 @@ class Tracker private constructor(
             }
         }
 
-        if(configuration.isJankTrackingEnabled != sessionData.enableJankTracking) {
-            changes.append("\nenableJankTracking: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableJankTracking}")
-            configuration.isJankTrackingEnabled = sessionData.enableJankTracking
+        if(configuration.isJankTrackingEnabled != sessionData.enableResponsiveness) {
+            changes.append("\nenableResponsiveness: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableResponsiveness}")
+            configuration.isJankTrackingEnabled = sessionData.enableResponsiveness
             if (sessionData.enableScreenTracking && configuration.isJankTrackingEnabled) {
                 initializeJankTracking()
             } else {
@@ -1403,7 +1403,7 @@ class Tracker private constructor(
                 enableAppInstall = configuration.isAppInstallEnabled,
                 enableForceRestart = configuration.isForceRestartEnable,
                 forceRestartDuration = configuration.forceRestartDuration,
-                enableJankTracking = configuration.isJankTrackingEnabled
+                enableResponsiveness = configuration.isJankTrackingEnabled
             )
 
             initializeConfigurationUpdater(application, configuration, defaultConfig)
@@ -1541,7 +1541,7 @@ class Tracker private constructor(
             isAppInstallEnabled = sessionData.enableAppInstall
             isForceRestartEnable = sessionData.enableForceRestart
             forceRestartDuration = sessionData.forceRestartDuration
-            isJankTrackingEnabled = sessionData.enableJankTracking
+            isJankTrackingEnabled = sessionData.enableResponsiveness
         }
 
         private lateinit var configurationRepository: IBTTConfigurationRepository

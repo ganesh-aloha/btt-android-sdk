@@ -12,7 +12,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_ANR_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_CRASH_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING_TAP_DETECTION
-import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_JANK_TRACKING
+import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_RESPONSIVENESS
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_LAUNCH_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_MEMORY_WARNING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_NETWORK_STATE_TRACKING
@@ -54,7 +54,7 @@ internal data class SessionData(
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
     val forceRestartDuration: Double,
-    val enableJankTracking: Boolean
+    val enableResponsiveness: Boolean
 ) {
     companion object {
         private const val SESSION_ID = "sessionId"
@@ -76,7 +76,7 @@ internal data class SessionData(
         private const val ENABLE_APP_INSTALL = "enableAppInstall"
         private const val ENABLE_FORCE_RESTART = "enableForceRestart"
         private const val FORCE_RESTART_DURATION = "forceRestartDuration"
-        private const val ENABLE_JANK_TRACKING = "enableJankTracking"
+        private const val ENABLE_RESPONSIVENESS = "enableResponsiveness"
 
         internal fun JSONObject.toSessionData(): SessionData? {
             try {
@@ -109,7 +109,7 @@ internal data class SessionData(
                     enableAppInstall = getBooleanOrNull(ENABLE_APP_INSTALL) ?: false,
                     enableForceRestart = getBooleanOrNull(ENABLE_FORCE_RESTART) ?: false,
                     forceRestartDuration = getDoubleOrNull(FORCE_RESTART_DURATION) ?: 10.0,
-                    enableJankTracking = getBooleanOrNull(ENABLE_JANK_TRACKING) ?: DEFAULT_ENABLE_JANK_TRACKING
+                    enableResponsiveness = getBooleanOrNull(ENABLE_RESPONSIVENESS) ?: DEFAULT_ENABLE_RESPONSIVENESS
                 )
             } catch (e: Exception) {
                 Tracker.instance?.configuration?.logger?.error("Error while parsing session data: ${e::class.simpleName}(\"${e.message}\")")
@@ -140,7 +140,7 @@ internal data class SessionData(
             put(ENABLE_APP_INSTALL, enableAppInstall)
             put(ENABLE_FORCE_RESTART, enableForceRestart)
             put(FORCE_RESTART_DURATION, forceRestartDuration)
-            put(ENABLE_JANK_TRACKING, enableJankTracking)
+            put(ENABLE_RESPONSIVENESS, enableResponsiveness)
         }
     }
 }
