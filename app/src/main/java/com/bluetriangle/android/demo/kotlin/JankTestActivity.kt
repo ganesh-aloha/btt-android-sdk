@@ -42,13 +42,13 @@ class JankTestActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.simulateHitch.setOnClickListener {
-            hitchUntilUptimeMs = SystemClock.uptimeMillis() + HITCH_WINDOW_MS
             binding.statusText.text = getString(R.string.jank_test_hitching)
+            hitchUntilUptimeMs = SystemClock.uptimeMillis() + HITCH_WINDOW_MS
         }
 
         binding.simulateHang.setOnClickListener {
-            pendingHangMs = HANG_SLEEP_MS
             binding.statusText.text = getString(R.string.jank_test_hanging)
+            pendingHangMs = HANG_SLEEP_MS
         }
 
         startAnimation()
@@ -65,7 +65,7 @@ class JankTestActivity : AppCompatActivity() {
 
     private fun startAnimation() {
         animator = ValueAnimator.ofFloat(0f, 360f).apply {
-            duration = 1200L
+            duration = 360L
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener { animation ->
@@ -76,11 +76,16 @@ class JankTestActivity : AppCompatActivity() {
         }
     }
 
+    /** Counts animation pulses so the hitch window only slows every Nth frame. */
+    private var frameIndex = 0L
+
     /**
      * Runs on the main thread during the animation phase of a frame, so sleeping here stretches
      * the current frame's duration - exactly what JankStats measures.
      */
     private fun blockFrameIfRequested() {
+        frameIndex++
+
         val hangMs = pendingHangMs
         if (hangMs > 0L) {
             pendingHangMs = 0L
@@ -90,10 +95,13 @@ class JankTestActivity : AppCompatActivity() {
         }
 
         if (SystemClock.uptimeMillis() < hitchUntilUptimeMs) {
-            SystemClock.sleep(HITCH_FRAME_SLEEP_MS)
-            if (SystemClock.uptimeMillis() >= hitchUntilUptimeMs) {
-                binding.statusText.text = getString(R.string.jank_test_idle)
+            // Only every Nth frame sleeps: the SDK sums overruns across *consecutive* janky
+            // frames into a hang, so hitches must be separated by normal frames to stay hitches.
+            if (frameIndex % HITCH_FRAME_INTERVAL == 0L) {
+                SystemClock.sleep(HITCH_FRAME_SLEEP_MS)
             }
+        } else {
+            binding.statusText.text = getString(R.string.jank_test_idle)
         }
     }
 
@@ -104,8 +112,11 @@ class JankTestActivity : AppCompatActivity() {
     }
 
     companion object {
-        /** Per-frame main-thread sleep during the hitch window - janky, but far below a hang. */
+        /** Sleep applied to the slow frames of the hitch window - janky, but far below a hang. */
         private const val HITCH_FRAME_SLEEP_MS = 130L
+
+        /** Every Nth frame hitches; the normal frames in between reset the hang accumulation. */
+        private const val HITCH_FRAME_INTERVAL = 3L
 
         /** How long the hitch burst lasts. */
         private const val HITCH_WINDOW_MS = 5_000L

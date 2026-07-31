@@ -130,21 +130,21 @@ internal class JankFrameMonitor(
     private fun validateFrameData(frameData: FrameData, frameBudget: Long) {
         val isJank = frameData.isJank
         val frameDurationUiNanos = frameData.frameDurationUiNanos
-        var frameOverrunNanos = frameData.frameDurationUiNanos - frameBudget
+        var frameOverrunNanos = (frameDurationUiNanos - frameBudget).coerceAtLeast(0L)
 
         when {
             Build.VERSION.SDK_INT >= 31 -> {
-                frameOverrunNanos = (frameData as FrameDataApi31).frameOverrunNanos
+                frameOverrunNanos = (frameData as FrameDataApi31).frameDurationCpuNanos
             }
 
             Build.VERSION.SDK_INT >= 24 -> {
-                frameOverrunNanos = (frameData as FrameDataApi24).frameDurationCpuNanos  - frameBudget
+                frameOverrunNanos = (frameData as FrameDataApi24).frameDurationCpuNanos
             }
 
             else -> {}
         }
 
-        if (isJank && frameOverrunNanos < 0)
+        if (isJank && frameOverrunNanos <= 0)
             frameOverrunNanos = frameData.frameDurationUiNanos
 
         screenAccumulators.recordFrame(isJank, frameDurationUiNanos, frameBudget, frameOverrunNanos)
@@ -156,6 +156,10 @@ val Window.minJankDuration: Long
 
 val Window.frameBudget: Long
     get() {
-        val refreshRate = windowManager?.defaultDisplay?.refreshRate?.takeIf { it > 0f } ?: Constants.DEFAULT_SCREEN_REFRESH_RATE
+        val refreshRate =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                context.display?.refreshRate?.takeIf { it > 0f } ?: Constants.DEFAULT_SCREEN_REFRESH_RATE
+            else
+                windowManager.defaultDisplay.refreshRate.takeIf { it > 0f } ?: Constants.DEFAULT_SCREEN_REFRESH_RATE
         return (1_000_000_000.0 / refreshRate).toLong()
     }
