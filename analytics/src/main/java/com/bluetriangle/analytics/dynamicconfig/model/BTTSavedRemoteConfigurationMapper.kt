@@ -13,7 +13,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_CRASH_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_FORCE_RESTART
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING_TAP_DETECTION
-import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_RESPONSIVENESS
+import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_LAUNCH_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_MEMORY_WARNING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_NETWORK_STATE_TRACKING
@@ -47,7 +47,7 @@ internal object BTTSavedRemoteConfigurationMapper {
     private const val ENABLE_APP_INSTALL = "enableAppInstall"
     private const val ENABLE_FORCE_RESTART = "enableForceRestart"
     private const val FORCE_RESTART_DURATION = "forceRestartDuration"
-    private const val ENABLE_RESPONSIVENESS = "enableResponsiveness"
+    private const val ENABLE_SCREEN_RESPONSIVENESS = "enableScreenResponsiveness"
 
     private const val CONFIG_KEY = "configKey"
 
@@ -83,7 +83,7 @@ internal object BTTSavedRemoteConfigurationMapper {
             jsonObject.getBooleanOrNull(ENABLE_APP_INSTALL) ?: DEFAULT_ENABLE_APP_INSTALL,
             jsonObject.getBooleanOrNull(ENABLE_FORCE_RESTART) ?: DEFAULT_ENABLE_FORCE_RESTART,
             jsonObject.getDoubleOrNull(FORCE_RESTART_DURATION) ?: DEFAULT_FORCE_RESTART_DURATION,
-            jsonObject.getBooleanOrNull(ENABLE_RESPONSIVENESS) ?: DEFAULT_ENABLE_RESPONSIVENESS
+            jsonObject.getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
         )
     }
 
@@ -112,7 +112,7 @@ internal object BTTSavedRemoteConfigurationMapper {
         put(ENABLE_APP_INSTALL, config.enableAppInstall)
         put(ENABLE_FORCE_RESTART, config.enableForceRestart)
         put(FORCE_RESTART_DURATION, config.forceRestartDuration)
-        put(ENABLE_RESPONSIVENESS, config.enableResponsiveness)
+        put(ENABLE_SCREEN_RESPONSIVENESS, config.enableScreenResponsiveness)
     }
 
 }

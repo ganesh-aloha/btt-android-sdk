@@ -111,7 +111,7 @@ internal class SessionManager(
             config.enableAppInstall,
             config.enableForceRestart,
             config.forceRestartDuration,
-            config.enableResponsiveness
+            config.enableScreenResponsiveness
         )
     }
 
@@ -155,7 +155,7 @@ internal class SessionManager(
                 it.enableAppInstall,
                 it.enableForceRestart,
                 it.forceRestartDuration,
-                it.enableResponsiveness
+                it.enableScreenResponsiveness
             )
             sessionStore.storeSessionData(
                 newExpirySession
@@ -212,7 +212,7 @@ internal class SessionManager(
                                 config.enableAppInstall,
                                 config.enableForceRestart,
                                 config.forceRestartDuration,
-                                config.enableResponsiveness
+                                config.enableScreenResponsiveness
                             )
                             Tracker.instance?.updateSession(sessionData)
                             sessionStore.storeSessionData(

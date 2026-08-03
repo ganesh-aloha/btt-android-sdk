@@ -87,7 +87,7 @@ object Constants {
     internal const val DEFAULT_ENABLE_BREADCRUMBS = true
     internal const val DEFAULT_BREADCRUMBS_CAPACITY = 150
 
-    internal const val DEFAULT_ENABLE_RESPONSIVENESS = true
+    internal const val DEFAULT_ENABLE_SCREEN_RESPONSIVENESS = true
 
     internal const val DEFAULT_SCREEN_REFRESH_RATE = 60f
     // Per-screen frame health report fields (see [com.bluetriangle.analytics.jank.JankMetrics])
