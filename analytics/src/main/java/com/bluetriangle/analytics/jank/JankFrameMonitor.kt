@@ -134,11 +134,11 @@ internal class JankFrameMonitor(
 
         when {
             Build.VERSION.SDK_INT >= 31 -> {
-                frameOverrunNanos = (frameData as FrameDataApi31).frameDurationCpuNanos
+                frameOverrunNanos = (frameData as FrameDataApi31).frameDurationCpuNanos - frameBudget
             }
 
             Build.VERSION.SDK_INT >= 24 -> {
-                frameOverrunNanos = (frameData as FrameDataApi24).frameDurationCpuNanos
+                frameOverrunNanos = (frameData as FrameDataApi24).frameDurationCpuNanos - frameBudget
             }
 
             else -> {}
