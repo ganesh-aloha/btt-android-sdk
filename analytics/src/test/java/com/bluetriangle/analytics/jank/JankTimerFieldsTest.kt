@@ -102,10 +102,23 @@ class JankTimerFieldsTest {
     }
 
     @Test
-    fun `toJSONObject omits frame health fields when no metrics were stamped`() {
+    fun `toJSONObject zeroes frame health fields when no metrics were stamped`() {
         val timer = Timer("Page", "Segment")
 
         val json = timer.nativeAppProperties.toJSONObject()
+
+        assertEquals(0L, json.getLong(Constants.JANK_FRAME_COUNT))
+        assertEquals(0L, json.getLong(Constants.TOTAL_JANK_DURATION))
+        assertEquals(0L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(0L, json.getLong(Constants.TOTAL_HANG_DURATION))
+    }
+
+    @Test
+    fun `toJSONObject omits frame health fields when responsiveness is not being sent`() {
+        val timer = Timer("Page", "Segment")
+        timer.setJankReportFields(metrics(totalFrames = 100, jankFrameCount = 5, hangFrameCount = 1))
+
+        val json = timer.nativeAppProperties.toJSONObject(sendResponsiveNess = false)
 
         assertFalse(json.has(Constants.JANK_FRAME_COUNT))
         assertFalse(json.has(Constants.TOTAL_JANK_DURATION))

@@ -12,6 +12,16 @@ class JankFrameAccumulatorTest {
 
     private fun ms(millis: Long): Long = millis * 1_000_000L
 
+    /**
+     * Frames carry their own overrun, which is what the buckets measure. These cases describe a
+     * frame by duration/budget, so derive the overrun from them.
+     */
+    private fun JankFrameAccumulator.record(
+        isJank: Boolean,
+        frameDurationNanos: Long,
+        frameBudgetNanos: Long
+    ) = recordFrame(isJank, frameDurationNanos, frameBudgetNanos, frameDurationNanos - frameBudgetNanos)
+
     @Test
     fun `snapshot with no frames recorded returns all zeros`() {
         val snapshot = accumulator.snapshot()
@@ -26,10 +36,10 @@ class JankFrameAccumulatorTest {
 
     @Test
     fun `frames are classified into jank and hang buckets by excess over budget`() {
-        accumulator.recordFrame(isJank = false, frameDurationNanos = ms(8), frameBudgetNanos = budget)     // normal
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(40), frameBudgetNanos = budget)     // jank
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(60), frameBudgetNanos = budget)     // jank
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(800), frameBudgetNanos = budget)    // hang (excess ~783ms)
+        accumulator.record(isJank = false, frameDurationNanos = ms(8), frameBudgetNanos = budget)     // normal
+        accumulator.record(isJank = true, frameDurationNanos = ms(40), frameBudgetNanos = budget)     // jank
+        accumulator.record(isJank = true, frameDurationNanos = ms(60), frameBudgetNanos = budget)     // jank
+        accumulator.record(isJank = true, frameDurationNanos = ms(800), frameBudgetNanos = budget)    // hang (excess ~783ms)
 
         val snapshot = accumulator.snapshot()
         assertEquals(4L, snapshot.totalFrames)
@@ -49,7 +59,7 @@ class JankFrameAccumulatorTest {
 
     @Test
     fun `hang frame does not also count as jank`() {
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(1000), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(1000), frameBudgetNanos = budget)
 
         val snapshot = accumulator.snapshot()
         assertEquals(1L, snapshot.totalFrames)
@@ -60,9 +70,9 @@ class JankFrameAccumulatorTest {
     @Test
     fun `hang boundary at 750ms excess is inclusive`() {
         // excess exactly at threshold -> hang
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(750) + budget, frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(750) + budget, frameBudgetNanos = budget)
         // excess just below threshold -> jank
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(749) + budget, frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(749) + budget, frameBudgetNanos = budget)
 
         val snapshot = accumulator.snapshot()
         assertEquals(1L, snapshot.hangFrameCount)
@@ -73,7 +83,7 @@ class JankFrameAccumulatorTest {
 
     @Test
     fun `hang classification is excess based even when isJank is false`() {
-        accumulator.recordFrame(isJank = false, frameDurationNanos = ms(900), frameBudgetNanos = budget)
+        accumulator.record(isJank = false, frameDurationNanos = ms(900), frameBudgetNanos = budget)
 
         val snapshot = accumulator.snapshot()
         assertEquals(0L, snapshot.jankFrameCount)
@@ -82,7 +92,7 @@ class JankFrameAccumulatorTest {
 
     @Test
     fun `non jank frame below hang threshold lands in no bucket`() {
-        accumulator.recordFrame(isJank = false, frameDurationNanos = ms(50), frameBudgetNanos = budget)
+        accumulator.record(isJank = false, frameDurationNanos = ms(50), frameBudgetNanos = budget)
 
         val snapshot = accumulator.snapshot()
         assertEquals(1L, snapshot.totalFrames)
@@ -92,7 +102,7 @@ class JankFrameAccumulatorTest {
 
     @Test
     fun `jank frame faster than budget records zero excess`() {
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(10), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(10), frameBudgetNanos = budget)
 
         val snapshot = accumulator.snapshot()
         assertEquals(1L, snapshot.jankFrameCount)
@@ -102,17 +112,17 @@ class JankFrameAccumulatorTest {
 
     @Test
     fun `longest tracks the maximum excess per bucket`() {
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(60), frameBudgetNanos = budget)
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(40), frameBudgetNanos = budget)
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(55), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(60), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(40), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(55), frameBudgetNanos = budget)
 
         assertEquals((ms(60) - budget) / 1_000_000L, accumulator.snapshot().longestJankMs)
     }
 
     @Test
     fun `reset zeroes all counters`() {
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(40), frameBudgetNanos = budget)
-        accumulator.recordFrame(isJank = true, frameDurationNanos = ms(900), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(40), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(900), frameBudgetNanos = budget)
 
         accumulator.reset()
 
