@@ -3,16 +3,17 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-parcelize'
     id("org.jetbrains.compose") version "1.6.10"
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 android {
-    compileSdk 34
+    compileSdk 37
 
     defaultConfig {
         applicationId "com.bluetriangle.android.demo"
         namespace "com.bluetriangle.android.demo"
         minSdk 21
-        targetSdk 34
+        targetSdk 37
         versionCode 6
         versionName "2.19.5"
 
@@ -46,9 +47,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion "1.5.14"
-    }
     kotlinOptions {
         jvmTarget = '11'
     }
@@ -58,7 +56,7 @@ dependencies {
     implementation project(':analytics')
     implementation project(':analytics-okhttp')
 
-    implementation "com.squareup.okhttp3:okhttp-bom:4.9.2"
+    implementation platform("com.squareup.okhttp3:okhttp-bom:4.9.2")
     implementation "com.squareup.okhttp3:okhttp"
 
     implementation 'androidx.core:core-ktx:1.10.1'

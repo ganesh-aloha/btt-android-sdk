@@ -55,6 +55,7 @@ import com.bluetriangle.analytics.networkstate.NetworkStateMonitor
 import com.bluetriangle.analytics.networkstate.NetworkTimelineTracker
 import com.bluetriangle.analytics.performancemonitor.PerformanceSpan
 import com.bluetriangle.analytics.performancemonitor.monitors.MemoryWarningReporter
+import com.bluetriangle.analytics.profilemanager.ProfilingEventTracker
 import com.bluetriangle.analytics.screenTracking.ActivityLifecycleTracker
 import com.bluetriangle.analytics.screenTracking.BTTScreenLifecycleTracker
 import com.bluetriangle.analytics.screenTracking.FragmentLifecycleTracker
@@ -1347,6 +1348,8 @@ class Tracker private constructor(
 
             val isInDebugMode = isDebuggable(application)
             if (!isInDebugMode) configuration.isDebug = false
+
+            ProfilingEventTracker.init(application, rateLimitHours = 0)
 
             val defaultConfig = BTTRemoteConfiguration(
                 networkSampleRate = configuration.networkSampleRate,

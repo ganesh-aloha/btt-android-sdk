@@ -97,9 +97,7 @@ internal object Utils {
      */
     fun getAppVersion(context: Context): String {
         val packageInfo = getAppPackageInfo(context)
-        return if (packageInfo != null) {
-            packageInfo.versionName
-        } else "UNKNOWN"
+        return packageInfo?.versionName ?: "UNKNOWN"
     }
 
     val os: String

@@ -11,14 +11,12 @@ internal class InteractionGestureListener(
     val userEvent: (UserEventType, TapTarget?) -> Unit,
 ) : SimpleOnGestureListener() {
 
-    override fun onSingleTapUp(e: MotionEvent?): Boolean {
+    override fun onSingleTapUp(e: MotionEvent): Boolean {
 
-        if(e != null) {
-            userEvent(
-                UserEventType.TAP,
-                TapTargetResolver.resolve(activity, e.rawX, e.rawY)
-            )
-        }
+        userEvent(
+            UserEventType.TAP,
+            TapTargetResolver.resolve(activity, e.rawX, e.rawY)
+        )
 
         return super.onSingleTapUp(e)
     }
