@@ -93,7 +93,7 @@ object Constants {
     // Per-screen frame health report fields (see [com.bluetriangle.analytics.jank.JankMetrics])
     internal const val TOTAL_FRAME_COUNT = "totalFrames"
     internal const val JANK_FRAME_COUNT = "hitchCount"
-    internal const val LONGEST_JANK_DURATION = "longestHitch"
+    internal const val JANK_FRAME_PERCENT = "hitchFramePercent"
     internal const val TOTAL_JANK_DURATION = "totalHitchDuration"
     internal const val JANK_TIME_RATIO = "hitchTimeRatio"
     internal const val HANG_COUNT = "hangCount"

@@ -1,7 +1,9 @@
 package com.bluetriangle.analytics.jank
 
 import android.os.Parcelable
+import com.bluetriangle.analytics.utility.roundTo2Decimals
 import kotlinx.parcelize.Parcelize
+import kotlin.math.roundToInt
 
 /**
  * A snapshot of cumulative frame-health stats accumulated since the last [JankFrameAccumulator.reset].
@@ -33,3 +35,20 @@ internal data class JankMetrics(
     val totalHangDurationMs: Long,
     val longestHangMs: Long
 ) : Parcelable
+
+internal val JankMetrics.jankFramePercentage: Int
+    get() = if (totalFrames == 0L) {
+        0
+    } else {
+        (jankFrameCount * 100.0 / totalFrames).roundToInt()
+    }
+
+internal fun JankMetrics.getJankTimeRatio(screenTimeInSeconds: Long): Double {
+    if (screenTimeInSeconds == 0L) return 0.0
+    return (totalJankDurationMs.toDouble() / screenTimeInSeconds).roundTo2Decimals()
+}
+
+internal fun JankMetrics.getHangTimeRatio(screenTimeInSeconds: Long): Double {
+    if (screenTimeInSeconds == 0L) return 0.0
+    return (totalHangDurationMs.toDouble() / screenTimeInSeconds).roundTo2Decimals()
+}

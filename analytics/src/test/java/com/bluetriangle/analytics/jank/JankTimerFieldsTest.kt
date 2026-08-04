@@ -92,7 +92,7 @@ class JankTimerFieldsTest {
 
         assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
         assertEquals(200L, json.getLong(Constants.TOTAL_JANK_DURATION))
-        assertEquals(60L, json.getLong(Constants.LONGEST_JANK_DURATION))
+        assertEquals(60L, json.getLong(Constants.JANK_FRAME_PERCENT))
         // ratio = totalJankDurationMs / (fullTime ms / 1000) = 200 / 5
         assertEquals(40.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
         assertEquals(1L, json.getLong(Constants.HANG_COUNT))

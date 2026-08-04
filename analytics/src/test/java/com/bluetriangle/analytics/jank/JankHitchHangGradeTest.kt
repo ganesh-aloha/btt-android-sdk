@@ -150,7 +150,7 @@ class JankHitchHangGradeTest {
 
         assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
         assertEquals(120L, json.getLong(Constants.TOTAL_JANK_DURATION))
-        assertEquals(40L, json.getLong(Constants.LONGEST_JANK_DURATION))
+        assertEquals(40L, json.getLong(Constants.JANK_FRAME_PERCENT))
         assertEquals(6.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
     }
 
@@ -342,7 +342,7 @@ class JankHitchHangGradeTest {
         // 350ms of hitches over 30s -> 11.67 ms/s (Worst), 2 hangs (Worst), longest 2800ms (Worst)
         assertEquals(11.67, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
         assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
-        assertEquals(90L, json.getLong(Constants.LONGEST_JANK_DURATION))
+        assertEquals(90L, json.getLong(Constants.JANK_FRAME_PERCENT))
         assertEquals(2L, json.getLong(Constants.HANG_COUNT))
         assertEquals(2800L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(4300L, json.getLong(Constants.TOTAL_HANG_DURATION))
