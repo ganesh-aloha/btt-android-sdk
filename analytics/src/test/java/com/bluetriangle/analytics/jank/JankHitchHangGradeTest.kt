@@ -12,19 +12,19 @@ import org.robolectric.RobolectricTestRunner
  * Hitch/hang cases where the bad frames arrive in **several separate windows** of a single screen's
  * visible time (a burst while a list loads, another on a scroll, another on a dialog), rather than
  * all at once. The accumulator keeps no per-window state, so every window folds into one per-screen
- * total, and the beacon's `hitchTimeRatio` is that total spread over the whole time on screen -
+ * total, and the beacon's `hitchTimePercent` is that total spread over the whole time on screen -
  * these cases pin that behaviour down and then grade the resulting beacon.
  *
  * Grade (worst dimension wins):
  *
- * | Grade | hitchTimeRatio (ms/s) | Hang count | Longest hang     |
+ * | Grade | hitchTimePercent (ms/s) | Hang count | Longest hang     |
  * |-------|-----------------------|------------|------------------|
  * | Good  | < 5                   | 0          | -                |
  * | Bad   | 5 - 10                | 1          | <= 2500ms        |
  * | Worst | > 10                  | >= 2       | any hang > 2500ms|
  *
  * The grade itself is derived here, in the test, from the same three beacon fields the portal reads
- * ([Constants.JANK_TIME_RATIO], [Constants.HANG_COUNT], [Constants.LONGEST_HANG_DURATION]) - the SDK
+ * ([Constants.JANK_TIME_PERCENT], [Constants.HANG_COUNT], [Constants.LONGEST_HANG_DURATION]) - the SDK
  * only ships the numbers.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -82,13 +82,13 @@ class JankHitchHangGradeTest {
 
     /** Grades a beacon the way the portal does: worst of the three dimensions wins. */
     private fun gradeOf(json: JSONObject): Grade {
-        val hitchTimeRatio = json.getDouble(Constants.JANK_TIME_RATIO)
+        val hitchTimePercent = json.getDouble(Constants.JANK_TIME_PERCENT)
         val hangCount = json.getLong(Constants.HANG_COUNT)
         val longestHangMs = json.getLong(Constants.LONGEST_HANG_DURATION)
 
         val hitchGrade = when {
-            hitchTimeRatio > 10.0 -> Grade.WORST
-            hitchTimeRatio >= 5.0 -> Grade.BAD
+            hitchTimePercent > 10.0 -> Grade.WORST
+            hitchTimePercent >= 5.0 -> Grade.BAD
             else -> Grade.GOOD
         }
         val hangCountGrade = when {
@@ -139,7 +139,7 @@ class JankHitchHangGradeTest {
     }
 
     @Test
-    fun `hitchTimeRatio spreads all windows over the whole time on screen`() {
+    fun `hitchTimePercent spreads all windows over the whole time on screen`() {
         // 3 windows, 120ms of hitches in total, 20s on screen -> 6 ms/s
         val json = beaconFor(
             screenTimeMs = 20_000,
@@ -151,7 +151,7 @@ class JankHitchHangGradeTest {
         assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
         assertEquals(120L, json.getLong(Constants.TOTAL_JANK_DURATION))
         assertEquals(40L, json.getLong(Constants.JANK_FRAME_PERCENT))
-        assertEquals(6.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(6.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
     }
 
     @Test
@@ -189,7 +189,7 @@ class JankHitchHangGradeTest {
             Window(hitchesMs = listOf(12))
         )
 
-        assertEquals(4.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(4.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(0L, json.getLong(Constants.HANG_COUNT))
         assertEquals(0L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(Grade.GOOD, gradeOf(json))
@@ -206,7 +206,7 @@ class JankHitchHangGradeTest {
         assertEquals(Grade.BAD, gradeOf(beaconFor(20_000, *windows)))
 
         val json = beaconFor(60_000, *windows)
-        assertEquals(3.33, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(3.33, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(Grade.GOOD, gradeOf(json))
     }
 
@@ -224,7 +224,7 @@ class JankHitchHangGradeTest {
             Window(hitchesMs = listOf(10))
         )
 
-        assertEquals(7.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(7.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(0L, json.getLong(Constants.HANG_COUNT))
         assertEquals(Grade.BAD, gradeOf(json))
     }
@@ -239,7 +239,7 @@ class JankHitchHangGradeTest {
             Window(hangsMs = listOf(2000))
         )
 
-        assertEquals(4.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(4.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(1L, json.getLong(Constants.HANG_COUNT))
         assertEquals(2000L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(Grade.BAD, gradeOf(json))
@@ -253,7 +253,7 @@ class JankHitchHangGradeTest {
             Window(hitchesMs = listOf(30)),
             Window(hitchesMs = listOf(20))
         )
-        assertEquals(5.0, atFive.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(5.0, atFive.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(Grade.BAD, gradeOf(atFive))
 
         // 100ms / 10s -> exactly 10 ms/s
@@ -262,7 +262,7 @@ class JankHitchHangGradeTest {
             Window(hitchesMs = listOf(60)),
             Window(hitchesMs = listOf(40))
         )
-        assertEquals(10.0, atTen.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(10.0, atTen.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(Grade.BAD, gradeOf(atTen))
     }
 
@@ -293,7 +293,7 @@ class JankHitchHangGradeTest {
             Window(hitchesMs = listOf(20))
         )
 
-        assertEquals(15.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(15.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(Grade.WORST, gradeOf(json))
     }
 
@@ -307,7 +307,7 @@ class JankHitchHangGradeTest {
             Window(hangsMs = listOf(1000))
         )
 
-        assertEquals(2.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(2.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(2L, json.getLong(Constants.HANG_COUNT))
         assertEquals(1000L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(1800L, json.getLong(Constants.TOTAL_HANG_DURATION))
@@ -323,7 +323,7 @@ class JankHitchHangGradeTest {
             Window(hangsMs = listOf(3000))
         )
 
-        assertEquals(1.0, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(1.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(1L, json.getLong(Constants.HANG_COUNT))
         assertEquals(3000L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(Grade.WORST, gradeOf(json))
@@ -340,7 +340,7 @@ class JankHitchHangGradeTest {
         )
 
         // 350ms of hitches over 30s -> 11.67 ms/s (Worst), 2 hangs (Worst), longest 2800ms (Worst)
-        assertEquals(11.67, json.getDouble(Constants.JANK_TIME_RATIO), 0.0)
+        assertEquals(11.67, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
         assertEquals(90L, json.getLong(Constants.JANK_FRAME_PERCENT))
         assertEquals(2L, json.getLong(Constants.HANG_COUNT))

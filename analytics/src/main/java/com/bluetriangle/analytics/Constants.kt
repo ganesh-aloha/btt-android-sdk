@@ -95,11 +95,12 @@ object Constants {
     internal const val JANK_FRAME_COUNT = "hitchCount"
     internal const val JANK_FRAME_PERCENT = "hitchFramePercent"
     internal const val TOTAL_JANK_DURATION = "totalHitchDuration"
-    internal const val JANK_TIME_RATIO = "hitchTimeRatio"
+    internal const val JANK_TIME_PERCENT = "hitchTimePercent"
     internal const val HANG_COUNT = "hangCount"
+    internal const val HANG_FRAME_PERCENT = "hitchFramePercent"
     internal const val LONGEST_HANG_DURATION = "longestHang"
     internal const val TOTAL_HANG_DURATION = "totalHangDuration"
-    internal const val HANG_TIME_RATIO = "hangTimeRatio"
+    internal const val HANG_TIME_PERCENT = "hangTimePercent"
 
     /**
      * Frames at or above this full duration are classified as hangs (Apple's hang convention).

@@ -43,6 +43,13 @@ internal val JankMetrics.jankFramePercentage: Int
         (jankFrameCount * 100.0 / totalFrames).roundToInt()
     }
 
+internal val JankMetrics.hangFramePercentage: Int
+    get() = if (totalFrames == 0L) {
+        0
+    } else {
+        (hangFrameCount * 100.0 / totalFrames).roundToInt()
+    }
+
 internal fun JankMetrics.getJankTimeRatio(screenTimeInSeconds: Long): Double {
     if (screenTimeInSeconds == 0L) return 0.0
     return (totalJankDurationMs.toDouble() / screenTimeInSeconds).roundTo2Decimals()

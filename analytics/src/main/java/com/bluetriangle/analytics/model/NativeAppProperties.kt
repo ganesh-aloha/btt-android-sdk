@@ -24,11 +24,12 @@ import com.bluetriangle.analytics.Constants.SCREEN_TYPE
 import com.bluetriangle.analytics.Constants.SDK_VERSION
 import com.bluetriangle.analytics.Constants.JANK_FRAME_COUNT
 import com.bluetriangle.analytics.Constants.TOTAL_JANK_DURATION
-import com.bluetriangle.analytics.Constants.JANK_TIME_RATIO
+import com.bluetriangle.analytics.Constants.JANK_TIME_PERCENT
 import com.bluetriangle.analytics.Constants.JANK_FRAME_PERCENT
 import com.bluetriangle.analytics.Constants.HANG_COUNT
+import com.bluetriangle.analytics.Constants.HANG_FRAME_PERCENT
 import com.bluetriangle.analytics.Constants.TOTAL_HANG_DURATION
-import com.bluetriangle.analytics.Constants.HANG_TIME_RATIO
+import com.bluetriangle.analytics.Constants.HANG_TIME_PERCENT
 import com.bluetriangle.analytics.Constants.LONGEST_HANG_DURATION
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
@@ -40,8 +41,8 @@ import com.bluetriangle.analytics.networkstate.data.BTTNetworkProtocol
 import com.bluetriangle.analytics.event.BTTEvent
 import com.bluetriangle.analytics.jank.getHangTimeRatio
 import com.bluetriangle.analytics.jank.getJankTimeRatio
+import com.bluetriangle.analytics.jank.hangFramePercentage
 import com.bluetriangle.analytics.jank.jankFramePercentage
-import com.bluetriangle.analytics.utility.roundTo2Decimals
 import com.bluetriangle.analytics.utility.value
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
@@ -130,12 +131,13 @@ internal data class NativeAppProperties(
             obj.put(JANK_FRAME_COUNT, metrics?.jankFrameCount ?: 0)
             obj.put(JANK_FRAME_PERCENT, metrics?.jankFramePercentage ?: 0)
             obj.put(TOTAL_JANK_DURATION, metrics?.totalJankDurationMs ?: 0)
-            obj.put(JANK_TIME_RATIO,metrics?.getJankTimeRatio(screenTime) ?: 0)
+            obj.put(JANK_TIME_PERCENT,metrics?.getJankTimeRatio(screenTime) ?: 0)
 
             obj.put(HANG_COUNT, metrics?.hangFrameCount ?: 0)
-            obj.put(LONGEST_HANG_DURATION, metrics?.longestHangMs ?: 0)
+            obj.put(HANG_FRAME_PERCENT, metrics?.hangFramePercentage ?: 0)
             obj.put(TOTAL_HANG_DURATION, metrics?.totalHangDurationMs ?: 0)
-            obj.put(HANG_TIME_RATIO, metrics?.getHangTimeRatio(screenTime) ?: 0)
+            obj.put(LONGEST_HANG_DURATION, metrics?.longestHangMs ?: 0)
+            obj.put(HANG_TIME_PERCENT, metrics?.getHangTimeRatio(screenTime) ?: 0)
         }
 
         return obj
