@@ -50,12 +50,12 @@ internal val JankMetrics.hangFramePercentage: Int
         (hangFrameCount * 100.0 / totalFrames).roundToInt()
     }
 
-internal fun JankMetrics.getJankTimeRatio(screenTimeInSeconds: Long): Double {
-    if (screenTimeInSeconds == 0L) return 0.0
-    return (totalJankDurationMs.toDouble() / screenTimeInSeconds).roundTo2Decimals()
+internal fun JankMetrics.getJankTimePercentage(screenTimeInSeconds: Long): Int {
+    if (screenTimeInSeconds == 0L) return 0
+    return (totalJankDurationMs * 100.0 / screenTimeInSeconds).roundToInt()
 }
 
-internal fun JankMetrics.getHangTimeRatio(screenTimeInSeconds: Long): Double {
-    if (screenTimeInSeconds == 0L) return 0.0
-    return (totalHangDurationMs.toDouble() / screenTimeInSeconds).roundTo2Decimals()
+internal fun JankMetrics.getHangTimePercentage(screenTimeInSeconds: Long): Int {
+    if (screenTimeInSeconds == 0L) return 0
+    return (totalHangDurationMs * 100.0 / screenTimeInSeconds).roundToInt()
 }

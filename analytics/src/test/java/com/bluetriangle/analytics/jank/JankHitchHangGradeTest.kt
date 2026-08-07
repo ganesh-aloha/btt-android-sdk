@@ -24,7 +24,7 @@ import org.robolectric.RobolectricTestRunner
  * | Worst | > 10                  | >= 2       | any hang > 2500ms|
  *
  * The grade itself is derived here, in the test, from the same three beacon fields the portal reads
- * ([Constants.JANK_TIME_PERCENT], [Constants.HANG_COUNT], [Constants.LONGEST_HANG_DURATION]) - the SDK
+ * ([Constants.JANK_TIME_PERCENT], [Constants.HANG_FRAME_COUNT], [Constants.LONGEST_HANG_DURATION]) - the SDK
  * only ships the numbers.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -83,7 +83,7 @@ class JankHitchHangGradeTest {
     /** Grades a beacon the way the portal does: worst of the three dimensions wins. */
     private fun gradeOf(json: JSONObject): Grade {
         val hitchTimePercent = json.getDouble(Constants.JANK_TIME_PERCENT)
-        val hangCount = json.getLong(Constants.HANG_COUNT)
+        val hangCount = json.getLong(Constants.HANG_FRAME_COUNT)
         val longestHangMs = json.getLong(Constants.LONGEST_HANG_DURATION)
 
         val hitchGrade = when {
@@ -190,7 +190,7 @@ class JankHitchHangGradeTest {
         )
 
         assertEquals(4.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(0L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(0L, json.getLong(Constants.HANG_FRAME_COUNT))
         assertEquals(0L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(Grade.GOOD, gradeOf(json))
     }
@@ -225,7 +225,7 @@ class JankHitchHangGradeTest {
         )
 
         assertEquals(7.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(0L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(0L, json.getLong(Constants.HANG_FRAME_COUNT))
         assertEquals(Grade.BAD, gradeOf(json))
     }
 
@@ -240,7 +240,7 @@ class JankHitchHangGradeTest {
         )
 
         assertEquals(4.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(1L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(1L, json.getLong(Constants.HANG_FRAME_COUNT))
         assertEquals(2000L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(Grade.BAD, gradeOf(json))
     }
@@ -275,7 +275,7 @@ class JankHitchHangGradeTest {
         )
 
         assertEquals(2500L, json.getLong(Constants.LONGEST_HANG_DURATION))
-        assertEquals(1L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(1L, json.getLong(Constants.HANG_FRAME_COUNT))
         assertEquals(Grade.BAD, gradeOf(json))
     }
 
@@ -308,7 +308,7 @@ class JankHitchHangGradeTest {
         )
 
         assertEquals(2.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(2L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(2L, json.getLong(Constants.HANG_FRAME_COUNT))
         assertEquals(1000L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(1800L, json.getLong(Constants.TOTAL_HANG_DURATION))
         assertEquals(Grade.WORST, gradeOf(json))
@@ -324,7 +324,7 @@ class JankHitchHangGradeTest {
         )
 
         assertEquals(1.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(1L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(1L, json.getLong(Constants.HANG_FRAME_COUNT))
         assertEquals(3000L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(Grade.WORST, gradeOf(json))
     }
@@ -343,7 +343,7 @@ class JankHitchHangGradeTest {
         assertEquals(11.67, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
         assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
         assertEquals(90L, json.getLong(Constants.JANK_FRAME_PERCENT))
-        assertEquals(2L, json.getLong(Constants.HANG_COUNT))
+        assertEquals(2L, json.getLong(Constants.HANG_FRAME_COUNT))
         assertEquals(2800L, json.getLong(Constants.LONGEST_HANG_DURATION))
         assertEquals(4300L, json.getLong(Constants.TOTAL_HANG_DURATION))
         assertEquals(Grade.WORST, gradeOf(json))

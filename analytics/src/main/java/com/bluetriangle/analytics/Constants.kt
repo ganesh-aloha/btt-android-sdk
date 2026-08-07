@@ -89,17 +89,28 @@ object Constants {
 
     internal const val DEFAULT_ENABLE_SCREEN_RESPONSIVENESS = true
 
+//    hitchCount
+//    totalHithcDuration
+//    longestHitch
+//
+//    hangCount
+//    totalHangDuration
+//    longestHang
+//
+//    totalFrameCount
+
     internal const val DEFAULT_SCREEN_REFRESH_RATE = 60f
     // Per-screen frame health report fields (see [com.bluetriangle.analytics.jank.JankMetrics])
-    internal const val TOTAL_FRAME_COUNT = "totalFrames"
+    internal const val TOTAL_FRAME_COUNT = "totalFrameCount"
     internal const val JANK_FRAME_COUNT = "hitchCount"
-    internal const val JANK_FRAME_PERCENT = "hitchFramePercent"
     internal const val TOTAL_JANK_DURATION = "totalHitchDuration"
+    internal const val LONGEST_JANK_DURATION = "longestHitch"
+    internal const val JANK_FRAME_PERCENT = "hitchFramePercent"
     internal const val JANK_TIME_PERCENT = "hitchTimePercent"
-    internal const val HANG_COUNT = "hangCount"
-    internal const val HANG_FRAME_PERCENT = "hitchFramePercent"
-    internal const val LONGEST_HANG_DURATION = "longestHang"
+    internal const val HANG_FRAME_COUNT = "hangCount"
     internal const val TOTAL_HANG_DURATION = "totalHangDuration"
+    internal const val LONGEST_HANG_DURATION = "longestHang"
+    internal const val HANG_FRAME_PERCENT = "hitchFramePercent"
     internal const val HANG_TIME_PERCENT = "hangTimePercent"
 
     /**
