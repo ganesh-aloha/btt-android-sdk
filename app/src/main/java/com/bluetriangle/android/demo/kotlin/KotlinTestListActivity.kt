@@ -78,6 +78,10 @@ class KotlinTestListActivity : AppCompatActivity() {
             startActivity(Intent(this, JankTestActivity::class.java))
         }
 
+        binding.scrollJankTest.setOnClickListener {
+            startActivity(Intent(this, ScrollJankTestActivity::class.java))
+        }
+
         binding.buttonLaunchGallery.setOnClickListener {
             startActivity(Intent.createChooser(Intent(Intent.ACTION_PICK).apply {
                 type = "image/*"

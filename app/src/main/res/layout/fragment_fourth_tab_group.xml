@@ -87,6 +87,15 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
+        android:id="@+id/scroll_jank_test"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="Scroll Jank Test (Hitch &amp; Hang)"
+        app:layout_constraintBottom_toTopOf="@+id/jank_test"
+        app:layout_constraintStart_toStartOf="@+id/jank_test" />
+
+    <Button
         android:id="@+id/jank_test"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

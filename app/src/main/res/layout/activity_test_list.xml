@@ -138,6 +138,12 @@
                 android:layout_height="wrap_content"
                 android:text="Jank Test (Hitch &amp; Hang)" />
 
+            <Button
+                android:id="@+id/scroll_jank_test"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Scroll Jank Test (Heavy List)" />
+
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

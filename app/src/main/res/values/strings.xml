@@ -69,6 +69,25 @@
     <string name="jank_test_idle">Animating smoothly</string>
     <string name="jank_test_hitching">Hitching: every frame sleeps 130ms…</string>
     <string name="jank_test_hanging">Hanging: next frame freezes for 1s…</string>
+
+    <string name="scroll_jank_test">Scroll Jank Test</string>
+    <string name="scroll_jank_test_description">A 400-row feed whose rows each do real work on the main thread while binding (procedural bitmap + blur + text). Pick a load mode, then scroll - the stutter you see is what the SDK reports as hitch/hang frames in this screen\'s timer beacon.</string>
+    <string name="scroll_jank_mode_smooth">Smooth - light rows (baseline)</string>
+    <string name="scroll_jank_mode_hitch">Hitchy - every row costs ~40ms to bind</string>
+    <string name="scroll_jank_mode_hang">Hang - hitchy rows + a ~900ms row every 6th row</string>
+    <string name="scroll_jank_auto_scroll">Start auto-scroll</string>
+    <string name="scroll_jank_auto_scroll_stop">Stop auto-scroll</string>
+    <string name="scroll_jank_status_idle">Smooth rows · scroll by hand</string>
+    <string name="scroll_jank_status_manual">%1$s · scroll by hand</string>
+    <string name="scroll_jank_status_auto">%1$s · auto-scrolling</string>
+    <string name="scroll_jank_status_smooth">Smooth rows</string>
+    <string name="scroll_jank_status_hitch">Hitchy rows (~%1$dms each)</string>
+    <string name="scroll_jank_status_hang">Hang rows (~%1$dms every %2$d rows)</string>
+    <string name="scroll_jank_row_title">Row %1$d</string>
+    <string name="scroll_jank_row_title_heavy">Row %1$d (heavy)</string>
+    <string name="scroll_jank_row_subtitle">%1$dms of bind work</string>
+    <string name="scroll_jank_thumbnail_description">Procedurally generated row thumbnail</string>
+
     <string name="start_timer">Start Timer</string>
     <string name="stop_timer">Stop Timer</string>
 

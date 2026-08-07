@@ -14,6 +14,7 @@ import com.bluetriangle.android.demo.compose.ComposeMainActivity
 import com.bluetriangle.android.demo.groupingpoc.QuoteRequestHelper
 import com.bluetriangle.android.demo.kotlin.JankTestActivity
 import com.bluetriangle.android.demo.kotlin.MemoryTestViewModel.MemoryBlock
+import com.bluetriangle.android.demo.kotlin.ScrollJankTestActivity
 
 class FourthTabFragment : Fragment() {
 
@@ -66,6 +67,10 @@ class FourthTabFragment : Fragment() {
 
         view.findViewById<Button>(R.id.jank_test).setOnClickListener {
             startActivity(Intent(context, JankTestActivity::class.java))
+        }
+
+        view.findViewById<Button>(R.id.scroll_jank_test).setOnClickListener {
+            startActivity(Intent(context, ScrollJankTestActivity::class.java))
         }
     }
 }
