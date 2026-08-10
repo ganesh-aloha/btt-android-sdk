@@ -224,17 +224,17 @@ class JankFrameAccumulatorTest {
     }
 
     @Test
-    fun `hitch severity is the count weighted mean of the populated bins`() {
+    fun `hitch severity is the weighted total of the populated bins`() {
         repeat(3) { accumulator.hitch(overrunMs = 30) }    // weight 0.5
         accumulator.hitch(overrunMs = 250)                // weight 2.0
         accumulator.hitch(overrunMs = 440)                // weight 3.0
 
-        // (3*0.5 + 2.0 + 3.0) / 5
-        assertEquals(1.3, accumulator.snapshot().jankSeverity, 0.0)
+        // 3*0.5 + 2.0 + 3.0, not divided by the 5 hitches
+        assertEquals(6.5, accumulator.snapshot().jankSeverity, 0.0)
     }
 
     @Test
-    fun `hitch severity is scale free - the same mix of bins scores the same at any volume`() {
+    fun `hitch severity grows with volume, not just with how bad each hitch was`() {
         repeat(2) { accumulator.hitch(overrunMs = 30) }
         accumulator.hitch(overrunMs = 250)
         val few = accumulator.snapshot().jankSeverity
@@ -245,8 +245,8 @@ class JankFrameAccumulatorTest {
         repeat(100) { accumulator.hitch(overrunMs = 250) }
         val many = accumulator.snapshot().jankSeverity
 
-        assertEquals(1.0, few, 0.0)
-        assertEquals(few, many, 0.0)
+        assertEquals(3.0, few, 0.0)     // 2*0.5 + 2.0
+        assertEquals(300.0, many, 0.0)  // 200*0.5 + 100*2.0
     }
 
     @Test

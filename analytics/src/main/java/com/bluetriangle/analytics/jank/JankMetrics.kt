@@ -28,11 +28,11 @@ import kotlin.math.roundToInt
  * `[{50, 5}, {150, 2}, {300, 4}, {450, 1}]`, one `{upperBoundMs, count}` pair per **populated** bin,
  * ascending by bound. Empty bins are omitted, so a screen with no jank's is [EMPTY_JANK_HISTOGRAM];
  * the counts sum to [jankFrameCount].
- * @param jankSeverity weighted mean severity of those hitches, `sum(count * weight) / sum(count)`
- * over [JankFrameAccumulator.JANK_SEVERITY_WEIGHTS] - between the lightest and heaviest bin weight
- * (0.5-4.0) when any jank was recorded, 0.0 when none was. Scale-free: it says how bad the typical
- * hitch was, not how many there were, so pair it with [jankFrameCount] to tell a screen with one
- * long jank from a screen full of them.
+ * @param jankSeverity weighted severity of those hitches, `sum(count * weight)` over
+ * [JankFrameAccumulator.JANK_SEVERITY_WEIGHTS] - 0.0 when no jank was recorded, otherwise growing
+ * with **both** how bad the hitches were and how many there were (10 mild hitches score the same
+ * 5.0 as one 300-450ms hitch plus a mild one). Unbounded and not normalized by time on screen, so
+ * it is a raw badness total, not a rate; [ResponsivenessGrade] caps it when scoring.
  */
 @Parcelize
 internal data class JankMetrics(

@@ -95,9 +95,13 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
         .joinToString(separator = ", ", prefix = "[", postfix = "]")
 
     /**
-     * Weighted mean severity of the recorded hitches - `sum(count * weight) / sum(count)` over
-     * [JANK_SEVERITY_WEIGHTS] - so it describes how bad a screen's *typical* hitch was rather than
-     * how many it had: 20 mild hitches and 2 mild hitches both score 0.5. 0.0 when there were none.
+     * Weighted severity of the recorded jank's - `sum(count * weight)` over
+     * [JANK_SEVERITY_WEIGHTS] - so it grows with both severity and volume: 20 mild hitches score
+     * 10.0 where 2 score 1.0. 0.0 when there were none.
+     *
+     * Deliberately *not* divided by the jank count: [ResponsivenessGrade] scores it against a
+     * 0-100 badness ramp and caps it, which needs a total that can exceed the cap, not a mean
+     * bounded by the heaviest bin weight. Matches iOS's `weightedMean`.
      */
     private fun jankSeverity(): Double {
         var weightedSum = 0.0
