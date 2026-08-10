@@ -105,6 +105,8 @@ object Constants {
     internal const val JANK_FRAME_COUNT = "hitchCount"
     internal const val TOTAL_JANK_DURATION = "totalHitchDuration"
     internal const val LONGEST_JANK_DURATION = "longestHitch"
+    internal const val JANK_HISTOGRAMS = "hitchHistograms"
+    internal const val JANK_WEIGHTED_MEAN = "hitchWeightedMean"
     internal const val JANK_FRAME_PERCENT = "hitchFramePercent"
     internal const val JANK_TIME_PERCENT = "hitchTimePercent"
     internal const val HANG_FRAME_COUNT = "hangCount"

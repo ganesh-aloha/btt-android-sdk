@@ -134,5 +134,126 @@ class JankFrameAccumulatorTest {
         assertEquals(0L, snapshot.hangFrameCount)
         assertEquals(0L, snapshot.totalHangDurationMs)
         assertEquals(0L, snapshot.longestHangMs)
+        assertEquals("[]", snapshot.jankHistogram)
+    }
+
+    /** Records a hitch with an exact overrun, which is what the histogram bins on. */
+    private fun JankFrameAccumulator.hitch(overrunMs: Long) = recordFrame(
+        isJank = true,
+        frameDurationNanos = ms(overrunMs) + budget,
+        frameBudgetNanos = budget,
+        frameOverrunNanos = ms(overrunMs)
+    )
+
+    @Test
+    fun `hitches land in the first bin their overrun fits, bounds inclusive`() {
+        accumulator.hitch(overrunMs = 0)
+        accumulator.hitch(overrunMs = 50)     // on the first bound
+        accumulator.hitch(overrunMs = 51)
+        accumulator.hitch(overrunMs = 150)    // on the second bound
+        accumulator.hitch(overrunMs = 300)
+        accumulator.hitch(overrunMs = 301)
+        accumulator.hitch(overrunMs = 749)    // last hitch before the hang threshold
+
+        assertEquals(
+            "[{50, 2}, {150, 2}, {300, 1}, {450, 1}, {750, 1}]",
+            accumulator.snapshot().jankHistogram
+        )
+    }
+
+    @Test
+    fun `snapshot histogram is the flattened string with empty bins omitted`() {
+        repeat(5) { accumulator.hitch(overrunMs = 30) }
+        repeat(2) { accumulator.hitch(overrunMs = 120) }
+        repeat(4) { accumulator.hitch(overrunMs = 250) }
+        accumulator.hitch(overrunMs = 440)
+        // nothing in the 450-750 bin, so it must not appear
+
+        assertEquals(
+            "[{50, 5}, {150, 2}, {300, 4}, {450, 1}]",
+            accumulator.snapshot().jankHistogram
+        )
+    }
+
+    @Test
+    fun `histogram keeps the gaps between populated bins closed`() {
+        accumulator.hitch(overrunMs = 30)
+        accumulator.hitch(overrunMs = 700)
+
+        assertEquals("[{50, 1}, {750, 1}]", accumulator.snapshot().jankHistogram)
+    }
+
+    @Test
+    fun `histogram is empty brackets when no hitches were recorded`() {
+        accumulator.record(isJank = false, frameDurationNanos = ms(8), frameBudgetNanos = budget)
+
+        assertEquals("[]", accumulator.snapshot().jankHistogram)
+    }
+
+    @Test
+    fun `histogram counts only hitches, excluding hangs and normal frames`() {
+        accumulator.hitch(overrunMs = 20)
+        accumulator.hitch(overrunMs = 400)
+        accumulator.record(isJank = true, frameDurationNanos = ms(900), frameBudgetNanos = budget)  // hang
+        accumulator.record(isJank = false, frameDurationNanos = ms(8), frameBudgetNanos = budget)   // normal
+
+        val snapshot = accumulator.snapshot()
+        assertEquals(2L, snapshot.jankFrameCount)
+        assertEquals(1L, snapshot.hangFrameCount)
+        // counts sum to jankFrameCount - the hang and the normal frame are absent
+        assertEquals("[{50, 1}, {450, 1}]", snapshot.jankHistogram)
+    }
+
+    @Test
+    fun `hitch severity is zero when no hitches were recorded`() {
+        accumulator.record(isJank = false, frameDurationNanos = ms(8), frameBudgetNanos = budget)
+        accumulator.record(isJank = true, frameDurationNanos = ms(900), frameBudgetNanos = budget)  // hang
+
+        assertEquals(0.0, accumulator.snapshot().jankSeverity, 0.0)
+    }
+
+    @Test
+    fun `hitch severity of a single hitch is its own bin weight`() {
+        accumulator.hitch(overrunMs = 30)
+        assertEquals(0.5, accumulator.snapshot().jankSeverity, 0.0)
+
+        accumulator.reset()
+
+        accumulator.hitch(overrunMs = 700)
+        assertEquals(4.0, accumulator.snapshot().jankSeverity, 0.0)
+    }
+
+    @Test
+    fun `hitch severity is the count weighted mean of the populated bins`() {
+        repeat(3) { accumulator.hitch(overrunMs = 30) }    // weight 0.5
+        accumulator.hitch(overrunMs = 250)                // weight 2.0
+        accumulator.hitch(overrunMs = 440)                // weight 3.0
+
+        // (3*0.5 + 2.0 + 3.0) / 5
+        assertEquals(1.3, accumulator.snapshot().jankSeverity, 0.0)
+    }
+
+    @Test
+    fun `hitch severity is scale free - the same mix of bins scores the same at any volume`() {
+        repeat(2) { accumulator.hitch(overrunMs = 30) }
+        accumulator.hitch(overrunMs = 250)
+        val few = accumulator.snapshot().jankSeverity
+
+        accumulator.reset()
+
+        repeat(200) { accumulator.hitch(overrunMs = 30) }
+        repeat(100) { accumulator.hitch(overrunMs = 250) }
+        val many = accumulator.snapshot().jankSeverity
+
+        assertEquals(1.0, few, 0.0)
+        assertEquals(few, many, 0.0)
+    }
+
+    @Test
+    fun `reset clears hitch severity`() {
+        accumulator.hitch(overrunMs = 700)
+        accumulator.reset()
+
+        assertEquals(0.0, accumulator.snapshot().jankSeverity, 0.0)
     }
 }

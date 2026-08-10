@@ -1,6 +1,7 @@
 package com.bluetriangle.analytics.jank
 
 import com.bluetriangle.analytics.Constants
+import com.bluetriangle.analytics.utility.roundTo2Decimals
 import com.bluetriangle.analytics.utility.roundTo4Decimals
 import java.util.concurrent.atomic.AtomicLong
 
@@ -35,6 +36,13 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
     private val jank = Bucket()
     private val hang = Bucket()
 
+    /**
+     * Distribution of jank (hitch) frame overruns, keyed by inclusive upper bound in ms and kept in
+     * ascending bound order so [snapshot] can emit the bins as-is.
+     */
+    private val jankHistogram: Map<Long, AtomicLong> =
+        JANK_HISTOGRAM_BOUNDS_MS.associateWithTo(LinkedHashMap()) { AtomicLong(0) }
+
     @Volatile
     private var startTimeMs: Long = nowMs()
 
@@ -51,8 +59,57 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
         val durationNanos = frameOverrunNanos.coerceAtLeast(0L)
         when {
             durationNanos >= HANG_THRESHOLD_NANOS -> hang.record(durationNanos)
-            isJank -> jank.record(durationNanos)
+            isJank -> {
+                jank.record(durationNanos)
+                recordJankHistogram(durationNanos)
+            }
         }
+    }
+
+    /**
+     * Bins a hitch by its overrun. Every hitch is below the hang threshold, which is also the last
+     * bound, so exactly one bin always matches.
+     */
+    private fun recordJankHistogram(durationNanos: Long) {
+        val durationMs = durationNanos.nanosToMs()
+        for ((upperBoundMs, count) in jankHistogram) {
+            if (durationMs <= upperBoundMs) {
+                count.incrementAndGet()
+                return
+            }
+        }
+    }
+
+    /**
+     * Flattens the live counters to the beacon's histogram form - `[{50, 5}, {150, 2}, {450, 1}]`,
+     * one `{upperBoundMs, count}` pair per populated bin in ascending bound order.
+     *
+     * Empty bins are dropped, so pairs are not positional (consumers must key on the bound) and a
+     * screen with no hitches renders as [EMPTY_JANK_HISTOGRAM]. Each counter is read exactly once
+     * so a concurrent hitch can't be filtered in and then rendered with a different count.
+     */
+    private fun jankHistogramString(): String = jankHistogram.entries
+        .mapNotNull { (upperBoundMs, counter) ->
+            counter.get().takeIf { it > 0 }?.let { count -> "{$upperBoundMs, $count}" }
+        }
+        .joinToString(separator = ", ", prefix = "[", postfix = "]")
+
+    /**
+     * Weighted mean severity of the recorded hitches - `sum(count * weight) / sum(count)` over
+     * [JANK_SEVERITY_WEIGHTS] - so it describes how bad a screen's *typical* hitch was rather than
+     * how many it had: 20 mild hitches and 2 mild hitches both score 0.5. 0.0 when there were none.
+     */
+    private fun jankSeverity(): Double {
+        var weightedSum = 0.0
+
+        for ((upperBoundMs, counter) in jankHistogram) {
+            val count = counter.get()
+            if (count == 0L) continue
+
+            weightedSum += count * (JANK_SEVERITY_WEIGHTS[upperBoundMs] ?: 0.0)
+        }
+
+        return (weightedSum).roundTo2Decimals()
     }
 
     fun snapshot(): JankMetrics {
@@ -63,7 +120,9 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
             longestJankMs = jank.longestDurationNanos.get().nanosToMs(),
             hangFrameCount = hang.count.get(),
             totalHangDurationMs = hang.totalDurationNanos.get().nanosToMs(),
-            longestHangMs = hang.longestDurationNanos.get().nanosToMs()
+            longestHangMs = hang.longestDurationNanos.get().nanosToMs(),
+            jankHistogram = jankHistogramString(),
+            jankSeverity = jankSeverity()
         )
     }
 
@@ -71,6 +130,7 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
         totalFrames.set(0)
         jank.reset()
         hang.reset()
+        jankHistogram.values.forEach { it.set(0) }
         startTimeMs = nowMs()
     }
 
@@ -80,8 +140,30 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
         return (durationMs / elapsedMs).coerceAtMost(1.0).roundTo4Decimals()
     }
 
-    private companion object {
+    internal companion object {
         const val HANG_THRESHOLD_NANOS = Constants.HANG_THRESHOLD_MS * 1_000_000L
+
+        /**
+         * Inclusive upper bounds (ms) of the hitch histogram bins, ascending. The last bound is the
+         * hang threshold - anything at or above it is a hang, not a hitch - so the bins cover every
+         * possible hitch overrun with no spill-over bucket needed.
+         */
+        val JANK_HISTOGRAM_BOUNDS_MS =
+            listOf(50L, 150L, 300L, 450L, Constants.HANG_THRESHOLD_MS)
+
+        /**
+         * Weights the bins of longer hitches more heavily for [jankSeverity]. Calculation-only -
+         * not part of any bin's state, so it is never sent in a payload. Mirrors iOS's
+         * `weightsByUpperBoundMs`; keep the two in step or the same screen scores differently per
+         * platform.
+         */
+        val JANK_SEVERITY_WEIGHTS = mapOf(
+            50L to 0.5,
+            150L to 1.0,
+            300L to 2.0,
+            450L to 3.0,
+            Constants.HANG_THRESHOLD_MS to 4.0
+        )
 
         fun Long.nanosToMs(): Long = this / 1_000_000L
 

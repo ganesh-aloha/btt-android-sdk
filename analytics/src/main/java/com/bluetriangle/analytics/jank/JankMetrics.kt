@@ -1,7 +1,6 @@
 package com.bluetriangle.analytics.jank
 
 import android.os.Parcelable
-import com.bluetriangle.analytics.utility.roundTo2Decimals
 import kotlinx.parcelize.Parcelize
 import kotlin.math.roundToInt
 
@@ -24,6 +23,16 @@ import kotlin.math.roundToInt
  * @param hangFrameCount frames classified as hangs
  * @param totalHangDurationMs cumulative full duration (ms) of hang frames
  * @param longestHangMs longest single hang frame (ms)
+ * @param jankHistogram how the jank (hitch) frames spread across the fixed duration bins in
+ * [JankFrameAccumulator.JANK_HISTOGRAM_BOUNDS_MS], already flattened to its beacon form -
+ * `[{50, 5}, {150, 2}, {300, 4}, {450, 1}]`, one `{upperBoundMs, count}` pair per **populated** bin,
+ * ascending by bound. Empty bins are omitted, so a screen with no jank's is [EMPTY_JANK_HISTOGRAM];
+ * the counts sum to [jankFrameCount].
+ * @param jankSeverity weighted mean severity of those hitches, `sum(count * weight) / sum(count)`
+ * over [JankFrameAccumulator.JANK_SEVERITY_WEIGHTS] - between the lightest and heaviest bin weight
+ * (0.5-4.0) when any jank was recorded, 0.0 when none was. Scale-free: it says how bad the typical
+ * hitch was, not how many there were, so pair it with [jankFrameCount] to tell a screen with one
+ * long jank from a screen full of them.
  */
 @Parcelize
 internal data class JankMetrics(
@@ -33,8 +42,13 @@ internal data class JankMetrics(
     val longestJankMs: Long,
     val hangFrameCount: Long,
     val totalHangDurationMs: Long,
-    val longestHangMs: Long
+    val longestHangMs: Long,
+    val jankHistogram: String = EMPTY_JANK_HISTOGRAM,
+    val jankSeverity: Double = 0.0
 ) : Parcelable
+
+/** Hitch histogram value for a screen with no hitches in any bin. */
+internal const val EMPTY_JANK_HISTOGRAM = "[]"
 
 internal val JankMetrics.jankFramePercentage: Int
     get() = if (totalFrames == 0L) {
