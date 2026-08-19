@@ -162,11 +162,11 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
          * platform.
          */
         val JANK_SEVERITY_WEIGHTS = mapOf(
-            50L to 0.5,
-            150L to 1.0,
+            50L to 0.25,
+            150L to 0.75,
             300L to 2.0,
-            450L to 3.0,
-            Constants.HANG_THRESHOLD_MS to 4.0
+            450L to 2.5,
+            Constants.HANG_THRESHOLD_MS to 3.5
         )
 
         fun Long.nanosToMs(): Long = this / 1_000_000L
