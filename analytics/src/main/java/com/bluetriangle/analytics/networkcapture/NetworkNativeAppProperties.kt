@@ -15,7 +15,8 @@ data class NetworkNativeAppProperties(
     var err: String?,
     var netState: String? = null,
     var deviceModel: String? = null,
-    var netStateSource: String? = null
+    var netStateSource: String? = null,
+    var httpMethod: String? = null
 ) : Parcelable {
 
     val appVersion: String? = Tracker.instance?.appVersion
@@ -31,6 +32,9 @@ data class NetworkNativeAppProperties(
         }
         obj.put(APP_VERSION, appVersion)
         obj.put(SDK_VERSION, sdkVersion)
+        httpMethod?.let{
+            obj.put(CapturedRequest.FIELD_HTTP_METHOD, it)
+        }
         return obj
     }
 

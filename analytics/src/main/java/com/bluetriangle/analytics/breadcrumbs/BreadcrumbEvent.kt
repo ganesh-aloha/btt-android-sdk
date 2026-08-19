@@ -106,10 +106,12 @@ internal sealed class BreadcrumbEvent(
         BreadcrumbEvent("network.request", System.currentTimeMillis(), data) {
         data class NetworkRequestData(
             val url: String,
+            val method:String,
             val statusCode: Int
         ) : Data {
             override fun writeTo(jsonObject: JSONObject) {
                 jsonObject.put("url", url)
+                jsonObject.put("method", method.uppercase())
                 jsonObject.put("statusCode", statusCode.toString())
             }
 
@@ -117,6 +119,7 @@ internal sealed class BreadcrumbEvent(
                 fun fromJson(json: JSONObject): NetworkRequestData {
                     return NetworkRequestData(
                         url = json.getString("url"),
+                        method = json.getString("method"),
                         statusCode = json.getString("statusCode").toInt()
                     )
                 }

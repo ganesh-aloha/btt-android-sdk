@@ -20,6 +20,7 @@ class BlueTriangleOkHttpInterceptor(private val configuration: BlueTriangleConfi
         val request: Request = chain.request()
         val capturedRequest = CapturedRequest()
         capturedRequest.url = request.url.toString()
+        capturedRequest.method = request.method
 
         capturedRequest.start()
         val response: Response = chain.proceed(request)

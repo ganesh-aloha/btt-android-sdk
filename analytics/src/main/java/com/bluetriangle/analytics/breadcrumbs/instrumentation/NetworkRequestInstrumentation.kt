@@ -18,15 +18,17 @@ internal class NetworkRequestInstrumentation(breadcrumbsCollector: BreadcrumbsCo
     }
 
     override fun onNetworkRequestCaptured(networkRequest: CapturedRequest) {
-        val url = networkRequest.url?:return
-        val statusCode = networkRequest.responseStatusCode?:return
-        addBreadcrumb(url, statusCode)
+        val url = networkRequest.url ?: return
+        val method = networkRequest.method ?: return
+        val statusCode = networkRequest.responseStatusCode ?: return
+        addBreadcrumb(url, method, statusCode)
     }
 
     private fun addBreadcrumb(
         url: String,
+        method: String,
         statusCode: Int
     ) = collector.get()?.add(
-        BreadcrumbEvent.NetworkRequest(BreadcrumbEvent.NetworkRequest.NetworkRequestData(url, statusCode))
+        BreadcrumbEvent.NetworkRequest(BreadcrumbEvent.NetworkRequest.NetworkRequestData(url, method, statusCode))
     )
 }

@@ -93,6 +93,7 @@ internal class BlueTriangleOkHttpEventListener(
             capturedRequest = CapturedRequest().apply {
                 start()
                 url = call.request().url.toString()
+                method = call.request().method
                 val mediaType = call.request().headers["Content-Type"]?.toMediaType()
                 requestType = requestTypeFromMediaType(file, mediaType)
             }

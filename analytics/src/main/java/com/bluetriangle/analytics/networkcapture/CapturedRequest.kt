@@ -44,6 +44,12 @@ class CapturedRequest {
             }
         }
 
+    var method: String? = null
+        set(value) {
+            field = value
+            nativeAppProperties?.apply { httpMethod = value }
+        }
+
     /**
      * name of file requested
      */
@@ -127,6 +133,7 @@ class CapturedRequest {
         val netStateMonitor = Tracker.instance?.networkStateMonitor
 
         nativeAppProperties = NetworkNativeAppProperties(null)
+        nativeAppProperties?.httpMethod = method
         netStateMonitor?.state?.value?.let {
             nativeAppProperties?.netState = it.value
             if(it is BTTNetworkState.Cellular) {
@@ -181,5 +188,6 @@ class CapturedRequest {
         const val FIELD_RESPONSE_CODE = "rCd"
         const val FIELD_NETWORK_STATE = "netState"
         const val FIELD_DEVICE_MODEL = "deviceModel"
+        const val FIELD_HTTP_METHOD = "httpMethod"
     }
 }
