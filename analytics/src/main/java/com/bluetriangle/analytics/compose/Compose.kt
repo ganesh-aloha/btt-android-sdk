@@ -57,7 +57,7 @@ fun NavHostController.withBttNavigationTracker(): NavHostController {
 
             Tracker.instance?.configuration?.logger?.info("withBttNavigationTracker - Label=${destination.label}, Route=${destination.route}, ScreenName= $screenName")
             currentLocationTracker.value?.onViewEnded()
-            currentLocationTracker.value = BTTScreenTracker(screenName.toString())
+            currentLocationTracker.value = BTTScreenTracker(screenName.toString(), ScreenType.Composable)
             currentLocationTracker.value?.onLoadStarted()
             // Open the view/jank window immediately so frames during first paint are attributed
             // to this destination; load-end only finalizes page-load timing.
@@ -97,7 +97,7 @@ fun <T: Any> SceneState<T>.bttTrackBackStack():SceneState<T> {
             }
 
             currentLocationTracker.value?.onViewEnded()
-            currentLocationTracker.value = BTTScreenTracker(screenName.toString())
+            currentLocationTracker.value = BTTScreenTracker(screenName.toString(), ScreenType.Composable)
             currentLocationTracker.value?.onLoadStarted()
             // Open the view/jank window immediately so frames during first paint are attributed
             // to this destination; load-end only finalizes page-load timing.
@@ -171,7 +171,7 @@ object DecomposeHook {
             val config = active.javaClass.getMethod("getConfiguration").invoke(active) ?: return
             val screenName = config.javaClass.simpleName ?: "Unknown"
             currentLocationTracker?.onViewEnded()
-            currentLocationTracker = BTTScreenTracker(screenName)
+            currentLocationTracker = BTTScreenTracker(screenName, ScreenType.Composable)
             currentLocationTracker?.onLoadStarted()
             currentLocationTracker?.onViewStarted()
         } catch (_: Exception) {
@@ -201,7 +201,7 @@ object VoyagerHook {
             if (screenName == lastScreenName) return
             lastScreenName = screenName
             currentTracker?.onViewEnded()
-            currentTracker = BTTScreenTracker(screenName)
+            currentTracker = BTTScreenTracker(screenName, ScreenType.Composable)
             currentTracker?.onLoadStarted()
             currentTracker?.onViewStarted()
         } catch (e: Exception) {
