@@ -26,6 +26,7 @@ import com.bluetriangle.analytics.Timer.Companion.FIELD_TRAFFIC_SEGMENT_NAME
 import com.bluetriangle.analytics.Utils.isDebuggable
 import com.bluetriangle.analytics.anrwatchdog.ANRReporter
 import com.bluetriangle.analytics.anrwatchdog.AnrManager
+import com.bluetriangle.analytics.applaunch.AppExitInfoReporter
 import com.bluetriangle.analytics.applaunch.AppLaunchReporter
 import com.bluetriangle.analytics.breadcrumbs.BreadcrumbsManager
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfig
@@ -154,6 +155,8 @@ class Tracker private constructor(
 
     internal var breadcrumbsManager: BreadcrumbsManager? = null
 
+    private val appExitInfoReporter: AppExitInfoReporter
+
     private val sharedPreferences: SharedPreferences?
         get() {
             val context = context.get() ?: return null
@@ -167,6 +170,7 @@ class Tracker private constructor(
         this.anrReporter = ANRReporter(deviceInfoProvider)
         this.appLaunchReporter = AppLaunchReporter(configuration.logger, application.applicationContext, deviceInfoProvider, configuration.forceRestartDuration)
         this.memoryWarningReporter = MemoryWarningReporter(deviceInfoProvider)
+        this.appExitInfoReporter = AppExitInfoReporter(configuration, application.applicationContext, deviceInfoProvider)
         this.globalPropertiesStore = GlobalPropertiesStore(application.applicationContext)
 
         appVersion = Utils.getAppVersion(application.applicationContext)
@@ -182,6 +186,8 @@ class Tracker private constructor(
 
         enable()
         Log.d("BlueTriangle","BlueTriangleSDK Initialized: $configuration")
+
+        appExitInfoReporter.start()
     }
 
     private fun enableLaunchMonitor() {
@@ -1249,6 +1255,7 @@ class Tracker private constructor(
         ANRWarning(BTTEvent.ANRWarning),
         MemoryWarning(BTTEvent.MemoryWarning),
         ForceRestart(BTTEvent.ForceRestart),
+        FatalANR(BTTEvent.FatalANR),
         BTTConfigUpdateError;
 
         val errorName: String
