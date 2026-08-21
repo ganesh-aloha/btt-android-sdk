@@ -71,6 +71,8 @@ object Constants {
     internal const val NETWORK_TYPE_OFFLINE = "offline"
     internal const val GROUPED = "grouped"
     internal const val GROUPING_CAUSE = "groupingCause"
+    internal const val GROUP_NAME_SOURCE = "groupSource"
+    internal const val GROUP_SCREEN_COUNT = "screenCount"
     internal const val GROUPING_CAUSE_INTERVAL = "groupingCauseInterval"
     internal const val EVENT_ID = "eventID"
     internal const val CONFIDENCE_RATE = "confidenceRate"

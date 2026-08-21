@@ -139,6 +139,7 @@ internal class BTTScreenLifecycleTracker(
             confidenceMsg = when(screen.type) {
                 ScreenType.Activity, ScreenType.Fragment -> "onCreate/onStart not called on ${screen.name}"
                 ScreenType.Composable -> "Composable load time could not be calculated"
+                ScreenType.ReactNative -> "React Native load time could not be calculated"
                 is ScreenType.Custom -> "onLoadStarted/onLoadEnded methods were not called"
             }
         } else if(viewStartTm == 0L) {
@@ -146,6 +147,7 @@ internal class BTTScreenLifecycleTracker(
             confidenceMsg = when(screen.type) {
                 ScreenType.Activity, ScreenType.Fragment -> "onResume not called on ${screen.name}"
                 ScreenType.Composable -> "Composable load time could not be calculated"
+                ScreenType.ReactNative -> "React Native load time could not be calculated"
                 is ScreenType.Custom -> "onViewStarted method was not called"
             }
         } else if(pgTm > 20_000) {

@@ -11,6 +11,8 @@ import com.bluetriangle.analytics.Constants.FULL_TIME
 import com.bluetriangle.analytics.Constants.GROUPED
 import com.bluetriangle.analytics.Constants.GROUPING_CAUSE
 import com.bluetriangle.analytics.Constants.GROUPING_CAUSE_INTERVAL
+import com.bluetriangle.analytics.Constants.GROUP_NAME_SOURCE
+import com.bluetriangle.analytics.Constants.GROUP_SCREEN_COUNT
 import com.bluetriangle.analytics.Constants.INSTALL_TIME
 import com.bluetriangle.analytics.Constants.LAUNCH_SCREEN_NAME
 import com.bluetriangle.analytics.Constants.LOAD_TIME
@@ -73,7 +75,8 @@ internal data class NativeAppProperties(
     var autoCheckout: Boolean? = null,
     var configKey: String? = null,
     var installTime: Long? = null,
-    var jankMetrics: JankMetrics? = null
+    var jankMetrics: JankMetrics? = null,
+    var groupNameSource: String? = null
 ) : Parcelable {
 
     private val cellularTotal
@@ -91,7 +94,11 @@ internal data class NativeAppProperties(
         obj.put(APP_VERSION, appVersion)
         obj.put(SDK_VERSION, sdkVersion)
         obj.put(GROUPED, grouped)
+        if(!sendResponsiveNess) obj.put(GROUP_SCREEN_COUNT, 1) // for child view wcd only
         obj.put(GROUPING_CAUSE, groupingCause)
+        groupNameSource?.let{
+            obj.put(GROUP_NAME_SOURCE, it)
+        }
         obj.put(GROUPING_CAUSE_INTERVAL, groupingCauseInterval)
         obj.put(EVENT_ID, event?.id?.toString())
         installTime?.let {
