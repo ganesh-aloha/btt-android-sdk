@@ -11,7 +11,12 @@ import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Logger
 import com.bluetriangle.analytics.Timer
+import com.bluetriangle.analytics.Timer.Companion.FIELD_CONTENT_GROUP_NAME
+import com.bluetriangle.analytics.Timer.Companion.FIELD_PAGE_NAME
+import com.bluetriangle.analytics.Timer.Companion.FIELD_SESSION_ID
+import com.bluetriangle.analytics.Timer.Companion.FIELD_TRAFFIC_SEGMENT_NAME
 import com.bluetriangle.analytics.Tracker
+import com.bluetriangle.analytics.Tracker.Companion.SHARED_PREFERENCES_NAME
 import com.bluetriangle.analytics.anrwatchdog.ANRWarningException
 import com.bluetriangle.analytics.anrwatchdog.AnrListener
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
@@ -66,7 +71,7 @@ internal class FatalANRTracker(
         reportJob?.cancel()
         reportJob = null
 
-        Tracker.instance?.anrManager?.detector?.removeAnrListener( "Fatal ANR")
+        Tracker.instance?.anrManager?.detector?.removeAnrListener("Fatal ANR")
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -138,18 +143,28 @@ internal class FatalANRTracker(
         )
     }
 
-    private fun buildExitTimer(errorType: Tracker.BTErrorType) = Timer().apply {
-        startWithoutPerformanceMonitor()
-        setPageName(Constants.CRASH_PAGE_NAME)
-        setContentGroupName("")
-        setTrafficSegmentName("")
-        setTimeOnPage(Constants.TIMER_MIN_PGTM)
-        pageTimeCalculator = {
-            Constants.TIMER_MIN_PGTM
+    private fun buildExitTimer(errorType: Tracker.BTErrorType): Timer {
+        val prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+
+        val sessionId = prefs.getString("ANR_$FIELD_SESSION_ID", "")
+        val pageName = prefs.getString("ANR_$FIELD_PAGE_NAME", "")
+        val pageType = prefs.getString("ANR_$FIELD_CONTENT_GROUP_NAME", "")
+        val txnName = prefs.getString("ANR_$FIELD_TRAFFIC_SEGMENT_NAME", "")
+
+        return Timer().apply {
+            startWithoutPerformanceMonitor()
+            setPageName(pageName ?: Constants.CRASH_PAGE_NAME)
+            pageType?.let { setContentGroupName(pageType) }
+            txnName?.let { setTrafficSegmentName(txnName) }
+            sessionId?.let { setField(FIELD_SESSION_ID, sessionId) }
+            setTimeOnPage(Constants.TIMER_MIN_PGTM)
+            pageTimeCalculator = {
+                Constants.TIMER_MIN_PGTM
+            }
+            generateNativeAppProperties()
+            nativeAppProperties.loadTime = Constants.TIMER_MIN_PGTM
+            nativeAppProperties.event = errorType.event
         }
-        generateNativeAppProperties()
-        nativeAppProperties.loadTime = Constants.TIMER_MIN_PGTM
-        nativeAppProperties.event = errorType.event
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -210,6 +225,19 @@ internal class FatalANRTracker(
 
     override fun onAppNotResponding(error: ANRWarningException) {
         Tracker.instance?.breadcrumbsManager?.dump()
+        val timer = Tracker.instance?.getMostRecentTimer()
+        timer?.let { timer ->
+            val prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+            prefs?.edit {
+                putString("ANR_$FIELD_SESSION_ID", timer.getField(FIELD_SESSION_ID))
+                putString("ANR_$FIELD_PAGE_NAME", timer.getField(FIELD_PAGE_NAME))
+                putString("ANR_$FIELD_CONTENT_GROUP_NAME", timer.getField(FIELD_CONTENT_GROUP_NAME))
+                putString(
+                    "ANR_$FIELD_TRAFFIC_SEGMENT_NAME",
+                    timer.getField(FIELD_TRAFFIC_SEGMENT_NAME)
+                )
+            }
+        }
     }
 
     companion object {
