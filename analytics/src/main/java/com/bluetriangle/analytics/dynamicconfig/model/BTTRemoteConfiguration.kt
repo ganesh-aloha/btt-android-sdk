@@ -27,7 +27,8 @@ internal open class BTTRemoteConfiguration(
     val configKey: String,
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
-    val forceRestartDuration: Double
+    val forceRestartDuration: Double,
+    val enableReportFatalAnr: Boolean
 ) {
     override fun equals(other: Any?): Boolean {
         if(other is BTTRemoteConfiguration) {
@@ -49,7 +50,8 @@ internal open class BTTRemoteConfiguration(
                     other.configKey == configKey &&
                     other.enableAppInstall == enableAppInstall &&
                     other.enableForceRestart == enableForceRestart &&
-                    other.forceRestartDuration == forceRestartDuration
+                    other.forceRestartDuration == forceRestartDuration &&
+                    other.enableReportFatalAnr == enableReportFatalAnr
         }
         return false
     }
@@ -78,6 +80,7 @@ internal open class BTTRemoteConfiguration(
         result = 31 * result + enableAppInstall.hashCode()
         result = 31 * result + enableForceRestart.hashCode()
         result = 31 * result + forceRestartDuration.hashCode()
+        result = 31 * result + enableReportFatalAnr.hashCode()
         return result
     }
 

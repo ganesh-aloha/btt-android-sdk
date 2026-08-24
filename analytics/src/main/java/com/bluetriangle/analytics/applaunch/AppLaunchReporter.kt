@@ -1,7 +1,6 @@
 package com.bluetriangle.analytics.applaunch
 
 import android.content.Context
-import android.util.Log
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Logger
@@ -16,26 +15,37 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class AppLaunchReporter(
     logger: Logger?, val context: Context, val deviceInfoProvider: IDeviceInfoProvider, forceRestartDuration: Double
 ) {
     private var forceRestartTracker: ForceRestartTracker? = null
+    private var fatalANRTracker: FatalANRTracker? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var appInstallReportJob: Job? = null
 
     init {
         forceRestartTracker = ForceRestartTracker(logger, context, this, forceRestartDuration)
+        fatalANRTracker = FatalANRTracker(logger, context, deviceInfoProvider)
     }
 
-    fun start() {
+    fun startForceRestartTracker() {
         forceRestartTracker?.start()
     }
 
-    fun stop() {
+    fun stopForceRestartTracker() {
         forceRestartTracker?.stop()
         scope.cancel()
+    }
+
+    fun startFatalANRTracker() {
+        fatalANRTracker?.start()
+    }
+
+    fun stopFatalANRTracker() {
+        fatalANRTracker?.stop()
     }
 
     fun setForceRestartDuration(forceRestartDuration: Double) {
@@ -46,7 +56,7 @@ internal class AppLaunchReporter(
         appInstallReportJob?.cancel()
 
         appInstallReportJob = scope.launch {
-            while (Tracker.instance == null) delay(5)
+            while (Tracker.instance == null) delay(5.milliseconds)
 
             Timer().apply {
                 startWithoutPerformanceMonitor()

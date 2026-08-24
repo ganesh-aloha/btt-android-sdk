@@ -28,7 +28,8 @@ internal class BTTSavedRemoteConfiguration(
     val savedDate: Long,
     enableAppInstall: Boolean,
     enableForceRestart: Boolean,
-    forceRestartDuration: Double
+    forceRestartDuration: Double,
+    enableReportFatalAnr: Boolean
 ) : BTTRemoteConfiguration(
     networkSampleRate,
     ignoreScreens,
@@ -48,7 +49,8 @@ internal class BTTSavedRemoteConfiguration(
     configKey,
     enableAppInstall,
     enableForceRestart,
-    forceRestartDuration
+    forceRestartDuration,
+    enableReportFatalAnr
 ) {
 
     companion object {
@@ -72,7 +74,8 @@ internal class BTTSavedRemoteConfiguration(
             System.currentTimeMillis(),
             remoteConfig.enableAppInstall,
             remoteConfig.enableForceRestart,
-            remoteConfig.forceRestartDuration
+            remoteConfig.forceRestartDuration,
+            remoteConfig.enableReportFatalAnr
         )
     }
 

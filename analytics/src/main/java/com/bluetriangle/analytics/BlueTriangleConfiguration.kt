@@ -206,6 +206,11 @@ class BlueTriangleConfiguration {
      */
     var forceRestartDuration: Double = 10.0
 
+    /**
+     * Enable or disable reporting of fatal ANRs.
+     */
+    var isReportFatalAnrEnabled: Boolean = true
+
     companion object {
         const val DEFAULT_TRACKER_URL = "https://d.btttag.com/analytics.rcv"
         const val DEFAULT_ERROR_REPORTING_URL = "https://d.btttag.com/err.rcv"
@@ -250,6 +255,7 @@ class BlueTriangleConfiguration {
             isAppInstallEnabled : $isAppInstallEnabled,
             isForceRestartEnable : $isForceRestartEnable,
             forceRestartDuration : $forceRestartDuration,
+            isReportFatalAnrEnabled : $isReportFatalAnrEnabled,
             bttPluginVersion : $bttPluginVersion
         }
         """.trimIndent()

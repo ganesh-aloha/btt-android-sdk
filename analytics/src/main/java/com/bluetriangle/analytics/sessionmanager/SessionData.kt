@@ -52,7 +52,8 @@ internal data class SessionData(
     val expiration: Long,
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
-    val forceRestartDuration: Double
+    val forceRestartDuration: Double,
+    val enableReportFatalAnr: Boolean
 ) {
     companion object {
         private const val SESSION_ID = "sessionId"
@@ -74,6 +75,7 @@ internal data class SessionData(
         private const val ENABLE_APP_INSTALL = "enableAppInstall"
         private const val ENABLE_FORCE_RESTART = "enableForceRestart"
         private const val FORCE_RESTART_DURATION = "forceRestartDuration"
+        private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalANR"
 
         internal fun JSONObject.toSessionData(): SessionData? {
             try {
@@ -105,7 +107,8 @@ internal data class SessionData(
                     expiration = getLong(EXPIRATION),
                     enableAppInstall = getBooleanOrNull(ENABLE_APP_INSTALL) ?: false,
                     enableForceRestart = getBooleanOrNull(ENABLE_FORCE_RESTART) ?: false,
-                    forceRestartDuration = getDoubleOrNull(FORCE_RESTART_DURATION) ?: 10.0
+                    forceRestartDuration = getDoubleOrNull(FORCE_RESTART_DURATION) ?: 10.0,
+                    enableReportFatalAnr = getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: false
                 )
             } catch (e: Exception) {
                 Tracker.instance?.configuration?.logger?.error("Error while parsing session data: ${e::class.simpleName}(\"${e.message}\")")
@@ -136,6 +139,7 @@ internal data class SessionData(
             put(ENABLE_APP_INSTALL, enableAppInstall)
             put(ENABLE_FORCE_RESTART, enableForceRestart)
             put(FORCE_RESTART_DURATION, forceRestartDuration)
+            put(ENABLE_REPORT_FATAL_ANR, enableReportFatalAnr)
         }
     }
 }

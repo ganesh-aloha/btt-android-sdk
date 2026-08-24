@@ -26,7 +26,6 @@ import com.bluetriangle.analytics.Timer.Companion.FIELD_TRAFFIC_SEGMENT_NAME
 import com.bluetriangle.analytics.Utils.isDebuggable
 import com.bluetriangle.analytics.anrwatchdog.ANRReporter
 import com.bluetriangle.analytics.anrwatchdog.AnrManager
-import com.bluetriangle.analytics.applaunch.AppExitInfoReporter
 import com.bluetriangle.analytics.applaunch.AppLaunchReporter
 import com.bluetriangle.analytics.breadcrumbs.BreadcrumbsManager
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfig
@@ -83,10 +82,10 @@ class Tracker private constructor(
     internal var performanceMonitor: PerformanceMonitor? = null
         @Synchronized set
 
-    private var anrManager: AnrManager? = null
-        @Synchronized set
+    internal var anrManager: AnrManager? = null
+        @Synchronized private set
 
-    /**
+    /**ƒ
      * Weak reference to Android application context
      */
     private val context: WeakReference<Context>
@@ -155,8 +154,6 @@ class Tracker private constructor(
 
     internal var breadcrumbsManager: BreadcrumbsManager? = null
 
-    private val appExitInfoReporter: AppExitInfoReporter
-
     private val sharedPreferences: SharedPreferences?
         get() {
             val context = context.get() ?: return null
@@ -170,7 +167,6 @@ class Tracker private constructor(
         this.anrReporter = ANRReporter(deviceInfoProvider)
         this.appLaunchReporter = AppLaunchReporter(configuration.logger, application.applicationContext, deviceInfoProvider, configuration.forceRestartDuration)
         this.memoryWarningReporter = MemoryWarningReporter(deviceInfoProvider)
-        this.appExitInfoReporter = AppExitInfoReporter(configuration, application.applicationContext, deviceInfoProvider)
         this.globalPropertiesStore = GlobalPropertiesStore(application.applicationContext)
 
         appVersion = Utils.getAppVersion(application.applicationContext)
@@ -186,8 +182,6 @@ class Tracker private constructor(
 
         enable()
         Log.d("BlueTriangle","BlueTriangleSDK Initialized: $configuration")
-
-        appExitInfoReporter.start()
     }
 
     private fun enableLaunchMonitor() {
@@ -253,7 +247,11 @@ class Tracker private constructor(
 
         if (configuration.isForceRestartEnable) {
             appLaunchReporter.setForceRestartDuration(sessionData.forceRestartDuration)
-            startAppLaunchReporter()
+            startForceRestartTracker()
+        }
+
+        if (configuration.isReportFatalAnrEnabled) {
+            startFatalANRTracker()
         }
 
         checkAppVersion()
@@ -309,7 +307,8 @@ class Tracker private constructor(
         disableLaunchMonitor()
         LifecycleRegistry.uninstall()
         disableBreadcrumbs()
-        stopAppLaunchReporter()
+        stopForceRestartTracker()
+        stopFatalANRTracker()
         configuration.logger?.debug("SDK is disabled.")
     }
 
@@ -323,12 +322,20 @@ class Tracker private constructor(
         performanceMonitor = null
     }
 
-    private fun startAppLaunchReporter() {
-        appLaunchReporter.start()
+    private fun startForceRestartTracker() {
+        appLaunchReporter.startForceRestartTracker()
     }
 
-    private fun stopAppLaunchReporter() {
-        appLaunchReporter.stop()
+    private fun stopForceRestartTracker() {
+        appLaunchReporter.stopForceRestartTracker()
+    }
+
+    private fun startFatalANRTracker() {
+        appLaunchReporter.startFatalANRTracker()
+    }
+
+    private fun stopFatalANRTracker() {
+        appLaunchReporter.stopFatalANRTracker()
     }
 
     fun trackCrashes() {
@@ -982,9 +989,19 @@ class Tracker private constructor(
             changes.append("\nenableForceRestart: ${configuration.isForceRestartEnable} -> ${sessionData.enableForceRestart}")
             configuration.isForceRestartEnable = sessionData.enableForceRestart
             if (configuration.isForceRestartEnable) {
-                startAppLaunchReporter()
+                startForceRestartTracker()
             } else {
-                stopAppLaunchReporter()
+                stopForceRestartTracker()
+            }
+        }
+
+        if (configuration.isReportFatalAnrEnabled != sessionData.enableReportFatalAnr) {
+            changes.append("\nreportFatalANR: ${configuration.isReportFatalAnrEnabled} -> ${sessionData.enableReportFatalAnr}")
+            configuration.isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
+            if (configuration.isReportFatalAnrEnabled) {
+                startFatalANRTracker()
+            } else {
+                stopFatalANRTracker()
             }
         }
 
@@ -1374,7 +1391,8 @@ class Tracker private constructor(
                 configKey = DEFAULT_CONFIG_KEY,
                 enableAppInstall = configuration.isAppInstallEnabled,
                 enableForceRestart = configuration.isForceRestartEnable,
-                forceRestartDuration = configuration.forceRestartDuration
+                forceRestartDuration = configuration.forceRestartDuration,
+                enableReportFatalAnr = configuration.isReportFatalAnrEnabled
             )
 
             initializeConfigurationUpdater(application, configuration, defaultConfig)
@@ -1512,6 +1530,7 @@ class Tracker private constructor(
             isAppInstallEnabled = sessionData.enableAppInstall
             isForceRestartEnable = sessionData.enableForceRestart
             forceRestartDuration = sessionData.forceRestartDuration
+            isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
         }
 
         private lateinit var configurationRepository: IBTTConfigurationRepository

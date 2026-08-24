@@ -9,8 +9,11 @@ import androidx.core.content.edit
 import com.bluetriangle.analytics.BlueTriangleConfiguration
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.CrashRunnable
+import com.bluetriangle.analytics.Logger
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.Tracker
+import com.bluetriangle.analytics.anrwatchdog.ANRWarningException
+import com.bluetriangle.analytics.anrwatchdog.AnrListener
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,9 +21,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.PrintWriter
-import java.io.StringWriter
-import java.io.Writer
 
 /**
  * Reports the exit of the previous app process as an error, when the process was killed by a fatal
@@ -30,13 +30,17 @@ import java.io.Writer
  * Everything it does blocks - a binder call for the exit record, reading the ANR trace file and a
  * network round trip for the report - so it all runs off the main thread.
  */
-internal class AppExitInfoReporter(
-    private val configuration: BlueTriangleConfiguration,
+internal class FatalANRTracker(
+    private val logger: Logger?,
     private val context: Context,
     private val deviceInfoProvider: IDeviceInfoProvider
-) {
+) : AnrListener {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var reportJob: Job? = null
+
+    private fun addAnrListener() {
+        Tracker.instance?.anrManager?.detector?.addAnrListener("Fatal ANR", this)
+    }
 
     fun start() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
@@ -45,10 +49,13 @@ internal class AppExitInfoReporter(
         reportJob = scope.launch {
             // CrashRunnable needs the tracker singleton, which is assigned only after Tracker.init() returns
             while (Tracker.instance == null) delay(5)
+
+            addAnrListener()
+
             try {
                 checkAppExitInfoAndReport()
             } catch (e: Exception) {
-                configuration.logger?.error(e, "Error while reporting last app exit: ${e.message}")
+                logger?.error(e, "Error while reporting last app exit: ${e.message}")
             }
 
             reportJob = null
@@ -58,12 +65,12 @@ internal class AppExitInfoReporter(
     fun stop() {
         reportJob?.cancel()
         reportJob = null
+
+        Tracker.instance?.anrManager?.detector?.removeAnrListener( "Fatal ANR")
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
     private fun checkAppExitInfoAndReport() {
-        if (!configuration.isTrackCrashesEnabled) return
-
         val prefs = context.getSharedPreferences(
             Tracker.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE
         )
@@ -74,7 +81,7 @@ internal class AppExitInfoReporter(
         // Retrieve the most recent exit reason for this app
         val exitList = activityManager.getHistoricalProcessExitReasons(context.packageName, 0, 1)
         if (exitList.isEmpty()) {
-            configuration.logger?.debug("AppExitInfoReporter::checkAppExitInfoAndReport - Last process exit reasons is empty")
+            logger?.debug("AppExitInfoReporter::checkAppExitInfoAndReport - Last process exit reasons is empty")
             return
         }
 
@@ -82,7 +89,7 @@ internal class AppExitInfoReporter(
 
         // The system keeps the record across launches, so report each exit only once
         if (lastExit.timestamp <= lastReportedExitTime) {
-            configuration.logger?.debug("AppExitInfoReporter::checkAppExitInfoAndReport - Last exit at ${lastExit.timestamp} is already reported")
+            logger?.debug("AppExitInfoReporter::checkAppExitInfoAndReport - Last exit at ${lastExit.timestamp} is already reported")
             return
         }
 
@@ -90,7 +97,7 @@ internal class AppExitInfoReporter(
 
         val errorType = errorTypeOf(lastExit)
         if (errorType == null) {
-            configuration.logger?.debug("AppExitInfoReporter::checkAppExitInfoAndReport - Skipping exit reason: ${lastExit.reason}")
+            logger?.debug("AppExitInfoReporter::checkAppExitInfoAndReport - Skipping exit reason: ${lastExit.reason}")
             return
         }
 
@@ -100,12 +107,8 @@ internal class AppExitInfoReporter(
     @RequiresApi(Build.VERSION_CODES.R)
     private fun errorTypeOf(exitInfo: ApplicationExitInfo): Tracker.BTErrorType? {
         return when (exitInfo.reason) {
-            ApplicationExitInfo.REASON_ANR ->
-                if (configuration.isTrackAnrEnabled) Tracker.BTErrorType.FatalANR else null
-
-            ApplicationExitInfo.REASON_LOW_MEMORY ->
-                if (configuration.isMemoryWarningEnabled) Tracker.BTErrorType.MemoryWarning else null
-
+            ApplicationExitInfo.REASON_ANR -> Tracker.BTErrorType.FatalANR
+            ApplicationExitInfo.REASON_LOW_MEMORY -> Tracker.BTErrorType.MemoryWarning
             else -> null
         }
     }
@@ -114,7 +117,7 @@ internal class AppExitInfoReporter(
     private fun reportAppExit(exitInfo: ApplicationExitInfo, errorType: Tracker.BTErrorType) {
         val tracker = Tracker.instance ?: return
 
-        configuration.logger?.debug(
+        logger?.debug(
             "AppExitInfoReporter::reportAppExit - Reported as ${errorType.errorName}, Reason: ${exitInfo.reason}, " +
                     "Status: ${exitInfo.status}, Description: ${exitInfo.description}, at ${exitInfo.timestamp}"
         )
@@ -124,7 +127,7 @@ internal class AppExitInfoReporter(
 
         tracker.trackerExecutor.submit(
             CrashRunnable(
-                configuration,
+                tracker.configuration,
                 stackTrace,
                 exitInfo.timestamp.toString(),
                 errorType,
@@ -158,16 +161,11 @@ internal class AppExitInfoReporter(
                 formatAnrTrace(trace).ifBlank { null }
             }
         } catch (e: Throwable) {
-            configuration.logger?.error("Error while reading last exit trace: ${e.message}")
+            logger?.error("Error while reading last exit trace: ${e.message}")
             null
         }
     }
 
-    /**
-     * Replaces the "Subject: " prefix the platform puts in front of the ANR reason with
-     * "Fatal ANR: " and lifts the app's topmost frame up right below it, so the top of the report
-     * shows where the app was stuck without having to read through every thread of the trace.
-     */
     private fun formatAnrTrace(rawTrace: String): String {
         val trace = rawTrace.trimStart()
         if (!trace.startsWith(ANR_TRACE_SUBJECT_PREFIX)) {
@@ -208,6 +206,10 @@ internal class AppExitInfoReporter(
         return "App process was killed by the system. Reason: $reason, " +
                 "Description: ${exitInfo.description}, Status: ${exitInfo.status}, " +
                 "Importance: ${exitInfo.importance}, PSS: ${exitInfo.pss} kB, RSS: ${exitInfo.rss} kB"
+    }
+
+    override fun onAppNotResponding(error: ANRWarningException) {
+        Tracker.instance?.breadcrumbsManager?.dump()
     }
 
     companion object {
