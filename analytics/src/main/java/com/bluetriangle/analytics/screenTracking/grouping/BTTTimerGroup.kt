@@ -17,6 +17,13 @@ sealed class GroupingCause(val name: String, val timeInterval: Long) {
     class Manual(timeInterval: Long): GroupingCause("manual", timeInterval)
 }
 
+sealed class GroupNameSource(val name: String) {
+    object Auto: GroupNameSource("auto")
+    object NavigationTitle: GroupNameSource("navigationTitle")
+    object LastChildName: GroupNameSource("lastChildName")
+    object Manual: GroupNameSource("manual")
+}
+
 internal class BTTTimerGroup(
     private val namingStrategy: GroupNamingStrategy = LastTimerNameStrategy,
     groupIdleTime: Int,
@@ -39,6 +46,8 @@ internal class BTTTimerGroup(
         close()
     }
 
+    private var groupNameSource: GroupNameSource = GroupNameSource.Auto
+
     val startTime: Long
         get() = groupTimer.start
 
@@ -53,6 +62,7 @@ internal class BTTTimerGroup(
 
     fun setManualGroupName(groupName: String) {
         this.manualGroupName = groupName
+        if (groupName.isNotEmpty()) groupNameSource = GroupNameSource.Manual
         groupTimer.setPageName(groupName)
     }
 
@@ -145,6 +155,9 @@ internal class BTTTimerGroup(
             }
         }
 
+        if (manualGroupName == null && groupName == null)
+            groupNameSource = GroupNameSource.LastChildName
+
         val groupPageName = (manualGroupName ?: (groupName ?: namingStrategy.getName(timers.map { it.second })))
         groupTimer.setPageName(groupPageName)
 
@@ -201,6 +214,7 @@ internal class BTTTimerGroup(
         groupTimer.nativeAppProperties.fullTime = disappearTm - loadStartTime
         groupTimer.nativeAppProperties.grouped = true
         groupTimer.nativeAppProperties.groupingCause = groupingCause.name
+        groupTimer.nativeAppProperties.groupNameSource = groupNameSource.name
         groupTimer.nativeAppProperties.groupingCauseInterval = groupingCause.timeInterval
 
         // groupTimer is the one actually submitted, not any individual screen's Timer. Prefer the
