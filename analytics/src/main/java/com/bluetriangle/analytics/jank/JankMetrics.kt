@@ -3,7 +3,6 @@ package com.bluetriangle.analytics.jank
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
-import kotlin.math.roundToInt
 
 /**
  * A snapshot of cumulative frame-health stats accumulated since the last [JankFrameAccumulator.reset].
@@ -14,8 +13,6 @@ import kotlin.math.roundToInt
  *   (duration > [com.bluetriangle.analytics.Constants.JANK_HEURISTIC_MULTIPLIER] x frame budget)
  *
  * Durations are the **full** frame duration in ms (not the overrun beyond the frame budget).
- * Each `*TimeRatio` is that bucket's total duration divided by the wall-clock ms elapsed since
- * the last reset (i.e. the time the screen was visible), 0.0-1.0.
  *
  * @param totalFrames total number of frames observed
  * @param jankFrameCount frames classified as jank
@@ -64,30 +61,6 @@ internal data class JankMetrics(
 
 /** Hitch histogram value for a screen with no hitches in any bin. */
 internal const val EMPTY_JANK_HISTOGRAM = "[]"
-
-internal val JankMetrics.jankFramePercentage: Int
-    get() = if (totalFrames == 0L) {
-        0
-    } else {
-        (jankFrameCount * 100.0 / totalFrames).roundToInt()
-    }
-
-internal val JankMetrics.hangFramePercentage: Int
-    get() = if (totalFrames == 0L) {
-        0
-    } else {
-        (hangFrameCount * 100.0 / totalFrames).roundToInt()
-    }
-
-internal fun JankMetrics.getJankTimePercentage(screenTimeInSeconds: Long): Int {
-    if (screenTimeInSeconds == 0L) return 0
-    return (totalJankDurationMs * 100.0 / screenTimeInSeconds).roundToInt()
-}
-
-internal fun JankMetrics.getHangTimePercentage(screenTimeInSeconds: Long): Int {
-    if (screenTimeInSeconds == 0L) return 0
-    return (totalHangDurationMs * 100.0 / screenTimeInSeconds).roundToInt()
-}
 
 /** This screen's [ResponsivenessGrade] badness score, 0 (smooth) to 98 (worst reachable). */
 internal val JankMetrics.responsivenessGrade: Int

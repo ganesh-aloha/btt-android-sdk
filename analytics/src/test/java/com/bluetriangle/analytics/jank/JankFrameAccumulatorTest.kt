@@ -215,22 +215,22 @@ class JankFrameAccumulatorTest {
     @Test
     fun `hitch severity of a single hitch is its own bin weight`() {
         accumulator.hitch(overrunMs = 30)
-        assertEquals(0.5, accumulator.snapshot().jankSeverity, 0.0)
+        assertEquals(0.25, accumulator.snapshot().jankSeverity, 0.0)
 
         accumulator.reset()
 
         accumulator.hitch(overrunMs = 700)
-        assertEquals(4.0, accumulator.snapshot().jankSeverity, 0.0)
+        assertEquals(3.5, accumulator.snapshot().jankSeverity, 0.0)
     }
 
     @Test
     fun `hitch severity is the weighted total of the populated bins`() {
-        repeat(3) { accumulator.hitch(overrunMs = 30) }    // weight 0.5
-        accumulator.hitch(overrunMs = 250)                // weight 2.0
-        accumulator.hitch(overrunMs = 440)                // weight 3.0
+        repeat(3) { accumulator.hitch(overrunMs = 30) }    // 50ms bin, weight 0.25
+        accumulator.hitch(overrunMs = 250)                // 300ms bin, weight 2.0
+        accumulator.hitch(overrunMs = 440)                // 450ms bin, weight 2.5
 
-        // 3*0.5 + 2.0 + 3.0, not divided by the 5 hitches
-        assertEquals(6.5, accumulator.snapshot().jankSeverity, 0.0)
+        // 3*0.25 + 2.0 + 2.5, not divided by the 5 hitches
+        assertEquals(5.25, accumulator.snapshot().jankSeverity, 0.0)
     }
 
     @Test
@@ -245,8 +245,8 @@ class JankFrameAccumulatorTest {
         repeat(100) { accumulator.hitch(overrunMs = 250) }
         val many = accumulator.snapshot().jankSeverity
 
-        assertEquals(3.0, few, 0.0)     // 2*0.5 + 2.0
-        assertEquals(300.0, many, 0.0)  // 200*0.5 + 100*2.0
+        assertEquals(2.5, few, 0.0)     // 2*0.25 + 2.0
+        assertEquals(250.0, many, 0.0)  // 200*0.25 + 100*2.0
     }
 
     @Test

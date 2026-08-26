@@ -4,6 +4,7 @@ import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.Timer
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -12,20 +13,27 @@ import org.robolectric.RobolectricTestRunner
  * Hitch/hang cases where the bad frames arrive in **several separate windows** of a single screen's
  * visible time (a burst while a list loads, another on a scroll, another on a dialog), rather than
  * all at once. The accumulator keeps no per-window state, so every window folds into one per-screen
- * total, and the beacon's `hitchTimePercent` is that total spread over the whole time on screen -
- * these cases pin that behaviour down and then grade the resulting beacon.
+ * total - these cases pin that down and then grade the resulting beacon.
  *
- * Grade (worst dimension wins):
+ * The beacon ships frame health as two fields only: [Constants.RESPONSIVENESS_GRADE], a single
+ * 0-98 badness score the SDK computes itself via [ResponsivenessGrade], and
+ * [Constants.RESPONSIVENESS_META], the whole [JankMetrics] snapshot as a JSON string. The old
+ * per-screen ratio fields (`hitchTimePercent`, `hangTimePercent`, ...) are gone, and with them the
+ * old three-column Good/Bad/Worst table the portal derived from them - so time on screen no longer
+ * enters the grade at all, and hitch **volume and severity** ([JankMetrics.jankSeverity], the
+ * weighted histogram total) drive the hitch side instead of a duration ratio.
  *
- * | Grade | hitchTimePercent (ms/s) | Hang count | Longest hang     |
- * |-------|-----------------------|------------|------------------|
- * | Good  | < 5                   | 0          | -                |
- * | Bad   | 5 - 10                | 1          | <= 2500ms        |
- * | Worst | > 10                  | >= 2       | any hang > 2500ms|
+ * Grade bands used below follow [ResponsivenessGrade]'s own ramp anchors, which place 30 at each
+ * signal's "good" threshold and 70 at its "bad" one:
  *
- * The grade itself is derived here, in the test, from the same three beacon fields the portal reads
- * ([Constants.JANK_TIME_PERCENT], [Constants.HANG_FRAME_COUNT], [Constants.LONGEST_HANG_DURATION]) - the SDK
- * only ships the numbers.
+ * | Band  | responsivenessGrade |
+ * |-------|---------------------|
+ * | Good  | < 30                |
+ * | Bad   | 30 - 70             |
+ * | Worst | > 70                |
+ *
+ * Neither signal alone can exceed 90, and only jank *and* hangs compounding get past 70, so a
+ * single bad dimension now tops out in Bad where the old table would have called it Worst.
  */
 @RunWith(RobolectricTestRunner::class)
 class JankHitchHangGradeTest {
@@ -70,39 +78,28 @@ class JankHitchHangGradeTest {
     }
 
     /** Stamps [metrics] on a timer that was on screen for [screenTimeMs] and serializes the beacon. */
-    private fun beacon(metrics: JankMetrics, screenTimeMs: Long): JSONObject {
+    private fun beacon(metrics: JankMetrics, screenTimeMs: Long = 10_000): JSONObject {
         val timer = Timer("Page", "Segment")
         timer.setJankReportFields(metrics)
         timer.nativeAppProperties.fullTime = screenTimeMs
         return timer.nativeAppProperties.toJSONObject()
     }
 
-    private fun beaconFor(screenTimeMs: Long, vararg windows: Window): JSONObject =
-        beacon(metricsFor(*windows), screenTimeMs)
+    private fun beaconFor(vararg windows: Window): JSONObject = beacon(metricsFor(*windows))
 
-    /** Grades a beacon the way the portal does: worst of the three dimensions wins. */
-    private fun gradeOf(json: JSONObject): Grade {
-        val hitchTimePercent = json.getDouble(Constants.JANK_TIME_PERCENT)
-        val hangCount = json.getLong(Constants.HANG_FRAME_COUNT)
-        val longestHangMs = json.getLong(Constants.LONGEST_HANG_DURATION)
+    /** The [Constants.RESPONSIVENESS_META] blob, parsed back from the string the beacon carries. */
+    private fun JSONObject.meta() = JSONObject(getString(Constants.RESPONSIVENESS_META))
 
-        val hitchGrade = when {
-            hitchTimePercent > 10.0 -> Grade.WORST
-            hitchTimePercent >= 5.0 -> Grade.BAD
-            else -> Grade.GOOD
-        }
-        val hangCountGrade = when {
-            hangCount >= 2L -> Grade.WORST
-            hangCount == 1L -> Grade.BAD
-            else -> Grade.GOOD
-        }
-        val longestHangGrade = when {
-            longestHangMs > 2500L -> Grade.WORST
-            longestHangMs > 0L -> Grade.BAD
-            else -> Grade.GOOD
-        }
-        return maxOf(hitchGrade, hangCountGrade, longestHangGrade)
+    private fun JSONObject.grade() = getInt(Constants.RESPONSIVENESS_GRADE)
+
+    /** Bands a grade the way [ResponsivenessGrade]'s ramp anchors it - see the class doc. */
+    private fun bandOf(grade: Int): Grade = when {
+        grade > 70 -> Grade.WORST
+        grade >= 30 -> Grade.BAD
+        else -> Grade.GOOD
     }
+
+    private fun bandOf(json: JSONObject): Grade = bandOf(json.grade())
 
     // region accumulation across windows
 
@@ -120,6 +117,9 @@ class JankHitchHangGradeTest {
         assertEquals(40L, metrics.longestJankMs)
         assertEquals(0L, metrics.hangFrameCount)
         assertEquals(305L, metrics.totalFrames) // 300 healthy + 5 hitches
+        // every one of them fits the 50ms bin, so they share a single histogram entry
+        assertEquals("[{50, 5}]", metrics.jankHistogram)
+        assertEquals(1.25, metrics.jankSeverity, 0.0) // 5 * 0.25
     }
 
     @Test
@@ -133,25 +133,34 @@ class JankHitchHangGradeTest {
         assertEquals(3L, metrics.hangFrameCount)
         assertEquals(3900L, metrics.totalHangDurationMs)
         assertEquals(1800L, metrics.longestHangMs)
-        // The hang frames stay out of the hitch bucket even though they were reported as jank
+        // The hang frames stay out of the hitch bucket and the histogram even though they were
+        // reported as jank
         assertEquals(1L, metrics.jankFrameCount)
         assertEquals(20L, metrics.totalJankDurationMs)
+        assertEquals("[{50, 1}]", metrics.jankHistogram)
+        assertEquals(0.25, metrics.jankSeverity, 0.0)
     }
 
     @Test
-    fun `hitchTimePercent spreads all windows over the whole time on screen`() {
-        // 3 windows, 120ms of hitches in total, 20s on screen -> 6 ms/s
+    fun `responsivenessMeta carries the per-screen total, not one window`() {
         val json = beaconFor(
-            screenTimeMs = 20_000,
             Window(hitchesMs = listOf(40, 20)),
             Window(hitchesMs = listOf(30)),
             Window(hitchesMs = listOf(20, 10))
         )
 
-        assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
-        assertEquals(120L, json.getLong(Constants.TOTAL_JANK_DURATION))
-        assertEquals(40L, json.getLong(Constants.JANK_FRAME_PERCENT))
-        assertEquals(6.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
+        val meta = json.meta()
+        assertEquals(185L, meta.getLong("totalFrameCount")) // 180 healthy + 5 hitches
+        assertEquals(5L, meta.getLong("hitchCount"))
+        assertEquals(120L, meta.getLong("totalHitchDuration"))
+        assertEquals(40L, meta.getLong("longestHitch"))
+        assertEquals("[{50, 5}]", meta.getString("hitchHistograms"))
+        assertEquals(1.25, meta.getDouble("hitchesSeverity"), 0.0)
+        assertEquals(0L, meta.getLong("hangCount"))
+        assertEquals(0L, meta.getLong("totalHangDuration"))
+        assertEquals(0L, meta.getLong("longestHang"))
+
+        assertEquals(1, json.grade()) // 1.25 of hitch severity, no hangs
     }
 
     @Test
@@ -167,12 +176,34 @@ class JankHitchHangGradeTest {
         registry.frame(isJank = true, overrunMs = 20)
         val secondVisit = registry.onScreenHidden(SCREEN)!!
 
-        assertEquals(Grade.WORST, gradeOf(beacon(firstVisit, screenTimeMs = 10_000)))
+        // hitch severity 2.0 (the 300ms bin) compounding with a 3000ms hang's 70.15
+        assertEquals(72, beacon(firstVisit).grade())
+        assertEquals(Grade.WORST, bandOf(beacon(firstVisit)))
         assertEquals(200L, firstVisit.totalJankDurationMs)
 
         assertEquals(20L, secondVisit.totalJankDurationMs)
         assertEquals(0L, secondVisit.hangFrameCount)
-        assertEquals(Grade.GOOD, gradeOf(beacon(secondVisit, screenTimeMs = 10_000)))
+        assertEquals(0, beacon(secondVisit).grade())
+        assertEquals(Grade.GOOD, bandOf(beacon(secondVisit)))
+    }
+
+    @Test
+    fun `time on screen no longer changes the grade or the meta`() {
+        val metrics = metricsFor(
+            Window(hitchesMs = listOf(60, 40)),
+            Window(hitchesMs = listOf(50)),
+            Window(hitchesMs = listOf(50))
+        )
+        // 200ms of hitches: the old beacon graded that harshly over 20s and harmlessly over 60s
+        val shortVisit = beacon(metrics, screenTimeMs = 20_000)
+        val longVisit = beacon(metrics, screenTimeMs = 60_000)
+
+        assertEquals(2, shortVisit.grade()) // 3 * 0.25 + 0.75 of severity
+        assertEquals(shortVisit.grade(), longVisit.grade())
+        assertEquals(
+            shortVisit.getString(Constants.RESPONSIVENESS_META),
+            longVisit.getString(Constants.RESPONSIVENESS_META)
+        )
     }
 
     // endregion
@@ -180,34 +211,30 @@ class JankHitchHangGradeTest {
     // region Good
 
     @Test
-    fun `hitches in several windows still grade Good while the ratio stays under 5`() {
-        // 40ms of hitches over 3 windows, 10s on screen -> 4 ms/s, no hangs
+    fun `mild hitches across several windows stay Good`() {
         val json = beaconFor(
-            screenTimeMs = 10_000,
             Window(hitchesMs = listOf(10, 10)),
             Window(hitchesMs = listOf(8)),
             Window(hitchesMs = listOf(12))
         )
 
-        assertEquals(4.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(0L, json.getLong(Constants.HANG_FRAME_COUNT))
-        assertEquals(0L, json.getLong(Constants.LONGEST_HANG_DURATION))
-        assertEquals(Grade.GOOD, gradeOf(json))
+        assertEquals(1.0, json.meta().getDouble("hitchesSeverity"), 0.0) // 4 * 0.25
+        assertEquals(0L, json.meta().getLong("hangCount"))
+        assertEquals(1, json.grade())
+        assertEquals(Grade.GOOD, bandOf(json))
     }
 
     @Test
-    fun `a long visit dilutes the same hitch windows down to Good`() {
-        val windows = arrayOf(
-            Window(hitchesMs = listOf(60, 40)),
-            Window(hitchesMs = listOf(50)),
-            Window(hitchesMs = listOf(50))
-        )
-        // 200ms of hitches: harsh over 20s (10 ms/s), harmless over 60s (3.33 ms/s)
-        assertEquals(Grade.BAD, gradeOf(beaconFor(20_000, *windows)))
+    fun `mild hitches climb out of Good on volume alone`() {
+        // Same 50ms-bin hitches either way - only how many of them there were differs
+        val few = beaconFor(Window(hitchesMs = List(8) { 30L }))
+        val many = beaconFor(Window(hitchesMs = List(200) { 30L }))
 
-        val json = beaconFor(60_000, *windows)
-        assertEquals(3.33, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(Grade.GOOD, gradeOf(json))
+        assertEquals(2, few.grade())          // 8 * 0.25
+        assertEquals(Grade.GOOD, bandOf(few))
+
+        assertEquals(50, many.grade())        // 200 * 0.25
+        assertEquals(Grade.BAD, bandOf(many))
     }
 
     // endregion
@@ -215,68 +242,64 @@ class JankHitchHangGradeTest {
     // region Bad
 
     @Test
-    fun `hitch windows adding up to a ratio between 5 and 10 grade Bad`() {
-        // 70ms of hitches over 3 windows, 10s on screen -> 7 ms/s
+    fun `severe hitches accumulating across windows grade Bad`() {
+        // 10 hitches in the heaviest (750ms) bin across two windows -> 10 * 3.5 of severity
         val json = beaconFor(
-            screenTimeMs = 10_000,
-            Window(hitchesMs = listOf(30, 10)),
-            Window(hitchesMs = listOf(20)),
-            Window(hitchesMs = listOf(10))
+            Window(hitchesMs = List(5) { 700L }),
+            Window(hitchesMs = List(5) { 700L })
         )
 
-        assertEquals(7.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(0L, json.getLong(Constants.HANG_FRAME_COUNT))
-        assertEquals(Grade.BAD, gradeOf(json))
+        assertEquals(10L, json.meta().getLong("hitchCount"))
+        assertEquals("[{750, 10}]", json.meta().getString("hitchHistograms"))
+        assertEquals(35.0, json.meta().getDouble("hitchesSeverity"), 0.0)
+        assertEquals(0L, json.meta().getLong("hangCount"))
+        assertEquals(35, json.grade())
+        assertEquals(Grade.BAD, bandOf(json))
     }
 
     @Test
     fun `a single hang under 2500ms drags an otherwise Good screen to Bad`() {
-        // hitch ratio 4 ms/s (Good), but one 2000ms hang in the last window
         val json = beaconFor(
-            screenTimeMs = 10_000,
             Window(hitchesMs = listOf(20, 10)),
             Window(hitchesMs = listOf(10)),
             Window(hangsMs = listOf(2000))
         )
 
-        assertEquals(4.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(1L, json.getLong(Constants.HANG_FRAME_COUNT))
-        assertEquals(2000L, json.getLong(Constants.LONGEST_HANG_DURATION))
-        assertEquals(Grade.BAD, gradeOf(json))
+        assertEquals(0.75, json.meta().getDouble("hitchesSeverity"), 0.0) // Good on its own
+        assertEquals(1L, json.meta().getLong("hangCount"))
+        assertEquals(2000L, json.meta().getLong("longestHang"))
+        // the 2000ms hang scores 50 on the duration ramp, and the hitches add their sliver on top
+        assertEquals(50, json.grade())
+        assertEquals(Grade.BAD, bandOf(json))
     }
 
     @Test
-    fun `ratio boundaries 5 and 10 both grade Bad`() {
-        // 50ms / 10s -> exactly 5 ms/s
-        val atFive = beaconFor(
-            screenTimeMs = 10_000,
-            Window(hitchesMs = listOf(30)),
-            Window(hitchesMs = listOf(20))
-        )
-        assertEquals(5.0, atFive.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(Grade.BAD, gradeOf(atFive))
-
-        // 100ms / 10s -> exactly 10 ms/s
-        val atTen = beaconFor(
-            screenTimeMs = 10_000,
-            Window(hitchesMs = listOf(60)),
-            Window(hitchesMs = listOf(40))
-        )
-        assertEquals(10.0, atTen.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(Grade.BAD, gradeOf(atTen))
-    }
-
-    @Test
-    fun `a hang of exactly 2500ms is still Bad`() {
+    fun `a hang of exactly 2500ms sits on the Bad boundary`() {
         val json = beaconFor(
-            screenTimeMs = 20_000,
             Window(hitchesMs = listOf(10)),
             Window(hangsMs = listOf(2500))
         )
 
-        assertEquals(2500L, json.getLong(Constants.LONGEST_HANG_DURATION))
-        assertEquals(1L, json.getLong(Constants.HANG_FRAME_COUNT))
-        assertEquals(Grade.BAD, gradeOf(json))
+        assertEquals(2500L, json.meta().getLong("longestHang"))
+        assertEquals(1L, json.meta().getLong("hangCount"))
+        assertEquals(70, json.grade()) // 2500ms is the ramp's "bad" anchor, worth exactly 70
+        assertEquals(Grade.BAD, bandOf(json))
+    }
+
+    @Test
+    fun `two short hangs in separate windows are graded on their count`() {
+        val json = beaconFor(
+            Window(hitchesMs = listOf(20, 20), hangsMs = listOf(800)),
+            Window(healthyFrames = 120),
+            Window(hangsMs = listOf(1000))
+        )
+
+        assertEquals(2L, json.meta().getLong("hangCount"))
+        assertEquals(1000L, json.meta().getLong("longestHang"))
+        assertEquals(1800L, json.meta().getLong("totalHangDuration"))
+        // 2 hangs is the count ramp's "good" anchor (30); neither hang is long enough to beat it
+        assertEquals(30, json.grade())
+        assertEquals(Grade.BAD, bandOf(json))
     }
 
     // endregion
@@ -284,69 +307,52 @@ class JankHitchHangGradeTest {
     // region Worst
 
     @Test
-    fun `hitch windows pushing the ratio past 10 grade Worst`() {
-        // 150ms of hitches over 3 windows, 10s on screen -> 15 ms/s
-        val json = beaconFor(
-            screenTimeMs = 10_000,
-            Window(hitchesMs = listOf(60, 30)),
-            Window(hitchesMs = listOf(40)),
-            Window(hitchesMs = listOf(20))
-        )
+    fun `severe hitches alone reach Worst and cap at 90`() {
+        val json = beaconFor(Window(hitchesMs = List(30) { 700L }))
 
-        assertEquals(15.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(Grade.WORST, gradeOf(json))
+        // the meta keeps the raw severity even though the grade caps
+        assertEquals(105.0, json.meta().getDouble("hitchesSeverity"), 0.0) // 30 * 3.5
+        assertEquals(90, json.grade())
+        assertEquals(Grade.WORST, bandOf(json))
     }
 
     @Test
-    fun `two hangs in two different windows grade Worst even when both are short`() {
-        // hitch ratio 2 ms/s (Good), each hang well under 2500ms (Bad on its own) - the count decides
-        val json = beaconFor(
-            screenTimeMs = 20_000,
-            Window(hitchesMs = listOf(20, 20), hangsMs = listOf(800)),
-            Window(healthyFrames = 120),
-            Window(hangsMs = listOf(1000))
+    fun `hitches and hangs across many windows compound past either one alone`() {
+        val hitchesOnly = beaconFor(Window(hitchesMs = List(10) { 700L }))
+        val hangsOnly = beaconFor(Window(hangsMs = List(5) { 1600L }))
+        val both = beaconFor(
+            Window(hitchesMs = List(5) { 700L }, hangsMs = List(2) { 1600L }),
+            Window(hitchesMs = List(5) { 700L }, hangsMs = List(3) { 1600L })
         )
 
-        assertEquals(2.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(2L, json.getLong(Constants.HANG_FRAME_COUNT))
-        assertEquals(1000L, json.getLong(Constants.LONGEST_HANG_DURATION))
-        assertEquals(1800L, json.getLong(Constants.TOTAL_HANG_DURATION))
-        assertEquals(Grade.WORST, gradeOf(json))
+        assertEquals(35, hitchesOnly.grade())  // severity 35, no hangs
+        assertEquals(70, hangsOnly.grade())    // 5 hangs is the count ramp's "bad" anchor
+        // 70 + (1 - 35/100) * 35 * (70/100)
+        assertEquals(86, both.grade())
+        assertTrue(both.grade() > hitchesOnly.grade() && both.grade() > hangsOnly.grade())
+        assertEquals(Grade.WORST, bandOf(both))
+        assertEquals(Grade.BAD, bandOf(hitchesOnly))
+        assertEquals(Grade.BAD, bandOf(hangsOnly))
     }
 
     @Test
-    fun `one hang over 2500ms grades Worst on its own`() {
-        // hitch ratio 1 ms/s, a single hang -> both Good/Bad, but the 3000ms hang wins
-        val json = beaconFor(
-            screenTimeMs = 20_000,
+    fun `past 2500ms the longest-hang ramp is nearly flat, so only an extreme hang reaches Worst`() {
+        val threeSeconds = beaconFor(
             Window(hitchesMs = listOf(20)),
-            Window(hangsMs = listOf(3000))
+            Window(hangsMs = listOf(3_000))
+        )
+        val aMinute = beaconFor(
+            Window(hitchesMs = listOf(20)),
+            Window(hangsMs = listOf(60_000))
         )
 
-        assertEquals(1.0, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(1L, json.getLong(Constants.HANG_FRAME_COUNT))
-        assertEquals(3000L, json.getLong(Constants.LONGEST_HANG_DURATION))
-        assertEquals(Grade.WORST, gradeOf(json))
-    }
+        assertEquals(3_000L, threeSeconds.meta().getLong("longestHang"))
+        assertEquals(70, threeSeconds.grade())
+        assertEquals(Grade.BAD, bandOf(threeSeconds))
 
-    @Test
-    fun `hitches and hangs across many windows compound into Worst`() {
-        val json = beaconFor(
-            screenTimeMs = 30_000,
-            Window(hitchesMs = listOf(80, 60)),
-            Window(hitchesMs = listOf(50), hangsMs = listOf(1500)),
-            Window(hitchesMs = listOf(70, 90)),
-            Window(hangsMs = listOf(2800))
-        )
-
-        // 350ms of hitches over 30s -> 11.67 ms/s (Worst), 2 hangs (Worst), longest 2800ms (Worst)
-        assertEquals(11.67, json.getDouble(Constants.JANK_TIME_PERCENT), 0.0)
-        assertEquals(5L, json.getLong(Constants.JANK_FRAME_COUNT))
-        assertEquals(90L, json.getLong(Constants.JANK_FRAME_PERCENT))
-        assertEquals(2L, json.getLong(Constants.HANG_FRAME_COUNT))
-        assertEquals(2800L, json.getLong(Constants.LONGEST_HANG_DURATION))
-        assertEquals(4300L, json.getLong(Constants.TOTAL_HANG_DURATION))
-        assertEquals(Grade.WORST, gradeOf(json))
+        assertEquals(60_000L, aMinute.meta().getLong("longestHang"))
+        assertEquals(88, aMinute.grade())
+        assertEquals(Grade.WORST, bandOf(aMinute))
     }
 
     // endregion
@@ -361,14 +367,16 @@ class JankHitchHangGradeTest {
         val listMetrics = registry.onScreenHidden("ListScreen")!!
 
         registry.onScreenVisible("DetailScreen", isContent = true)
-        registry.frame(isJank = true, overrunMs = 30)
-        registry.frame(isJank = true, overrunMs = 2600)
+        repeat(10) { registry.frame(isJank = true, overrunMs = 700) }
+        repeat(5) { registry.frame(isJank = true, overrunMs = 1600) }
         val detailMetrics = registry.onScreenHidden("DetailScreen")!!
 
-        // 25ms over 10s -> 2.5 ms/s, no hangs
-        assertEquals(Grade.GOOD, gradeOf(beacon(listMetrics, screenTimeMs = 10_000)))
-        // 30ms over 10s is Good, but the 2600ms hang decides it
-        assertEquals(Grade.WORST, gradeOf(beacon(detailMetrics, screenTimeMs = 10_000)))
+        // two mild hitches, severity 0.5
+        assertEquals(1, beacon(listMetrics).grade())
+        assertEquals(Grade.GOOD, bandOf(beacon(listMetrics)))
+        // severity 35 compounding with 5 hangs
+        assertEquals(86, beacon(detailMetrics).grade())
+        assertEquals(Grade.WORST, bandOf(beacon(detailMetrics)))
     }
 
     private companion object {

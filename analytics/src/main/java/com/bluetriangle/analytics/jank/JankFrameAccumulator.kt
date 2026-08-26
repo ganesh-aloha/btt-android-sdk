@@ -2,7 +2,6 @@ package com.bluetriangle.analytics.jank
 
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.utility.roundTo2Decimals
-import com.bluetriangle.analytics.utility.roundTo4Decimals
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -136,12 +135,6 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
         hang.reset()
         jankHistogram.values.forEach { it.set(0) }
         startTimeMs = nowMs()
-    }
-
-    private fun timeRatio(bucket: Bucket, elapsedMs: Long): Double {
-        if (elapsedMs == 0L) return 0.0
-        val durationMs = bucket.totalDurationNanos.get() / 1_000_000.0
-        return (durationMs / elapsedMs).coerceAtMost(1.0).roundTo4Decimals()
     }
 
     internal companion object {
