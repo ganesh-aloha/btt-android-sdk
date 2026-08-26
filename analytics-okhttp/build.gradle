@@ -63,7 +63,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.blue-triangle-tech'
                 artifactId = 'btt-android-sdk-okhttp'
-                version = "2.19.4"
+                version = "2.19.8"
             }
         }
     }
