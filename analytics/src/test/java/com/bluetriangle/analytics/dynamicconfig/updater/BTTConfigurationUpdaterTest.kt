@@ -66,10 +66,11 @@ class BTTConfigurationUpdaterTest {
                     CheckoutConfig.DEFAULT,
                     BreadcrumbsConfig.DEFAULT,
                     "",
-                    System.currentTimeMillis(),
+                    0L, // nothing cached yet: savedDate of 0 makes update() exceed the refresh duration
                     true,
                     true,
-                    10.0
+                    10.0,
+                    true
                 )
             }
             whenever(fetcher.fetch()).thenAnswer {
@@ -93,7 +94,8 @@ class BTTConfigurationUpdaterTest {
                         "",
                         true,
                         true,
-                        10.0
+                        10.0,
+                        true
                     )
                 )
             }
@@ -127,7 +129,8 @@ class BTTConfigurationUpdaterTest {
                         "",
                         true,
                         true,
-                        10.0
+                        10.0,
+                        true
                     )
                 )
             )
@@ -152,7 +155,8 @@ class BTTConfigurationUpdaterTest {
                     System.currentTimeMillis(),
                     true,
                     true,
-                    10.0
+                    10.0,
+                    true
                 )
             )
             Thread.sleep(210)

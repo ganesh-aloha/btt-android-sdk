@@ -58,7 +58,8 @@ class BTTConfigurationRepositoryTest {
         "",
         true,
         true,
-        10.0
+        10.0,
+        true
     )
 
     @Before
@@ -110,7 +111,8 @@ class BTTConfigurationRepositoryTest {
             "",
             true,
             true,
-            10.0
+            10.0,
+            true
         )
         val repositoryInput = BTTConfigurationRepository(mockLogger, mockContext, siteId, defaultConfig)
         val repositoryOutput = BTTConfigurationRepository(mockLogger, mockContext, siteId, defaultConfig)
@@ -158,7 +160,8 @@ class BTTConfigurationRepositoryTest {
             "",
             true,
             true,
-            10.0
+            10.0,
+            true
         )
         repository.save(config)
 
