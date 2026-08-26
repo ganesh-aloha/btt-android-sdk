@@ -2,6 +2,7 @@ package com.bluetriangle.analytics.jank
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import org.json.JSONObject
 import kotlin.math.roundToInt
 
 /**
@@ -45,7 +46,21 @@ internal data class JankMetrics(
     val longestHangMs: Long,
     val jankHistogram: String = EMPTY_JANK_HISTOGRAM,
     val jankSeverity: Double = 0.0
-) : Parcelable
+) : Parcelable{
+    fun toJsonString(): String {
+        return JSONObject().apply {
+            put("totalFrameCount", totalFrames)
+            put("hitchCount", jankFrameCount)
+            put("hangCount", hangFrameCount)
+            put("totalHitchDuration", totalJankDurationMs)
+            put("totalHangDuration", totalHangDurationMs)
+            put("longestHitch", longestJankMs)
+            put("longestHang", longestHangMs)
+            put("hitchesSeverity", jankSeverity)
+            put("hitchHistograms", jankHistogram)
+        }.toString()
+    }
+}
 
 /** Hitch histogram value for a screen with no hitches in any bin. */
 internal const val EMPTY_JANK_HISTOGRAM = "[]"
@@ -73,3 +88,7 @@ internal fun JankMetrics.getHangTimePercentage(screenTimeInSeconds: Long): Int {
     if (screenTimeInSeconds == 0L) return 0
     return (totalHangDurationMs * 100.0 / screenTimeInSeconds).roundToInt()
 }
+
+/** This screen's [ResponsivenessGrade] badness score, 0 (smooth) to 98 (worst reachable). */
+internal val JankMetrics.responsivenessGrade: Int
+    get() = ResponsivenessGrade.grade(jankSeverity, hangFrameCount, longestHangMs)

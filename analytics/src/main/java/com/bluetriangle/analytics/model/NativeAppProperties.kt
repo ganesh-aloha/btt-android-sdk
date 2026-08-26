@@ -24,24 +24,17 @@ import com.bluetriangle.analytics.Constants.NETWORK_TYPE_WIFI
 import com.bluetriangle.analytics.Constants.NUMBER_OF_CPU_CORES
 import com.bluetriangle.analytics.Constants.SCREEN_TYPE
 import com.bluetriangle.analytics.Constants.SDK_VERSION
-import com.bluetriangle.analytics.Constants.JANK_HISTOGRAMS
-import com.bluetriangle.analytics.Constants.JANK_FRAME_COUNT
-import com.bluetriangle.analytics.Constants.TOTAL_JANK_DURATION
-import com.bluetriangle.analytics.Constants.HANG_FRAME_COUNT
-import com.bluetriangle.analytics.Constants.JANK_WEIGHTED_MEAN
-import com.bluetriangle.analytics.Constants.TOTAL_HANG_DURATION
-import com.bluetriangle.analytics.Constants.LONGEST_HANG_DURATION
-import com.bluetriangle.analytics.Constants.LONGEST_JANK_DURATION
-import com.bluetriangle.analytics.Constants.TOTAL_FRAME_COUNT
+import com.bluetriangle.analytics.Constants.RESPONSIVENESS_GRADE
+import com.bluetriangle.analytics.Constants.RESPONSIVENESS_META
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
-import com.bluetriangle.analytics.jank.EMPTY_JANK_HISTOGRAM
 import com.bluetriangle.analytics.jank.JankMetrics
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
 import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD_DEVICE_MODEL
 import com.bluetriangle.analytics.networkstate.BTTNetworkState
 import com.bluetriangle.analytics.networkstate.data.BTTNetworkProtocol
 import com.bluetriangle.analytics.event.BTTEvent
+import com.bluetriangle.analytics.jank.responsivenessGrade
 import com.bluetriangle.analytics.utility.value
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
@@ -127,26 +120,9 @@ internal data class NativeAppProperties(
         obj.put(CONFIDENCE_MSG, confidenceMsg)
 
         if (sendResponsiveNess) {
-            // fullTime is in milliseconds convert it to seconds
-            val screenTime = (fullTime ?: Long.MAX_VALUE) / 1000
-
             val metrics = jankMetrics
-
-            obj.put(TOTAL_FRAME_COUNT, metrics?.totalFrames ?: 0)
-
-            obj.put(JANK_FRAME_COUNT, metrics?.jankFrameCount ?: 0)
-            obj.put(TOTAL_JANK_DURATION, metrics?.totalJankDurationMs ?: 0)
-            obj.put(LONGEST_JANK_DURATION, metrics?.longestJankMs ?: 0)
-            obj.put(JANK_HISTOGRAMS, metrics?.jankHistogram ?: EMPTY_JANK_HISTOGRAM)
-            obj.put(JANK_WEIGHTED_MEAN, metrics?.jankSeverity ?: 0.0)
-            //obj.put(JANK_FRAME_PERCENT, metrics?.jankFramePercentage ?: 0)
-            //obj.put(JANK_TIME_PERCENT,metrics?.getJankTimePercentage(screenTime) ?: 0)
-
-            obj.put(HANG_FRAME_COUNT, metrics?.hangFrameCount ?: 0)
-            obj.put(TOTAL_HANG_DURATION, metrics?.totalHangDurationMs ?: 0)
-            obj.put(LONGEST_HANG_DURATION, metrics?.longestHangMs ?: 0)
-            //obj.put(HANG_FRAME_PERCENT, metrics?.hangFramePercentage ?: 0)
-            //obj.put(HANG_TIME_PERCENT, metrics?.getHangTimePercentage(screenTime) ?: 0)
+            obj.put(RESPONSIVENESS_GRADE, metrics?.responsivenessGrade ?: 0)
+            obj.put(RESPONSIVENESS_META, metrics?.toJsonString() ?: "")
         }
 
         return obj

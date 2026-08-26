@@ -83,7 +83,3 @@ internal object ResponsivenessGrade {
         return min(max(countScore, durationScore), SINGLE_SIGNAL_CAP)
     }
 }
-
-/** This screen's [ResponsivenessGrade] badness score, 0 (smooth) to 98 (worst reachable). */
-internal val JankMetrics.responsivenessGrade: Int
-    get() = ResponsivenessGrade.grade(jankSeverity, hangFrameCount, longestHangMs)
