@@ -1,9 +1,9 @@
 package com.bluetriangle.analytics.networkcapture
 
 import android.os.Parcelable
-import com.bluetriangle.analytics.BuildConfig
 import com.bluetriangle.analytics.Constants.SDK_VERSION
 import com.bluetriangle.analytics.Constants.APP_VERSION
+import com.bluetriangle.analytics.Constants.SDK_ID
 import com.bluetriangle.analytics.Timer.Companion.FIELD_NET_STATE_SOURCE
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
@@ -20,7 +20,8 @@ data class NetworkNativeAppProperties(
 ) : Parcelable {
 
     val appVersion: String? = Tracker.instance?.appVersion
-    val sdkVersion: String = BuildConfig.SDK_VERSION
+    val sdkVersion: String = Tracker.sdkVersion
+    val sdkId: String = Tracker.sdkId
 
     fun toJSONObject(): JSONObject {
         val obj = JSONObject()
@@ -32,6 +33,7 @@ data class NetworkNativeAppProperties(
         }
         obj.put(APP_VERSION, appVersion)
         obj.put(SDK_VERSION, sdkVersion)
+        obj.put(SDK_ID, sdkId)
         httpMethod?.let{
             obj.put(CapturedRequest.FIELD_HTTP_METHOD, it)
         }

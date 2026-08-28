@@ -2,7 +2,6 @@ package com.bluetriangle.analytics.hybrid
 
 import android.os.Looper
 import android.webkit.WebView
-import com.bluetriangle.analytics.BuildConfig
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.utility.WebViewHelper
 import java.lang.ref.WeakReference
@@ -34,7 +33,7 @@ object BTTWebViewTracker {
 
             val wcdOn = if(it.shouldSampleNetwork) "on" else "off"
             val wcdCollect = "{\"value\":\"$wcdOn\",\"expires\":\"$expiration\"}"
-            val sdkVersion = "Android-${BuildConfig.SDK_VERSION}"
+            val sdkVersion = "Android-${Tracker.sdkVersion}"
 
             setLocalStorage("BTT_X0siD", sessionID)
             setLocalStorage("BTT_SDK_VER", sdkVersion)

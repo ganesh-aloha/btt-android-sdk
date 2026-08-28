@@ -54,6 +54,7 @@ object Constants {
     internal const val DEFAULT_CONFIG_KEY = UNKNOWN
 
     internal const val SDK_VERSION = "sdkVersion"
+    internal const val SDK_ID = "sdkId"
     internal const val APP_VERSION = "appVersion"
     internal const val APP_LAST_FOREGROUND_TIME = "appLastForegroundTime"
 

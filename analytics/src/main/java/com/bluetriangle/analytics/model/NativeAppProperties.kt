@@ -23,6 +23,7 @@ import com.bluetriangle.analytics.Constants.NETWORK_TYPE_OFFLINE
 import com.bluetriangle.analytics.Constants.NETWORK_TYPE_WIFI
 import com.bluetriangle.analytics.Constants.NUMBER_OF_CPU_CORES
 import com.bluetriangle.analytics.Constants.SCREEN_TYPE
+import com.bluetriangle.analytics.Constants.SDK_ID
 import com.bluetriangle.analytics.Constants.SDK_VERSION
 import com.bluetriangle.analytics.Constants.RESPONSIVENESS_GRADE
 import com.bluetriangle.analytics.Constants.RESPONSIVENESS_META
@@ -55,6 +56,7 @@ internal data class NativeAppProperties(
     var netStateSource: String? = null,
     var appVersion: String? = null,
     var sdkVersion: String? = null,
+    var sdkId: String? = null,
     var grouped: Boolean = false,
     var confidenceRate: Int? = null,
     var confidenceMsg: String? = null,
@@ -86,6 +88,7 @@ internal data class NativeAppProperties(
         obj.put(NUMBER_OF_CPU_CORES, numberOfCPUCores)
         obj.put(APP_VERSION, appVersion)
         obj.put(SDK_VERSION, sdkVersion)
+        obj.put(SDK_ID, sdkId)
         obj.put(GROUPED, grouped)
         if(!sendResponsiveNess) obj.put(GROUP_SCREEN_COUNT, 1) // for child view wcd only
         obj.put(GROUPING_CAUSE, groupingCause)

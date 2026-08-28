@@ -174,7 +174,8 @@ class Timer : Parcelable {
             null,
             getNumberOfCPUCores(),
             appVersion = tracker?.appVersion,
-            sdkVersion = BuildConfig.SDK_VERSION,
+            sdkVersion = Tracker.sdkVersion,
+            sdkId = Tracker.sdkId,
             jankMetrics = stampedJankMetrics
         )
         Tracker.instance?.networkTimelineTracker?.let {
