@@ -2,6 +2,7 @@ package com.bluetriangle.analytics
 
 import com.bluetriangle.analytics.Constants.APP_VERSION
 import com.bluetriangle.analytics.Constants.BREADCRUMBS
+import com.bluetriangle.analytics.Constants.SDK_ID
 import com.bluetriangle.analytics.Constants.SDK_VERSION
 import com.bluetriangle.analytics.Timer.Companion.FIELD_NET_STATE_SOURCE
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
@@ -16,7 +17,8 @@ data class ErrorNativeAppProperties(
 ) {
 
     val appVersion: String? = Tracker.instance?.appVersion
-    val sdkVersion: String = BuildConfig.SDK_VERSION
+    val sdkVersion: String = Tracker.sdkVersion
+    val sdkId: String = Tracker.sdkId
 
     fun add(deviceInfo: DeviceInfo) {
         deviceModel = deviceInfo.deviceModel
@@ -30,6 +32,7 @@ data class ErrorNativeAppProperties(
         }
         appVersion?.let {
             this[SDK_VERSION] = sdkVersion
+            this[SDK_ID] = sdkId
             this[APP_VERSION] = appVersion
         }
         breadcrumbs?.let {

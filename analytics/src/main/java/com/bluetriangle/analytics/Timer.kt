@@ -2,7 +2,6 @@ package com.bluetriangle.analytics
 
 import android.os.Parcel
 import android.os.Parcelable
-import android.util.Log
 import com.bluetriangle.analytics.eventhub.sdkeventhub.SDKEventHub
 import com.bluetriangle.analytics.model.NativeAppProperties
 import com.bluetriangle.analytics.performancemonitor.PerformanceSpan
@@ -170,7 +169,8 @@ class Timer : Parcelable {
             null,
             getNumberOfCPUCores(),
             appVersion = tracker?.appVersion,
-            sdkVersion = BuildConfig.SDK_VERSION
+            sdkVersion = Tracker.sdkVersion,
+            sdkId = Tracker.sdkId
         )
         Tracker.instance?.networkTimelineTracker?.let {
             val networkSlice = it.sliceStats(

@@ -1288,6 +1288,11 @@ class Tracker private constructor(
         println(a / b)
     }
 
+    data class SdkInfo(
+        val sdkVersion: String,
+        val sdkId: String
+    )
+
     companion object {
         internal const val SHARED_PREFERENCES_NAME = "BTT_SHARED_PREFERENCES"
 
@@ -1307,6 +1312,35 @@ class Tracker private constructor(
         @JvmStatic
         var instance: Tracker? = null
             private set
+
+        private var _sdkVersion: String? = null
+
+        @JvmStatic
+        internal var sdkVersion: String
+            get() = _sdkVersion ?: BuildConfig.SDK_VERSION
+            set(value) {
+                _sdkVersion = value
+            }
+
+        private var _sdkId: String? = null
+
+        @JvmStatic
+        internal var sdkId: String
+            get() = _sdkId ?: BuildConfig.SDK_ID
+            set(value) {
+                _sdkId = value
+            }
+
+        @JvmStatic
+        fun setSdkInfo(info: SdkInfo) {
+            _sdkVersion = info.sdkVersion
+            _sdkId = info.sdkId
+        }
+
+        @JvmStatic
+        fun getSdkInfo(): SdkInfo {
+            return SdkInfo(sdkVersion, sdkId)
+        }
 
         /**
          * Initialize the tracker with default tracker URL and Site ID from string resources.
@@ -1547,7 +1581,7 @@ class Tracker private constructor(
                 defaultConfig = defaultConfig
             )
 
-            val configUrl = "https://${configuration.siteId}.btttag.com/config.php?siteID=${configuration.siteId}&os=${Constants.OS}&osver=${Build.VERSION.RELEASE}&app=${Utils.getAppVersion(application)}&sdk=${BuildConfig.SDK_VERSION}"
+            val configUrl = "https://${configuration.siteId}.btttag.com/config.php?siteID=${configuration.siteId}&os=${Constants.OS}&osver=${Build.VERSION.RELEASE}&app=${Utils.getAppVersion(application)}&sdk=${Tracker.sdkVersion}&sdkId=${Tracker.sdkId}"
             configurationUpdater = BTTConfigurationUpdater(
                 logger = configuration.logger,
                 repository = this.configurationRepository,
@@ -1587,7 +1621,7 @@ class Tracker private constructor(
         private val DEFAULT_VALUES: Map<String, String> = mapOf(
             Timer.FIELD_BROWSER to Constants.BROWSER,
             Timer.FIELD_NA_FLG to "1",
-            Timer.FIELD_SDK_VERSION to BuildConfig.SDK_VERSION,
+            Timer.FIELD_SDK_VERSION to sdkVersion,
             Timer.FIELD_TRAFFIC_SEGMENT_NAME to Constants.DEFAULT_TRAFFIC_SEGMENT_NAME,
             Timer.FIELD_CONTENT_GROUP_NAME to Constants.DEFAULT_CONTENT_GROUP_NAME
         )

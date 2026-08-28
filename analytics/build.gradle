@@ -16,6 +16,7 @@ android {
         targetSdk 31
 
         buildConfigField "String", "SDK_VERSION", "\"$version\""
+        buildConfigField "String", "SDK_ID", "\"btt-android-sdk\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"

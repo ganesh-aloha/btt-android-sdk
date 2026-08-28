@@ -133,7 +133,7 @@ internal object Utils {
     fun buildUserAgent(context: Context): String {
         val appName = getAppName(context)
         val appVersion = getAppVersion(context)
-        return "$appName/$appVersion Android/${Build.VERSION.RELEASE} ($deviceName) btt-android-sdk/${BuildConfig.SDK_VERSION}"
+        return "$appName/$appVersion Android/${Build.VERSION.RELEASE} ($deviceName) ${Tracker.sdkId}/${Tracker.sdkVersion}"
     }
 
     val deviceName: String
