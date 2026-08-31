@@ -21,21 +21,31 @@ internal class AppLaunchReporter(
     logger: Logger?, val context: Context, val deviceInfoProvider: IDeviceInfoProvider, forceRestartDuration: Double
 ) {
     private var forceRestartTracker: ForceRestartTracker? = null
+    private var fatalANRTracker: FatalANRTracker? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var appInstallReportJob: Job? = null
 
     init {
         forceRestartTracker = ForceRestartTracker(logger, context, this, forceRestartDuration)
+        fatalANRTracker = FatalANRTracker(logger, context, deviceInfoProvider)
     }
 
-    fun start() {
+    fun startForceRestartTracker() {
         forceRestartTracker?.start()
     }
 
-    fun stop() {
+    fun stopForceRestartTracker() {
         forceRestartTracker?.stop()
         scope.cancel()
+    }
+
+    fun startFatalANRTracker() {
+        fatalANRTracker?.start()
+    }
+
+    fun stopFatalANRTracker() {
+        fatalANRTracker?.stop()
     }
 
     fun setForceRestartDuration(forceRestartDuration: Double) {

@@ -17,6 +17,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_LAUNCH_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_MEMORY_WARNING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_NETWORK_STATE_TRACKING
+import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_REPORT_FATAL_ANR
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_WEB_VIEW_STITCHING
 import com.bluetriangle.analytics.Constants.DEFAULT_FORCE_RESTART_DURATION
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfigMapper
@@ -48,6 +49,7 @@ internal object BTTSavedRemoteConfigurationMapper {
     private const val ENABLE_FORCE_RESTART = "enableForceRestart"
     private const val FORCE_RESTART_DURATION = "forceRestartDuration"
     private const val ENABLE_SCREEN_RESPONSIVENESS = "enableScreenResponsiveness"
+    private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalANR"
 
     private const val CONFIG_KEY = "configKey"
 
@@ -83,7 +85,8 @@ internal object BTTSavedRemoteConfigurationMapper {
             jsonObject.getBooleanOrNull(ENABLE_APP_INSTALL) ?: DEFAULT_ENABLE_APP_INSTALL,
             jsonObject.getBooleanOrNull(ENABLE_FORCE_RESTART) ?: DEFAULT_ENABLE_FORCE_RESTART,
             jsonObject.getDoubleOrNull(FORCE_RESTART_DURATION) ?: DEFAULT_FORCE_RESTART_DURATION,
-            jsonObject.getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
+            jsonObject.getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS,
+            jsonObject.getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: DEFAULT_ENABLE_REPORT_FATAL_ANR
         )
     }
 
@@ -113,6 +116,7 @@ internal object BTTSavedRemoteConfigurationMapper {
         put(ENABLE_FORCE_RESTART, config.enableForceRestart)
         put(FORCE_RESTART_DURATION, config.forceRestartDuration)
         put(ENABLE_SCREEN_RESPONSIVENESS, config.enableScreenResponsiveness)
+        put(ENABLE_REPORT_FATAL_ANR, config.enableReportFatalAnr)
     }
 
 }

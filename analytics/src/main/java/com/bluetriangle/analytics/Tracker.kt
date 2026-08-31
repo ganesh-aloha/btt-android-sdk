@@ -83,8 +83,8 @@ class Tracker private constructor(
     internal var performanceMonitor: PerformanceMonitor? = null
         @Synchronized set
 
-    private var anrManager: AnrManager? = null
-        @Synchronized set
+    internal var anrManager: AnrManager? = null
+        @Synchronized private set
 
     /**
      * Weak reference to Android application context
@@ -256,7 +256,11 @@ class Tracker private constructor(
 
         if (configuration.isForceRestartEnable) {
             appLaunchReporter.setForceRestartDuration(sessionData.forceRestartDuration)
-            startAppLaunchReporter()
+            startForceRestartTracker()
+        }
+
+        if (configuration.isReportFatalAnrEnabled) {
+            startFatalANRTracker()
         }
 
         checkAppVersion()
@@ -313,7 +317,8 @@ class Tracker private constructor(
         disableLaunchMonitor()
         LifecycleRegistry.uninstall()
         disableBreadcrumbs()
-        stopAppLaunchReporter()
+        stopForceRestartTracker()
+        stopFatalANRTracker()
         configuration.logger?.debug("SDK is disabled.")
     }
 
@@ -341,12 +346,20 @@ class Tracker private constructor(
         performanceMonitor = null
     }
 
-    private fun startAppLaunchReporter() {
-        appLaunchReporter.start()
+    private fun startForceRestartTracker() {
+        appLaunchReporter.startForceRestartTracker()
     }
 
-    private fun stopAppLaunchReporter() {
-        appLaunchReporter.stop()
+    private fun stopForceRestartTracker() {
+        appLaunchReporter.stopForceRestartTracker()
+    }
+
+    private fun startFatalANRTracker() {
+        appLaunchReporter.startFatalANRTracker()
+    }
+
+    private fun stopFatalANRTracker() {
+        appLaunchReporter.stopFatalANRTracker()
     }
 
     fun trackCrashes() {
@@ -1000,11 +1013,22 @@ class Tracker private constructor(
             changes.append("\nenableForceRestart: ${configuration.isForceRestartEnable} -> ${sessionData.enableForceRestart}")
             configuration.isForceRestartEnable = sessionData.enableForceRestart
             if (configuration.isForceRestartEnable) {
-                startAppLaunchReporter()
+                startForceRestartTracker()
             } else {
-                stopAppLaunchReporter()
+                stopForceRestartTracker()
             }
         }
+
+        if (configuration.isReportFatalAnrEnabled != sessionData.enableReportFatalAnr) {
+            changes.append("\nreportFatalANR: ${configuration.isReportFatalAnrEnabled} -> ${sessionData.enableReportFatalAnr}")
+            configuration.isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
+            if (configuration.isReportFatalAnrEnabled) {
+                startFatalANRTracker()
+            } else {
+                stopFatalANRTracker()
+            }
+        }
+
 
         if(configuration.isJankTrackingEnabled != sessionData.enableScreenResponsiveness) {
             changes.append("\nenableScreenResponsiveness: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableScreenResponsiveness}")
@@ -1284,6 +1308,7 @@ class Tracker private constructor(
         ANRWarning(BTTEvent.ANRWarning),
         MemoryWarning(BTTEvent.MemoryWarning),
         ForceRestart(BTTEvent.ForceRestart),
+        FatalANR(BTTEvent.FatalANR),
         BTTConfigUpdateError;
 
         val errorName: String
@@ -1437,7 +1462,8 @@ class Tracker private constructor(
                 enableAppInstall = configuration.isAppInstallEnabled,
                 enableForceRestart = configuration.isForceRestartEnable,
                 forceRestartDuration = configuration.forceRestartDuration,
-                enableScreenResponsiveness = configuration.isJankTrackingEnabled
+                enableScreenResponsiveness = configuration.isJankTrackingEnabled,
+                enableReportFatalAnr = configuration.isReportFatalAnrEnabled
             )
 
             initializeConfigurationUpdater(application, configuration, defaultConfig)
@@ -1576,6 +1602,7 @@ class Tracker private constructor(
             isForceRestartEnable = sessionData.enableForceRestart
             forceRestartDuration = sessionData.forceRestartDuration
             isJankTrackingEnabled = sessionData.enableScreenResponsiveness
+            isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
         }
 
         private lateinit var configurationRepository: IBTTConfigurationRepository

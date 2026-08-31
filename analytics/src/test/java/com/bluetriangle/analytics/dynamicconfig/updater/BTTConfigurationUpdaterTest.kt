@@ -70,6 +70,7 @@ class BTTConfigurationUpdaterTest {
                     true,
                     true,
                     10.0,
+                    true,
                     true
                 )
             }
@@ -95,6 +96,7 @@ class BTTConfigurationUpdaterTest {
                         true,
                         true,
                         10.0,
+                        true,
                         true
                     )
                 )
@@ -130,6 +132,7 @@ class BTTConfigurationUpdaterTest {
                         true,
                         true,
                         10.0,
+                        true,
                         true
                     )
                 )
@@ -156,6 +159,7 @@ class BTTConfigurationUpdaterTest {
                     true,
                     true,
                     10.0,
+                    true,
                     true
                 )
             )

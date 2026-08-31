@@ -8,7 +8,7 @@ internal class AnrManager(
 ) :
     AnrListener {
 
-    private val detector: AnrDetector = RunnableAnrDetector(configuration.trackAnrIntervalSec)
+    val detector: AnrDetector = RunnableAnrDetector(configuration.trackAnrIntervalSec)
 
     init {
         detector.addAnrListener("AnrManager", this)

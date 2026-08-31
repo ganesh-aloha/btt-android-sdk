@@ -51,7 +51,7 @@ internal class CrashRunnable(
             mostRecentTimer?.let {
                 Tracker.instance?.applyGlobalFields(it)
                 loadTimerFields(it)
-                if(errorType == Tracker.BTErrorType.NativeAppCrash) {
+                if(errorType == Tracker.BTErrorType.NativeAppCrash || errorType == Tracker.BTErrorType.FatalANR) {
                     submitTimer(it, true)
                 }
             }

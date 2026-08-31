@@ -29,7 +29,8 @@ internal class BTTSavedRemoteConfiguration(
     enableAppInstall: Boolean,
     enableForceRestart: Boolean,
     forceRestartDuration: Double,
-    enableScreenResponsiveness: Boolean
+    enableScreenResponsiveness: Boolean,
+    enableReportFatalAnr: Boolean
 ) : BTTRemoteConfiguration(
     networkSampleRate,
     ignoreScreens,
@@ -50,7 +51,8 @@ internal class BTTSavedRemoteConfiguration(
     enableAppInstall,
     enableForceRestart,
     forceRestartDuration,
-    enableScreenResponsiveness
+    enableScreenResponsiveness,
+    enableReportFatalAnr
 ) {
 
     companion object {
@@ -75,7 +77,8 @@ internal class BTTSavedRemoteConfiguration(
             remoteConfig.enableAppInstall,
             remoteConfig.enableForceRestart,
             remoteConfig.forceRestartDuration,
-            remoteConfig.enableScreenResponsiveness
+            remoteConfig.enableScreenResponsiveness,
+            remoteConfig.enableReportFatalAnr
         )
     }
 

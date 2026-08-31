@@ -19,6 +19,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_WEB_VIEW_STITCHING
 import com.bluetriangle.analytics.Constants.DEFAULT_FORCE_RESTART_DURATION
 import com.bluetriangle.analytics.Constants.DEFAULT_GROUPING_IDLE_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING_TAP_DETECTION
+import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_REPORT_FATAL_ANR
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfigMapper
 import com.bluetriangle.analytics.checkout.config.CheckoutConfigMapper
 import com.bluetriangle.analytics.utility.getBooleanOrNull
@@ -49,6 +50,7 @@ internal object BTTRemoteConfigurationMapper {
     private const val ENABLE_FORCE_RESTART = "enableForceRestart"
     private const val FORCE_RESTART_DURATION = "forceRestartDuration"
     private const val ENABLE_SCREEN_RESPONSIVENESS = "enableScreenResponsiveness"
+    private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalANR"
 
     fun fromJson(remoteConfigJson: JSONObject): BTTRemoteConfiguration {
         val networkSampleRate = remoteConfigJson.getDoubleOrNull(NETWORK_SAMPLE_RATE)?.div(100.0)
@@ -84,6 +86,8 @@ internal object BTTRemoteConfigurationMapper {
             remoteConfigJson.getDoubleOrNull(FORCE_RESTART_DURATION) ?: DEFAULT_FORCE_RESTART_DURATION
         val enableScreenResponsiveness =
             remoteConfigJson.getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
+        val enableReportFatalAnr =
+            remoteConfigJson.getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: DEFAULT_ENABLE_REPORT_FATAL_ANR
         return BTTRemoteConfiguration(
             networkSampleRate,
             ignoreScreens,
@@ -104,7 +108,8 @@ internal object BTTRemoteConfigurationMapper {
             enableAppInstall,
             enableForceRestart,
             forceRestartDuration,
-            enableScreenResponsiveness
+            enableScreenResponsiveness,
+            enableReportFatalAnr
         )
     }
 }

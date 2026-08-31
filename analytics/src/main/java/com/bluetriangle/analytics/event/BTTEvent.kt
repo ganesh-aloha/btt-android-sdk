@@ -13,4 +13,5 @@ sealed class BTTEvent(val id: Int, val defaultPageName: String): Parcelable {
     object Crash: BTTEvent(7, "NativeAppCrash") // 6 is for iOS crash
     object AppInstall: BTTEvent(8, "AppInstall")
     object ForceRestart: BTTEvent(9, "ForceRestart")
+    object FatalANR: BTTEvent(10, "FatalANR")
 }

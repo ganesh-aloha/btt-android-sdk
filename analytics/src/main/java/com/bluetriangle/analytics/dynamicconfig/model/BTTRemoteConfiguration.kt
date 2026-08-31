@@ -10,7 +10,7 @@ import com.bluetriangle.analytics.checkout.config.CheckoutConfig
 
 internal open class BTTRemoteConfiguration(
     val networkSampleRate: Double?,
-    val ignoreScreens:List<String>,
+    val ignoreScreens: List<String>,
     val enableAllTracking: Boolean,
     val enableScreenTracking: Boolean,
     val enableGrouping: Boolean,
@@ -28,7 +28,8 @@ internal open class BTTRemoteConfiguration(
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
     val forceRestartDuration: Double,
-    val enableScreenResponsiveness: Boolean
+    val enableScreenResponsiveness: Boolean,
+    val enableReportFatalAnr: Boolean
 ) {
     override fun equals(other: Any?): Boolean {
         if(other is BTTRemoteConfiguration) {
@@ -51,7 +52,8 @@ internal open class BTTRemoteConfiguration(
                     other.enableAppInstall == enableAppInstall &&
                     other.enableForceRestart == enableForceRestart &&
                     other.forceRestartDuration == forceRestartDuration &&
-                    other.enableScreenResponsiveness == enableScreenResponsiveness
+                    other.enableScreenResponsiveness == enableScreenResponsiveness &&
+                    other.enableReportFatalAnr == enableReportFatalAnr
         }
         return false
     }
@@ -81,6 +83,7 @@ internal open class BTTRemoteConfiguration(
         result = 31 * result + enableForceRestart.hashCode()
         result = 31 * result + forceRestartDuration.hashCode()
         result = 31 * result + enableScreenResponsiveness.hashCode()
+        result = 31 * result + enableReportFatalAnr.hashCode()
         return result
     }
 

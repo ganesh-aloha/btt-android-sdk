@@ -54,7 +54,8 @@ internal data class SessionData(
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
     val forceRestartDuration: Double,
-    val enableScreenResponsiveness: Boolean
+    val enableScreenResponsiveness: Boolean,
+    val enableReportFatalAnr: Boolean
 ) {
     companion object {
         private const val SESSION_ID = "sessionId"
@@ -77,6 +78,7 @@ internal data class SessionData(
         private const val ENABLE_FORCE_RESTART = "enableForceRestart"
         private const val FORCE_RESTART_DURATION = "forceRestartDuration"
         private const val ENABLE_SCREEN_RESPONSIVENESS = "enableScreenResponsiveness"
+        private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalANR"
 
         internal fun JSONObject.toSessionData(): SessionData? {
             try {
@@ -109,7 +111,8 @@ internal data class SessionData(
                     enableAppInstall = getBooleanOrNull(ENABLE_APP_INSTALL) ?: false,
                     enableForceRestart = getBooleanOrNull(ENABLE_FORCE_RESTART) ?: false,
                     forceRestartDuration = getDoubleOrNull(FORCE_RESTART_DURATION) ?: 10.0,
-                    enableScreenResponsiveness = getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
+                    enableScreenResponsiveness = getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS,
+                    enableReportFatalAnr = getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: false
                 )
             } catch (e: Exception) {
                 Tracker.instance?.configuration?.logger?.error("Error while parsing session data: ${e::class.simpleName}(\"${e.message}\")")
@@ -141,6 +144,7 @@ internal data class SessionData(
             put(ENABLE_FORCE_RESTART, enableForceRestart)
             put(FORCE_RESTART_DURATION, forceRestartDuration)
             put(ENABLE_SCREEN_RESPONSIVENESS, enableScreenResponsiveness)
+            put(ENABLE_REPORT_FATAL_ANR, enableReportFatalAnr)
         }
     }
 }
