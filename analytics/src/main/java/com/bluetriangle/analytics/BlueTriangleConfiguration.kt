@@ -257,7 +257,7 @@ class BlueTriangleConfiguration {
             isAppInstallEnabled : $isAppInstallEnabled,
             isForceRestartEnable : $isForceRestartEnable,
             forceRestartDuration : $forceRestartDuration,
-            bttPluginVersion : $bttPluginVersion
+            bttPluginVersion : $bttPluginVersion,
             isJankTrackingEnabled : $isJankTrackingEnabled
         }
         """.trimIndent()
