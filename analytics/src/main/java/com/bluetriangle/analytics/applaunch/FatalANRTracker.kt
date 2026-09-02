@@ -6,7 +6,6 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.content.edit
-import com.bluetriangle.analytics.BlueTriangleConfiguration
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Logger
@@ -113,7 +112,6 @@ internal class FatalANRTracker(
     private fun errorTypeOf(exitInfo: ApplicationExitInfo): Tracker.BTErrorType? {
         return when (exitInfo.reason) {
             ApplicationExitInfo.REASON_ANR -> Tracker.BTErrorType.FatalANR
-            ApplicationExitInfo.REASON_LOW_MEMORY -> Tracker.BTErrorType.MemoryWarning
             else -> null
         }
     }
@@ -172,8 +170,8 @@ internal class FatalANRTracker(
         return try {
             exitInfo.traceInputStream?.use { stream ->
                 // ANR traces hold every thread of the process and can be a few MB, cap what gets uploaded
-                val trace = stream.bufferedReader().readText().take(MAX_EXIT_TRACE_CHAR_LENGTH)
-                formatAnrTrace(trace).ifBlank { null }
+                val trace = stream.bufferedReader().readText().take(MAX_EXIT_TRACE_CHAR_LENGTH).trim().removePrefix(ANR_TRACE_SUBJECT_PREFIX)
+                formatAnrTrace(trace)
             }
         } catch (e: Throwable) {
             logger?.error("Error while reading last exit trace: ${e.message}")
@@ -182,19 +180,33 @@ internal class FatalANRTracker(
     }
 
     private fun formatAnrTrace(rawTrace: String): String {
-        val trace = rawTrace.trimStart()
-        if (!trace.startsWith(ANR_TRACE_SUBJECT_PREFIX)) {
-            return trace.lines().joinToString(LINE_SEPARATOR)
-        }
+        val lines = rawTrace.lines()
+        val subLines = arrayListOf("$FATAL_ANR_PREFIX${lines.first()}")
 
-        val lines = trace.removePrefix(ANR_TRACE_SUBJECT_PREFIX).lines()
-        val subject = "$FATAL_ANR_PREFIX${lines.first()}"
         val threadDump = lines.drop(1)
         val appFrame = appFrameOf(threadDump)
-            ?: return (listOf(subject) + threadDump).joinToString(LINE_SEPARATOR)
+        appFrame?.let{
+            subLines.add(it)
+            subLines.add("")
+            subLines.add("")
+        }
 
-        // Reason, the app's frame, two empty lines, then the trace as it came from the platform
-        return (listOf(subject, appFrame, "", "") + threadDump).joinToString(LINE_SEPARATOR)
+        val stackTrace = subLines.joinToString("\n") + rawTrace
+        return stackTrace.replace(Regex("\\r?\\n"), "~~")
+
+//        return buildString {
+//            for (line in subLines) {
+//                append(line)
+//                append("~~")
+//            }
+//
+//            for (line in threadDump) {
+//                //if (line.isNotBlank()) {
+//                    append(line)
+//                    append("~~")
+//                ///}
+//            }
+//        }
     }
 
     /**
