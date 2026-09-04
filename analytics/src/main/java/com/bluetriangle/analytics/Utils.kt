@@ -8,10 +8,7 @@ import android.os.Build
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.io.UnsupportedEncodingException
-import java.io.Writer
 import java.security.SecureRandom
 import java.util.*
 
@@ -156,29 +153,34 @@ internal object Utils {
         return Base64.encode(data.toByteArray(), Base64.DEFAULT)
     }
 
-    fun exceptionToStacktrace(message: String?, e: Throwable, hideExceptionName: Boolean = false): String {
-        val result: Writer = StringWriter()
-        val printWriter = PrintWriter(result)
-        e.printStackTrace(printWriter)
-        printWriter.close()
-        val lines = result.toString().split("\\r?\\n".toRegex())
-        return buildString {
-            if (!message.isNullOrBlank()) {
-                append(message)
-                append("~~")
-            } else if(hideExceptionName) {
-                append(e.message)
-                append("~~")
-            }
+    fun exceptionToStacktrace(message: String?, e: Throwable, hideExceptionName: Boolean = false): ExceptionInfo {
+        val lines = e.stackTraceToString().lines()
 
-            for (line in lines.takeLast(if(hideExceptionName) lines.size - 1 else lines.size)) {
-                if (line.isNotBlank()) {
-                    append(line)
-                    append("~~")
-                }
-            }
-            append(lines.last().trim())
+        val appFrame = Tracker.instance?.getStackTracePackageFrame(lines)
+
+        val title = listOfNotNull(
+            message?.takeIf(String::isNotBlank)
+                ?: if (hideExceptionName) e.message else lines.first(),
+            appFrame
+        ).joinToString("~~")
+
+        val stacktraceLines = if (hideExceptionName) {
+            lines.drop(1)
+        } else {
+            lines
         }
+
+        val prefix = when {
+            !message.isNullOrBlank() -> "$message~~"
+            hideExceptionName && !e.message.isNullOrBlank() -> "${e.message}~~"
+            else -> ""
+        }
+
+        val stacktrace = prefix + stacktraceLines
+            .filter(String::isNotBlank)
+            .joinToString("~~")
+
+        return ExceptionInfo(title, stacktrace)
     }
 
     /**
@@ -192,6 +194,7 @@ internal object Utils {
     }
 }
 
+internal data class ExceptionInfo(val title: String?, val stackTrace: String)
 
 /**
  * Extension to JSONObject to add a method to convert a JSON object to a Map<String, String>

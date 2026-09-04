@@ -14,16 +14,17 @@ internal class ANRReporter(
         val configuration = tracker.configuration
 
         val timeStamp = anrWarningException.timestamp.toString()
-        val stacktrace = Utils.exceptionToStacktrace(null, anrWarningException, true)
+        val exceptionInfo = Utils.exceptionToStacktrace(null, anrWarningException, true)
 
         try {
             val thread = Thread(
                 CrashRunnable(
                     configuration,
-                    stacktrace,
+                    exceptionInfo.stackTrace,
                     timeStamp,
                     Tracker.BTErrorType.ANRWarning,
                     timer,
+                    exceptionInfo.title,
                     deviceInfoProvider = deviceInfoProvider,
                     breadcrumbs = anrWarningException.breadcrumbs
                 )

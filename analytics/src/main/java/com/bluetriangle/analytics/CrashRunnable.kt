@@ -39,6 +39,7 @@ internal class CrashRunnable(
     private val timeStamp: String,
     private val errorType: Tracker.BTErrorType = Tracker.BTErrorType.NativeAppCrash,
     private val mostRecentTimer: Timer? = null,
+    private val title: String? = null,
     private val errorCount: Int = 1,
     private val deviceInfoProvider: IDeviceInfoProvider,
     private val breadcrumbs: JSONArray? = null
@@ -203,7 +204,7 @@ internal class CrashRunnable(
      */
     private fun buildCrashReportData(): String {
         val crashReport = mutableMapOf<String, Any?>(
-            "msg" to stackTrace,
+            "msg" to (title ?: stackTrace),
             "eTp" to errorType.errorName,
             "eCnt" to errorCount.toString(),
             "url" to configuration.applicationName,
@@ -215,6 +216,7 @@ internal class CrashRunnable(
         val netStateMonitor = Tracker.instance?.networkStateMonitor
 
         val nativeAppProperties = ErrorNativeAppProperties()
+        nativeAppProperties.stackTrace = stackTrace
 
         netStateMonitor?.state?.value?.let {
             nativeAppProperties.netState = it.value

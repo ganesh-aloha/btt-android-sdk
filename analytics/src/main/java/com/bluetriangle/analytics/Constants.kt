@@ -61,6 +61,7 @@ object Constants {
     internal const val APP_LAST_EXIT_INFO_TIME = "appLastExitInfoTime"
 
     internal const val BREADCRUMBS = "breadcrumbs"
+    internal const val STACK_TRACE = "stackTrace"
     internal const val NUMBER_OF_CPU_CORES = "numberOfCPUCores"
     internal const val SCREEN_TYPE = "screenType"
     internal const val MAX_MAIN_THREAD_USAGE = "maxMainThreadUsage"

@@ -1289,18 +1289,26 @@ class Tracker private constructor(
         val mostRecentTimer = getMostRecentTimer()
         mostRecentTimer?.generateNativeAppProperties()
 
-        val stacktrace = Utils.exceptionToStacktrace(message, exception)
+        val exceptionInfo = Utils.exceptionToStacktrace(message, exception)
         trackerExecutor.submit(
             CrashRunnable(
                 configuration,
-                stacktrace,
+                exceptionInfo.stackTrace,
                 timeStamp,
                 errorType,
                 mostRecentTimer,
+                exceptionInfo.title,
                 deviceInfoProvider = deviceInfoProvider,
                 breadcrumbs = breadcrumbsManager?.snapshot()
             )
         )
+    }
+
+    internal fun getStackTracePackageFrame(lines: List<String>): String? {
+        val packageName = context.get()?.packageName ?: return null
+        return lines.asSequence()
+            .map(String::trim)
+            .firstOrNull { it.contains(packageName) }
     }
 
     enum class BTErrorType(val event: BTTEvent? = null) {
