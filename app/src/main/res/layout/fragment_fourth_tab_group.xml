@@ -54,7 +54,9 @@
                 app:layout_constraintTop_toBottomOf="@+id/quote_text"
                 app:layout_constraintVertical_bias="1.0"
                 tools:text="TextView" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
+
     </com.google.android.material.card.MaterialCardView>
 
     <Button
@@ -67,24 +69,13 @@
         app:layout_constraintTop_toTopOf="@+id/get_quote_button" />
 
     <Button
-        android:id="@+id/anr_button"
+        android:id="@+id/hybrid_demo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
         android:layout_marginBottom="8dp"
-        android:text="ANR"
-        app:layout_constraintBottom_toTopOf="@+id/textInputLayout"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <Button
-        android:id="@+id/launch_compose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="8dp"
-        android:text="Launch Compose"
-        app:layout_constraintBottom_toTopOf="@+id/textInputLayout"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:text="Hybrid Demo"
+        app:layout_constraintBottom_toTopOf="@+id/scroll_jank_test"
+        app:layout_constraintStart_toStartOf="@+id/scroll_jank_test" />
 
     <Button
         android:id="@+id/scroll_jank_test"
@@ -123,6 +114,26 @@
         app:layout_constraintBottom_toTopOf="@+id/anr_button"
         app:layout_constraintEnd_toEndOf="@+id/anr_button" />
 
+    <Button
+        android:id="@+id/launch_compose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="Launch Compose"
+        app:layout_constraintBottom_toTopOf="@+id/textInputLayout"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/anr_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="ANR"
+        app:layout_constraintBottom_toTopOf="@+id/textInputLayout"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textInputLayout"
         android:layout_width="0dp"
@@ -137,5 +148,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Enter something..." />
+
     </com.google.android.material.textfield.TextInputLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

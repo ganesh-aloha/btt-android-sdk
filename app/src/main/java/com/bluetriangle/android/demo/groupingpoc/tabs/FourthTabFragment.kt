@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bluetriangle.android.demo.R
 import com.bluetriangle.android.demo.compose.ComposeMainActivity
 import com.bluetriangle.android.demo.groupingpoc.QuoteRequestHelper
+import com.bluetriangle.android.demo.kotlin.HybridDemoLayoutActivity
 import com.bluetriangle.android.demo.kotlin.JankTestActivity
 import com.bluetriangle.android.demo.kotlin.MemoryTestViewModel.MemoryBlock
 import com.bluetriangle.android.demo.kotlin.ScrollJankTestActivity
@@ -51,8 +52,9 @@ class FourthTabFragment : Fragment() {
         }
 
         view.findViewById<Button>(R.id.anr_button).setOnClickListener {
-            Thread.sleep(6000)
+            Thread.sleep(25000)
         }
+
         view.findViewById<Button>(R.id.launch_compose).setOnClickListener {
             startActivity(Intent(context, ComposeMainActivity::class.java))
         }
@@ -71,6 +73,10 @@ class FourthTabFragment : Fragment() {
 
         view.findViewById<Button>(R.id.scroll_jank_test).setOnClickListener {
             startActivity(Intent(context, ScrollJankTestActivity::class.java))
+        }
+
+        view.findViewById<Button>(R.id.hybrid_demo).setOnClickListener {
+            startActivity(Intent(context, HybridDemoLayoutActivity::class.java))
         }
     }
 }
