@@ -170,7 +170,7 @@ class KotlinTestListActivity : AppCompatActivity() {
         try {
             instance!!.raiseTestException()
         } catch (e: Throwable) {
-            instance!!.trackException("A test exception caught!", e)
+            instance!!.trackException("A test exception caught!", null, e)
         }
     }
 

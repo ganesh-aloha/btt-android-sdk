@@ -144,6 +144,7 @@ class Tracker private constructor(
     internal var memoryWarningReporter: MemoryWarningReporter
 
     private val claritySessionConnector:ClaritySessionConnector
+    internal val appPackageName: String
     internal val appVersion: String
     internal var firstInstallTime: Long? = null
         @Synchronized set
@@ -173,6 +174,7 @@ class Tracker private constructor(
         this.memoryWarningReporter = MemoryWarningReporter(deviceInfoProvider)
         this.globalPropertiesStore = GlobalPropertiesStore(application.applicationContext)
 
+        appPackageName = Utils.getAppPackageName(application.applicationContext)
         appVersion = Utils.getAppVersion(application.applicationContext)
 
         trackerExecutor = TrackerExecutor(configuration)
@@ -1267,8 +1269,8 @@ class Tracker private constructor(
         globalPropertiesStore.setCustomCategory(CustomCategory.Category5, value)
     }
 
-    fun trackError(message: String) {
-        trackException(message, object : Throwable() {
+    fun trackError(message: String, threadStack: String?) {
+        trackException(message, threadStack, object : Throwable() {
             override fun fillInStackTrace(): Throwable {
                 stackTrace = arrayOf()
                 return this
@@ -1283,7 +1285,10 @@ class Tracker private constructor(
      * @param exception the exception to track
      */
     fun trackException(
-        message: String?, exception: Throwable, errorType: BTErrorType = BTErrorType.NativeAppCrash
+        message: String?,
+        stackTrace: String?,
+        exception: Throwable,
+        errorType: BTErrorType = BTErrorType.NativeAppCrash
     ) {
         val timeStamp = System.currentTimeMillis().toString()
         val mostRecentTimer = getMostRecentTimer()
@@ -1293,7 +1298,7 @@ class Tracker private constructor(
         trackerExecutor.submit(
             CrashRunnable(
                 configuration,
-                exceptionInfo.stackTrace,
+                stackTrace ?: exceptionInfo.stackTrace,
                 timeStamp,
                 errorType,
                 mostRecentTimer,

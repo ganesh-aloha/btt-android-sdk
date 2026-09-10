@@ -2,6 +2,7 @@ package com.bluetriangle.analytics
 
 import com.bluetriangle.analytics.Constants.APP_VERSION
 import com.bluetriangle.analytics.Constants.BREADCRUMBS
+import com.bluetriangle.analytics.Constants.ERROR_META
 import com.bluetriangle.analytics.Constants.SDK_ID
 import com.bluetriangle.analytics.Constants.SDK_VERSION
 import com.bluetriangle.analytics.Constants.STACK_TRACE
@@ -9,6 +10,7 @@ import com.bluetriangle.analytics.Timer.Companion.FIELD_NET_STATE_SOURCE
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
 import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD_DEVICE_MODEL
 import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD_NETWORK_STATE
+import org.json.JSONObject
 
 data class ErrorNativeAppProperties(
     var netState: String? = null,
@@ -17,7 +19,7 @@ data class ErrorNativeAppProperties(
     var breadcrumbs: String? = null,
     var stackTrace: String? = null
 ) {
-
+    val appPackageName: String? = Tracker.instance?.appPackageName
     val appVersion: String? = Tracker.instance?.appVersion
     val sdkVersion: String = Tracker.sdkVersion
     val sdkId: String = Tracker.sdkId
@@ -43,5 +45,15 @@ data class ErrorNativeAppProperties(
         stackTrace?.let {
             this[STACK_TRACE] = stackTrace
         }
+
+        this[ERROR_META] = getErrorMeta()
+    }
+
+    fun getErrorMeta():String{
+        return JSONObject().apply {
+            put("appId", appPackageName)
+            put("platform", "Android")
+            put("deviceType", Utils.deviceName)
+        }.toString()
     }
 }

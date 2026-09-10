@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Base64
+import com.bluetriangle.analytics.utility.CrashTraceParser
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.UnsupportedEncodingException
@@ -99,6 +100,13 @@ internal object Utils {
         } else "UNKNOWN"
     }
 
+    fun getAppPackageName(context: Context): String {
+        val packageInfo = getAppPackageInfo(context)
+        return if (packageInfo != null) {
+            packageInfo.packageName
+        } else "UNKNOWN"
+    }
+
     val os: String
         get() = "${Constants.OS} ${Build.VERSION.RELEASE}"
 
@@ -164,21 +172,23 @@ internal object Utils {
             appFrame
         ).joinToString("~~")
 
-        val stacktraceLines = if (hideExceptionName) {
-            lines.drop(1)
-        } else {
-            lines
-        }
+//        val stacktraceLines = if (hideExceptionName) {
+//            lines.drop(1)
+//        } else {
+//            lines
+//        }
+//
+//        val prefix = when {
+//            !message.isNullOrBlank() -> "$message~~"
+//            hideExceptionName && !e.message.isNullOrBlank() -> "${e.message}~~"
+//            else -> ""
+//        }
+//
+//        val stacktrace = prefix + stacktraceLines
+//            .filter(String::isNotBlank)
+//            .joinToString("~~")
 
-        val prefix = when {
-            !message.isNullOrBlank() -> "$message~~"
-            hideExceptionName && !e.message.isNullOrBlank() -> "${e.message}~~"
-            else -> ""
-        }
-
-        val stacktrace = prefix + stacktraceLines
-            .filter(String::isNotBlank)
-            .joinToString("~~")
+        val stacktrace = CrashTraceParser.exceptionToJson(e).toString()
 
         return ExceptionInfo(title, stacktrace)
     }

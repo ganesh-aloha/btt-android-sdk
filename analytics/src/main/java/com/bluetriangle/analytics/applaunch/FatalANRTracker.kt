@@ -19,6 +19,7 @@ import com.bluetriangle.analytics.Tracker.Companion.SHARED_PREFERENCES_NAME
 import com.bluetriangle.analytics.anrwatchdog.ANRWarningException
 import com.bluetriangle.analytics.anrwatchdog.AnrListener
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
+import com.bluetriangle.analytics.utility.CrashTraceParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -126,14 +127,16 @@ internal class FatalANRTracker(
         )
 
         // A trace is only attached to ANR (and native crash) exits, describe the exit otherwise
-        val stackTrace = readExitStackTrace(exitInfo) ?: describeAppExit(exitInfo)
+        //val stackTrace = readExitStackTrace(exitInfo) ?: describeAppExit(exitInfo)
+        val exitInfoDetail = CrashTraceParser.parseApplicationExitInfo(exitInfo)
 
         tracker.trackerExecutor.submit(
             CrashRunnable(
                 tracker.configuration,
-                stackTrace,
+                exitInfoDetail.stackTrace.toString(),
                 exitInfo.timestamp.toString(),
                 errorType,
+                title = exitInfoDetail.title,
                 mostRecentTimer = buildExitTimer(errorType),
                 deviceInfoProvider = deviceInfoProvider,
                 breadcrumbs = tracker.breadcrumbsManager?.getCachedSnapshot()
@@ -193,20 +196,6 @@ internal class FatalANRTracker(
 
         val stackTrace = subLines.joinToString("\n") + rawTrace
         return stackTrace.replace(Regex("\\r?\\n"), "~~")
-
-//        return buildString {
-//            for (line in subLines) {
-//                append(line)
-//                append("~~")
-//            }
-//
-//            for (line in threadDump) {
-//                //if (line.isNotBlank()) {
-//                    append(line)
-//                    append("~~")
-//                ///}
-//            }
-//        }
     }
 
     /**
