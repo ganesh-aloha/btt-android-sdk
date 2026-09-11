@@ -5,6 +5,7 @@ import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.Utils
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
+import com.bluetriangle.analytics.event.CrashSource
 
 internal class ANRReporter(
     private val deviceInfoProvider: IDeviceInfoProvider
@@ -26,7 +27,8 @@ internal class ANRReporter(
                     timer,
                     exceptionInfo.title,
                     deviceInfoProvider = deviceInfoProvider,
-                    breadcrumbs = anrWarningException.breadcrumbs
+                    breadcrumbs = anrWarningException.breadcrumbs,
+                    source = CrashSource.MainThreadWatcher
                 )
             )
             thread.start()

@@ -5,6 +5,7 @@ import com.bluetriangle.analytics.Constants.TIMER_MIN_PGTM
 import com.bluetriangle.analytics.Timer.Companion.FIELD_NATIVE_APP
 import com.bluetriangle.analytics.caching.classifier.CacheType
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
+import com.bluetriangle.analytics.event.CrashSource
 import com.bluetriangle.analytics.networkstate.BTTNetworkState
 import com.bluetriangle.analytics.utility.value
 import org.json.JSONArray
@@ -42,7 +43,8 @@ internal class CrashRunnable(
     private val title: String? = null,
     private val errorCount: Int = 1,
     private val deviceInfoProvider: IDeviceInfoProvider,
-    private val breadcrumbs: JSONArray? = null
+    private val breadcrumbs: JSONArray? = null,
+    private val source: CrashSource? = null
 ) : Runnable {
 
     private var timerFields = mutableMapOf<String, String?>()
@@ -216,6 +218,7 @@ internal class CrashRunnable(
         val netStateMonitor = Tracker.instance?.networkStateMonitor
 
         val nativeAppProperties = ErrorNativeAppProperties()
+        nativeAppProperties.source = source?.name
         nativeAppProperties.stackTrace = stackTrace
 
         netStateMonitor?.state?.value?.let {

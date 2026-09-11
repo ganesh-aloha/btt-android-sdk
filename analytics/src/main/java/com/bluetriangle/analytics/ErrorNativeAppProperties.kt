@@ -17,9 +17,10 @@ data class ErrorNativeAppProperties(
     private var deviceModel: String? = null,
     var netStateSource: String? = null,
     var breadcrumbs: String? = null,
-    var stackTrace: String? = null
+    var stackTrace: String? = null,
+    var source:String? = null
 ) {
-    val appPackageName: String? = Tracker.instance?.appPackageName
+    val appVersionCode: Long? = Tracker.instance?.appVersionCode
     val appVersion: String? = Tracker.instance?.appVersion
     val sdkVersion: String = Tracker.sdkVersion
     val sdkId: String = Tracker.sdkId
@@ -51,9 +52,10 @@ data class ErrorNativeAppProperties(
 
     fun getErrorMeta():String{
         return JSONObject().apply {
-            put("appId", appPackageName)
             put("platform", "Android")
-            put("deviceType", Utils.deviceName)
+            appVersionCode?.let{put("build", appVersionCode.toString())}
+            put("arch", Utils.getDeviceArchitecture())
+            put("source", source ?: "Unknown")
         }.toString()
     }
 }

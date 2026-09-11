@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Base64
+import androidx.core.content.pm.PackageInfoCompat
 import com.bluetriangle.analytics.utility.CrashTraceParser
 import org.json.JSONArray
 import org.json.JSONObject
@@ -100,11 +101,32 @@ internal object Utils {
         } else "UNKNOWN"
     }
 
-    fun getAppPackageName(context: Context): String {
+    fun getAppDetails(context: Context): Triple<String, String, Long> {
         val packageInfo = getAppPackageInfo(context)
+
         return if (packageInfo != null) {
-            packageInfo.packageName
-        } else "UNKNOWN"
+            Triple(
+                packageInfo.packageName,
+                packageInfo.versionName ?: "UNKNOWN",
+                PackageInfoCompat.getLongVersionCode(packageInfo)
+            )
+        } else {
+            Triple(context.packageName, "UNKNOWN", 0L)
+        }
+    }
+
+    fun getDeviceArchitecture(): String {
+        // Build.SUPPORTED_ABIS returns an array of string ABIs ordered by preference
+        val supportedAbis = Build.SUPPORTED_ABIS
+
+        if (!supportedAbis.isNullOrEmpty()) {
+            // The first element is the primary ABI of the device
+            return supportedAbis[0]
+        }
+
+        // Fallback for older devices (deprecated but safe as a fallback)
+        @Suppress("DEPRECATION")
+        return Build.CPU_ABI
     }
 
     val os: String

@@ -32,7 +32,7 @@ object CrashTraceParser {
 
         while (current != null && seen.add(current) && index < 20) {
             val stack = JSONArray()
-            current.stackTrace.forEachIndexed  {i, element ->
+            current.stackTrace.forEachIndexed { i, element ->
                 // StackTraceElement.toString() already renders as
                 // "com.pkg.Class.method(File.kt:line)" — just prefix "at " to
                 // match the fLine convention used elsewhere.
@@ -74,17 +74,16 @@ object CrashTraceParser {
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    fun parseApplicationExitInfo(exitInfo: ApplicationExitInfo): AppExitError {
+    fun parseApplicationExitInfo(exitInfo: ApplicationExitInfo, errorType: String): AppExitError {
         val rawText = exitInfo.traceInputStream?.use { stream ->
             BufferedReader(InputStreamReader(stream)).readText()
         }.orEmpty()
 
-        return parseApplicationExitInfo(exitInfo.timestamp, rawText)
+        return parseApplicationExitInfo(errorType, rawText)
     }
 
-    private fun parseApplicationExitInfo(timestampMs: Long, rawTraceText: String): AppExitError {
+    private fun parseApplicationExitInfo(errorType: String, rawTraceText: String): AppExitError {
         val appId = Tracker.instance?.appPackageName ?: ""
-        val versionName = Tracker.instance?.appVersion ?: ""
         var exitReason = ""
 
         val lines = normalize(rawTraceText).split("\n").toMutableList()
@@ -94,7 +93,7 @@ object CrashTraceParser {
         }
 
         // Generate Title
-        val subLines = arrayListOf(exitReason)
+        val subLines = arrayListOf(extractAnrLocation(exitReason))
         val appFrame = appFrameOf(lines, appId)
         appFrame?.let {
             subLines.add(it)
@@ -198,7 +197,7 @@ object CrashTraceParser {
             put("threads", threads)
         }
 
-        return AppExitError(title, stackData)
+        return AppExitError("$errorType $title", stackData)
     }
 
     private fun appFrameOf(traceLines: List<String>, packageName: String): String? {
@@ -211,6 +210,12 @@ object CrashTraceParser {
             .firstOrNull { it.startsWith(STACK_FRAME_PREFIX) && it.contains(packageName) }
     }
 
+    fun extractAnrLocation(subject: String): String {
+        return subject.substringAfter("(")
+            .substringBefore(" is not responding")
+            .trim()
+            .substringAfterLast(" ")
+    }
     /**
      * Defensive only: a genuine AppExitInfo.traceInputStream() dump is plain text with
      * real quotes and slashes. Some export/logging pipelines JSON-escape the text before

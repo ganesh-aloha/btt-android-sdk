@@ -146,6 +146,7 @@ class Tracker private constructor(
     private val claritySessionConnector:ClaritySessionConnector
     internal val appPackageName: String
     internal val appVersion: String
+    internal val appVersionCode: Long
     internal var firstInstallTime: Long? = null
         @Synchronized set
 
@@ -174,8 +175,11 @@ class Tracker private constructor(
         this.memoryWarningReporter = MemoryWarningReporter(deviceInfoProvider)
         this.globalPropertiesStore = GlobalPropertiesStore(application.applicationContext)
 
-        appPackageName = Utils.getAppPackageName(application.applicationContext)
-        appVersion = Utils.getAppVersion(application.applicationContext)
+        val appVersionDetails = Utils.getAppDetails(application.applicationContext)
+
+        appPackageName = appVersionDetails.first
+        appVersion = appVersionDetails.second
+        appVersionCode = appVersionDetails.third
 
         trackerExecutor = TrackerExecutor(configuration)
 

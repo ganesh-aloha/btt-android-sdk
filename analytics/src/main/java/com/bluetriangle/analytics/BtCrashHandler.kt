@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.bluetriangle.analytics.Utils.exceptionToStacktrace
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
+import com.bluetriangle.analytics.event.CrashSource
 
 internal class BtCrashHandler(
     private val configuration: BlueTriangleConfiguration,
@@ -33,7 +34,8 @@ internal class BtCrashHandler(
             mostRecentTimer = mostRecentTimer,
             title = title,
             deviceInfoProvider = deviceInfoProvider,
-            breadcrumbs = Tracker.instance?.breadcrumbsManager?.snapshot()
+            breadcrumbs = Tracker.instance?.breadcrumbsManager?.snapshot(),
+            source = CrashSource.GlobalExceptionHandler
         ))
         thread.start()
         thread.join()

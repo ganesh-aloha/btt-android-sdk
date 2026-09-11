@@ -13,5 +13,12 @@ sealed class BTTEvent(val id: Int, val defaultPageName: String): Parcelable {
     object Crash: BTTEvent(7, "NativeAppCrash") // 6 is for iOS crash
     object AppInstall: BTTEvent(8, "AppInstall")
     object ForceRestart: BTTEvent(9, "ForceRestart")
-    object FatalANR: BTTEvent(10, "FatalANR")
+    object FatalANR: BTTEvent(13, "FatalANR") // 10, 11, 12 reserved for iOS metric kit errors
+}
+
+sealed class CrashSource(val name: String) {
+    object GlobalExceptionHandler : CrashSource("GlobalExceptionHandler")
+    object MainThreadWatcher : CrashSource("MainThreadWatcher")
+    object AppExitInformation : CrashSource("AppExitInformation")
+    object ReactJS : CrashSource("ReactJS")
 }
