@@ -36,7 +36,7 @@ class CapturedRequest {
      */
     var url: String? = null
         set(value) {
-            field = value
+            field = value?.substringBefore('?')
             value?.let {
                 val parsedUri = URI(it)
                 host = parsedUri.host
