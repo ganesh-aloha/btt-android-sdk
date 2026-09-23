@@ -114,6 +114,7 @@ internal class FatalANRTracker(
     private fun errorTypeOf(exitInfo: ApplicationExitInfo): Tracker.BTErrorType? {
         return when (exitInfo.reason) {
             ApplicationExitInfo.REASON_ANR -> Tracker.BTErrorType.FatalANR
+            ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> Tracker.BTErrorType.ExcessResourceUsage
             else -> null
         }
     }
@@ -129,7 +130,7 @@ internal class FatalANRTracker(
 
         // A trace is only attached to ANR (and native crash) exits, describe the exit otherwise
         //val stackTrace = readExitStackTrace(exitInfo) ?: describeAppExit(exitInfo)
-        val exitInfoDetail = CrashTraceParser.parseApplicationExitInfo(exitInfo, "Fatal ANR:")
+        val exitInfoDetail = CrashTraceParser.parseApplicationExitInfo(exitInfo, errorType, errorType.getPrefix())
 
         tracker.trackerExecutor.submit(
             CrashRunnable(
@@ -240,6 +241,14 @@ internal class FatalANRTracker(
                     timer.getField(FIELD_TRAFFIC_SEGMENT_NAME)
                 )
             }
+        }
+    }
+
+    fun Tracker.BTErrorType.getPrefix(): String {
+        return when (this) {
+            Tracker.BTErrorType.FatalANR -> "Fatal ANR:"
+            Tracker.BTErrorType.ExcessResourceUsage -> "Excess Resource Usage:"
+            else -> ""
         }
     }
 

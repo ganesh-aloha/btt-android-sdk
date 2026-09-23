@@ -74,15 +74,26 @@ object CrashTraceParser {
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    fun parseApplicationExitInfo(exitInfo: ApplicationExitInfo, errorType: String): AppExitError {
+    fun parseApplicationExitInfo(
+        exitInfo: ApplicationExitInfo,
+        errorType: Tracker.BTErrorType,
+        prefix: String
+    ): AppExitError {
+        if (errorType != Tracker.BTErrorType.FatalANR) {
+            return AppExitError(
+                "$prefix App is killed by OS - ${exitInfo.description ?: "No description provided by OS"}",
+                null
+            )
+        }
+
         val rawText = exitInfo.traceInputStream?.use { stream ->
             BufferedReader(InputStreamReader(stream)).readText()
         }.orEmpty()
 
-        return parseApplicationExitInfo(errorType, rawText)
+        return parseApplicationExitInfo(prefix, rawText)
     }
 
-    private fun parseApplicationExitInfo(errorType: String, rawTraceText: String): AppExitError {
+    private fun parseApplicationExitInfo(prefix: String, rawTraceText: String): AppExitError {
         val appId = Tracker.instance?.appPackageName ?: ""
         var exitReason = ""
 
@@ -197,7 +208,7 @@ object CrashTraceParser {
             put("threads", threads)
         }
 
-        return AppExitError("$errorType $title", stackData)
+        return AppExitError("$prefix $title", stackData)
     }
 
     private fun appFrameOf(traceLines: List<String>, packageName: String): String? {
