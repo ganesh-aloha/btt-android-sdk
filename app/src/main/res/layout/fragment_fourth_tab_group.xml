@@ -69,6 +69,15 @@
         app:layout_constraintTop_toTopOf="@+id/get_quote_button" />
 
     <Button
+        android:id="@+id/cpu_heavy_task"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="CPU Heavy Task"
+        app:layout_constraintBottom_toTopOf="@+id/hybrid_demo"
+        app:layout_constraintStart_toStartOf="@+id/hybrid_demo" />
+
+    <Button
         android:id="@+id/hybrid_demo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

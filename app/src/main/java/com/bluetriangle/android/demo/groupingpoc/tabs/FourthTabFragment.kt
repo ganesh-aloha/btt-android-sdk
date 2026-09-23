@@ -16,6 +16,9 @@ import com.bluetriangle.android.demo.kotlin.HybridDemoLayoutActivity
 import com.bluetriangle.android.demo.kotlin.JankTestActivity
 import com.bluetriangle.android.demo.kotlin.MemoryTestViewModel.MemoryBlock
 import com.bluetriangle.android.demo.kotlin.ScrollJankTestActivity
+import kotlin.concurrent.thread
+import kotlin.math.atan
+import kotlin.math.tan
 
 class FourthTabFragment : Fragment() {
 
@@ -80,6 +83,29 @@ class FourthTabFragment : Fragment() {
 
         view.findViewById<Button>(R.id.hybrid_demo).setOnClickListener {
             startActivity(Intent(context, HybridDemoLayoutActivity::class.java))
+        }
+
+        view.findViewById<Button>(R.id.cpu_heavy_task).setOnClickListener {
+            resourceHeavyTask()
+        }
+    }
+
+    fun resourceHeavyTask(durationMs: Long = 30_000) {
+        val end = System.nanoTime() + durationMs * 1_000_000
+
+        repeat(Runtime.getRuntime().availableProcessors()) { i ->
+            Thread {
+                while (System.nanoTime() < end) {
+                    var x = 0.123456789
+
+                    repeat(100_000) {
+                        x = kotlin.math.sin(x) * kotlin.math.cos(x)
+                    }
+                }
+            }.apply {
+                name = "CPU-Stress-$i"
+                start()
+            }
         }
     }
 }
