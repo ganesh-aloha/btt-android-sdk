@@ -5,6 +5,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_CART_COUNT_CHECKOUT
 import com.bluetriangle.analytics.Constants.DEFAULT_CHECKOUT_AMOUNT
 import com.bluetriangle.analytics.Constants.DEFAULT_CHECKOUT_TRACKING_ENABLED
 import com.bluetriangle.analytics.Constants.DEFAULT_TIMER_VALUE
+import com.bluetriangle.analytics.SdkCheckoutConfig
 
 internal class CheckoutConfig(
     val isEnabled: Boolean,
@@ -63,6 +64,20 @@ internal class CheckoutConfig(
             |cartCountCheckout: $cartCountCheckout
             |orderNumber: "$orderNumber"
             |timerValue: $timerValue
+            |)
         """.trimMargin()
+    }
+
+    fun toSdkConfig(): SdkCheckoutConfig{
+        return SdkCheckoutConfig(
+            isEnabled = isEnabled,
+            classNames = classNames,
+            networkUrlPattern = networkUrlPattern,
+            checkoutAmount = checkoutAmount,
+            cartCount = cartCount,
+            cartCountCheckout = cartCountCheckout,
+            orderNumber = orderNumber,
+            timerValue = timerValue
+        )
     }
 }

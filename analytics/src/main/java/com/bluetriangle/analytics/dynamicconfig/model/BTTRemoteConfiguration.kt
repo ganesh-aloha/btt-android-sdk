@@ -5,6 +5,7 @@
  */
 package com.bluetriangle.analytics.dynamicconfig.model
 
+import com.bluetriangle.analytics.SdkConfiguration
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfig
 import com.bluetriangle.analytics.checkout.config.CheckoutConfig
 
@@ -59,7 +60,7 @@ internal open class BTTRemoteConfiguration(
     }
 
     override fun toString(): String {
-        return "RemoteConfig { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey, enableScreenResponsiveness: $enableScreenResponsiveness }"
+        return "RemoteConfig { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey, enableAppInstall; $enableAppInstall, enableForceRestart: $enableForceRestart, enableScreenResponsiveness: $enableScreenResponsiveness, enableReportFatalAnr: $enableReportFatalAnr }"
     }
 
     override fun hashCode(): Int {
@@ -87,4 +88,29 @@ internal open class BTTRemoteConfiguration(
         return result
     }
 
+    fun toSdkConfiguration(): SdkConfiguration {
+        return SdkConfiguration(
+            networkSampleRate = networkSampleRate,
+            ignoreScreens = ignoreScreens,
+            enableAllTracking = enableAllTracking,
+            enableScreenTracking = enableScreenTracking,
+            enableGrouping = enableGrouping,
+            groupingIdleTime = groupingIdleTime,
+            enableGroupingTapDetection = enableGroupingTapDetection,
+            enableNetworkStateTracking = enableNetworkStateTracking,
+            enableCrashTracking = enableCrashTracking,
+            enableANRTracking = enableANRTracking,
+            enableMemoryWarning = enableMemoryWarning,
+            enableLaunchTime = enableLaunchTime,
+            enableWebViewStitching = enableWebViewStitching,
+            checkoutConfig = checkoutConfig.toSdkConfig(),
+            breadcrumbsConfig = breadcrumbsConfig.toSdkConfig(),
+            configKey = configKey,
+            enableAppInstall = enableAppInstall,
+            enableForceRestart = enableForceRestart,
+            forceRestartDuration = forceRestartDuration,
+            enableScreenResponsiveness = enableScreenResponsiveness,
+            enableReportFatalAnr = enableReportFatalAnr
+        )
+    }
 }

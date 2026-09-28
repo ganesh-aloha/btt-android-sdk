@@ -64,6 +64,7 @@ import com.bluetriangle.analytics.sessionmanager.ISessionManager
 import com.bluetriangle.analytics.sessionmanager.SessionData
 import com.bluetriangle.analytics.sessionmanager.SessionManager
 import com.bluetriangle.analytics.thirdpartyintegration.ClaritySessionConnector
+import com.bluetriangle.analytics.utility.postDelayedMain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -149,6 +150,8 @@ class Tracker private constructor(
     internal val appVersionCode: Long
     internal var firstInstallTime: Long? = null
         @Synchronized set
+
+    var configListener: IConfigListener? = null
 
     internal var appLaunchReporter: AppLaunchReporter
 
@@ -1598,8 +1601,21 @@ class Tracker private constructor(
                             instance?.appLaunchReporter?.reportAppInstall(installTime)
                         }
                     }
+
+                    notifyConfigToCrossPlatformSDK()
                 }
             }
+
+            notifyConfigToCrossPlatformSDK()
+        }
+
+        private fun notifyConfigToCrossPlatformSDK(){
+            // wait for configListener initialization
+            postDelayedMain({
+                instance?.configListener?.onConfigurationChanged(
+                    configurationRepository.get().toSdkConfiguration()
+                )
+            }, 500)
         }
 
         private fun BlueTriangleConfiguration.updateConfiguration(sessionData: SessionData) {
