@@ -12,9 +12,9 @@ sealed class BTTEvent(val id: Int, val defaultPageName: String): Parcelable {
     object MemoryWarning: BTTEvent(5, "MemoryWarning")
     object Crash: BTTEvent(7, "NativeAppCrash") // 6 is for iOS crash
     object AppInstall: BTTEvent(8, "AppInstall")
-    object ForceRestart: BTTEvent(9, "ForceRestart")
-    object FatalANR: BTTEvent(13, "FatalANR") // 10, 11, 12 reserved for iOS metric kit errors
-    object ExcessiveResourceUsage: BTTEvent(14, "ExcessiveResourceUsage")
+    object ForceRestart: BTTEvent(15, "ForceRestart")
+    object FatalANR: BTTEvent(19, "FatalANR") // 16, 17, 18 reserved for iOS metric kit errors
+    object AccessResourceUsage: BTTEvent(20, "AccessResourceUsage")
 }
 
 sealed class CrashSource(val name: String) {
