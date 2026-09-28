@@ -1329,7 +1329,7 @@ class Tracker private constructor(
         MemoryWarning(BTTEvent.MemoryWarning),
         ForceRestart(BTTEvent.ForceRestart),
         FatalANR(BTTEvent.FatalANR),
-        ExcessResourceUsage(BTTEvent.ExcessResourceUsage),
+        ExcessiveResourceUsage(BTTEvent.ExcessiveResourceUsage),
         BTTConfigUpdateError;
 
         val errorName: String
