@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Reports the exit of the previous app process as an error, when the process was killed by a fatal
- * ANR or by the low memory killer.
+ * ANR, excessive resource usage or the low memory killer.
  *
  * Android only tells us why a process died on the next launch, so the check runs once per launch.
  * Everything it does blocks - a binder call for the exit record, reading the ANR trace file and a
@@ -115,6 +115,7 @@ internal class FatalANRTracker(
         return when (exitInfo.reason) {
             ApplicationExitInfo.REASON_ANR -> Tracker.BTErrorType.FatalANR
             ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> Tracker.BTErrorType.AccessResourceUsage
+            ApplicationExitInfo.REASON_LOW_MEMORY -> Tracker.BTErrorType.LowMemory
             else -> null
         }
     }
@@ -248,6 +249,7 @@ internal class FatalANRTracker(
         return when (this) {
             Tracker.BTErrorType.FatalANR -> "Fatal ANR:"
             Tracker.BTErrorType.AccessResourceUsage -> "Excess Resource Usage:"
+            Tracker.BTErrorType.LowMemory -> "Low Memory:"
             else -> ""
         }
     }
