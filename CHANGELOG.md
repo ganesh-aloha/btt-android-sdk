@@ -1,4 +1,18 @@
-# Blue Triangle 2.19.7 Latest, July 20 2026
+# Blue Triangle 2.19.8 Latest, October 07 2026
+### New Features
+- Screen Responsiveness Tracking: BlueTriangle now tracks jank, hitch and hang frames per screen using AndroidX JankStats. Each screen timer reports hitch/hang metrics, a hitch histogram and a responsiveness grade. Can be disabled with the `com.blue-triangle.screen-responsiveness.enable` meta-data or remotely via `enableScreenResponsiveness`.
+- Fatal ANR Reporting: ANRs that terminated the app are reported on the next launch using `ApplicationExitInfo` (Android 11 / API 30 and above). Can be disabled remotely via `enableReportFatalAnr`.
+- App exits caused by Low Memory and Excessive Resource Usage are reported on the next launch (Android 11 / API 30 and above).
+- HTTP method is now captured for network requests, including OkHttp `BlueTriangleOkHttpInterceptor` and `BlueTriangleOkHttpEventListener`.
+- Remote configuration is exposed to cross-platform SDKs through `Tracker.configListener` (`IConfigListener`).
+
+### Improvements
+- Crash, ANR and fatal ANR stack traces are formatted and sent as JSON, along with the crash source.
+- Query parameters are removed from captured network request URLs.
+- Tap detection for breadcrumbs now resolves button text on Compose and React Native views.
+- Native app properties now include the grouped screen count, group name source and SDK id.
+
+# Blue Triangle 2.19.7, July 20 2026
 ### Bug Fixes and New Improvements
 - SDK logging was not printing in logcat in app debug mode; needed sdk debug mode issue fixed.
 - Make `androidx.navigation:navigation-compose` dependency compileOnly to avoid version conflict in consuming app.
