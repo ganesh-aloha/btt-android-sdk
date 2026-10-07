@@ -9,8 +9,10 @@ The Blue Triangle SDK for Android enables application owners to track their user
   - Main Timers
   - Network Timers
   - Custom Timers
+  - Screen Responsiveness (Jank, Hitch & Hang Frames)
 - Errors & Crashes
   - Application Not Responding (ANR)
+  - Fatal ANR, Low Memory and Excessive Resource Usage App Exits
   - HTTP Response Codes
   - App Crashes
 - Device Stats & Session Attributes
@@ -500,6 +502,27 @@ You can disable ANR detection by setting the following meta-data:
 <meta-data android:name="com.blue-triangle.track-anr.enable" android:value="false"/>
 ```
 
+### Screen Responsiveness
+
+The SDK monitors frame rendering on every tracked screen using AndroidX
+[JankStats](https://developer.android.com/topic/performance/jankstats) and reports how smooth the screen was along
+with its screen timer:
+
+- **Hitch** — a frame that takes more than twice the device's frame budget to render (e.g. > 33ms on a 60Hz display).
+- **Hang** — a frame that takes 750ms or more to render.
+
+For each screen the SDK reports the total frame count, hitch and hang counts and durations, the longest hitch and
+hang, a hitch duration histogram and a responsiveness grade. On API 24+ JankStats uses the platform FrameMetrics API;
+below API 24 it falls back to an approximation.
+
+Screen responsiveness requires screen tracking to be enabled. To disable it, add the following meta-data:
+
+```xml
+<meta-data android:name="com.blue-triangle.screen-responsiveness.enable" android:value="false"/>
+```
+
+It can also be enabled/disabled remotely from the Blue Triangle portal without an app release.
+
 ### Memory Warning 
 When the Java Virtual Machine cannot allocate an object because it is out of memory, and no more memory could be made available by the garbage collector, an OutOfMemoryError is thrown.
 
@@ -734,6 +757,18 @@ fun testCrashTracking() {
 ### App Install
 
 The BlueTriangle SDK automatically tracks new App Installs. Install event will be reported on next app launch after install. Hence, the time of the event may not necessarily be time of install it will be the time when user first time launched app after installation. If user launches app after 72 hours(3 days) post installation, BlueTriangle ignores this installation reporting.
+
+### Fatal ANR and App Exit Reasons
+
+On Android 11 (API Level 30) and above, the SDK reads `ApplicationExitInfo` on app launch and reports the previous
+process exit if the system killed the app for one of the following reasons:
+
+- `REASON_ANR` — reported as a Fatal ANR error, with the main thread stack trace when available.
+- `REASON_LOW_MEMORY` — reported as a Low Memory error.
+- `REASON_EXCESSIVE_RESOURCE_USAGE` — reported as an Excessive Resource Usage error.
+
+Because the exit can only be read after the app is relaunched, the error is reported on the next launch. Each exit is
+reported only once. Fatal ANR reporting can be enabled/disabled remotely from the Blue Triangle portal.
 
 ### Force Restart
 
