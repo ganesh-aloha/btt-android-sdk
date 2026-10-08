@@ -18,7 +18,7 @@ class BTTScreenTracker(private val pageName: String, private val screenType: Scr
             id,
             pageName,
             screenType
-        ))
+        ), true)
     }
 
     fun onLoadEnded() {
@@ -30,7 +30,7 @@ class BTTScreenTracker(private val pageName: String, private val screenType: Scr
             id,
             pageName,
             screenType
-        ))
+        ), true)
     }
 
     fun onViewStarted() {
@@ -42,7 +42,7 @@ class BTTScreenTracker(private val pageName: String, private val screenType: Scr
             id,
             pageName,
             screenType
-        ))
+        ), true)
     }
 
     fun onViewEnded() {
@@ -55,7 +55,7 @@ class BTTScreenTracker(private val pageName: String, private val screenType: Scr
             id,
             pageName,
             screenType
-        ))
+        ), true)
     }
 
     private fun logConsumedError() {
