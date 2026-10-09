@@ -1,4 +1,4 @@
-# Blue Triangle 2.19.8 Latest, October 07 2026
+# Blue Triangle 2.20.0 Latest, October 07 2026
 ### New Features
 - Screen Responsiveness Tracking: BlueTriangle now tracks jank, hitch and hang frames per screen using AndroidX JankStats. Each screen timer reports hitch/hang metrics, a hitch histogram and a responsiveness grade. Can be disabled with the `com.blue-triangle.screen-responsiveness.enable` meta-data or remotely via `enableScreenResponsiveness`.
 - Fatal ANR Reporting: ANRs that terminated the app are reported on the next launch using `ApplicationExitInfo` (Android 11 / API 30 and above). Can be disabled remotely via `enableReportFatalAnr`.
