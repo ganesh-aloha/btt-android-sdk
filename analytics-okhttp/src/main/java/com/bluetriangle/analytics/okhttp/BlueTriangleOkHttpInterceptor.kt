@@ -1,14 +1,12 @@
 package com.bluetriangle.analytics.okhttp
 
 import com.bluetriangle.analytics.BlueTriangleConfiguration
+import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
-import com.bluetriangle.analytics.networkcapture.RequestType
 import okhttp3.Interceptor
-import okhttp3.MediaType
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
-import java.util.*
 
 class BlueTriangleOkHttpInterceptor(private val configuration: BlueTriangleConfiguration) : Interceptor {
     @Throws(IOException::class)
@@ -30,7 +28,18 @@ class BlueTriangleOkHttpInterceptor(private val configuration: BlueTriangleConfi
         capturedRequest.encodedBodySize = response.body?.contentLength() ?: 0
         capturedRequest.requestType = requestTypeFromMediaType(capturedRequest.file, response.body?.contentType())
         capturedRequest.submit()
+        submitErrorIfAny(request, response)
         return response
     }
 
+    private fun submitErrorIfAny(request: Request, response: Response) {
+        if (!response.isSuccessful && !response.isRedirect) {
+            Tracker.instance?.reportNetworkError(
+                request.url.toString(),
+                request.method,
+                response.code,
+                response.message
+            )
+        }
+    }
 }

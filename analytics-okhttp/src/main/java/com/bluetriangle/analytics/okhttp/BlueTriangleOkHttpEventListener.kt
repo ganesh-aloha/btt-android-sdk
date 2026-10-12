@@ -2,6 +2,7 @@ package com.bluetriangle.analytics.okhttp
 
 import android.util.Log
 import com.bluetriangle.analytics.BlueTriangleConfiguration
+import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
 import com.bluetriangle.analytics.networkcapture.NetworkNativeAppProperties
 import okhttp3.Call
@@ -116,6 +117,7 @@ internal class BlueTriangleOkHttpEventListener(
                 nativeAppProperties?.err = "${ioe::class.java.simpleName} : ${ioe.message}"
                 stop()
                 submit()
+                Tracker.instance?.reportNetworkError(call.request().url.toString(), call.request().method, 600, "${ioe::class.java.simpleName} : ${ioe.message}")
             }
 
             configuration.logger?.debug("Submitted request: ${capturedRequest?.url}, ${capturedRequest?.duration}")

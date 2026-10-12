@@ -16,6 +16,7 @@ sealed class BTTEvent(val id: Int, val defaultPageName: String): Parcelable {
     object FatalANR: BTTEvent(19, "FatalANR") // 16, 17, 18 reserved for iOS metric kit errors
     object AccessResourceUsage: BTTEvent(20, "AccessResourceUsage")
     object LowMemory: BTTEvent(21, "LowMemory")
+    object NetworkError: BTTEvent(22, "NetworkError")
 }
 
 sealed class CrashSource(val name: String) {
@@ -23,4 +24,6 @@ sealed class CrashSource(val name: String) {
     object MainThreadWatcher : CrashSource("MainThreadWatcher")
     object AppExitInformation : CrashSource("AppExitInformation")
     object ReactJS : CrashSource("ReactJS")
+    object OkHttp : CrashSource("OkHttp") //  Network Error
+    object ReactFetch : CrashSource("ReactFetch") // Network Error
 }

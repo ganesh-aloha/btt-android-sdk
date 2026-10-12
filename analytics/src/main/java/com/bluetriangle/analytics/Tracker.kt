@@ -41,6 +41,7 @@ import com.bluetriangle.analytics.dynamicconfig.repository.IBTTConfigurationRepo
 import com.bluetriangle.analytics.dynamicconfig.updater.BTTConfigurationUpdater
 import com.bluetriangle.analytics.dynamicconfig.updater.IBTTConfigurationUpdater
 import com.bluetriangle.analytics.event.BTTEvent
+import com.bluetriangle.analytics.event.CrashSource
 import com.bluetriangle.analytics.eventhub.AppEventHub
 import com.bluetriangle.analytics.eventhub.sdkeventhub.SDKEventHub
 import com.bluetriangle.analytics.globalproperties.CustomCategory
@@ -1316,6 +1317,40 @@ class Tracker private constructor(
         )
     }
 
+    fun reportNetworkError(
+        url: String,
+        method: String,
+        statusCode: Int,
+        statusText: String,
+        source: CrashSource = CrashSource.OkHttp
+    ) {
+        val errorMsg =
+            "$method $url failed with status code $statusCode and status text $statusText"
+        val breadcrumbs = instance?.breadcrumbsManager?.snapshot()
+        val timeStamp = System.currentTimeMillis().toString()
+
+        try {
+            val thread = Thread(
+                CrashRunnable(
+                    configuration,
+                    errorMsg,
+                    timeStamp,
+                    BTErrorType.NetworkError,
+                    mostRecentTimer = null,
+                    title = errorMsg,
+                    errorCount = 1,
+                    deviceInfoProvider = deviceInfoProvider,
+                    breadcrumbs = breadcrumbs,
+                    source = source
+                )
+            )
+            thread.start()
+            thread.join()
+        } catch (interruptedException: InterruptedException) {
+            interruptedException.printStackTrace()
+        }
+    }
+
     internal fun getStackTracePackageFrame(lines: List<String>): String? {
         val packageName = context.get()?.packageName ?: return null
         return lines.asSequence()
@@ -1331,6 +1366,7 @@ class Tracker private constructor(
         FatalANR(BTTEvent.FatalANR),
         AccessResourceUsage(BTTEvent.AccessResourceUsage),
         LowMemory(BTTEvent.LowMemory),
+        NetworkError(BTTEvent.NetworkError),
         BTTConfigUpdateError;
 
         val errorName: String
