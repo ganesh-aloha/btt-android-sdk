@@ -12,7 +12,7 @@ The Blue Triangle SDK for Android enables application owners to track their user
   - Screen Responsiveness (Jank, Hitch & Hang Frames)
 - Errors & Crashes
   - Application Not Responding (ANR)
-  - Fatal ANR, Low Memory and Excessive Resource Usage App Exits
+  - Fatal ANR and Excessive Resource Usage App Exits
   - HTTP Response Codes
   - App Crashes
 - Device Stats & Session Attributes
@@ -764,7 +764,6 @@ On Android 11 (API Level 30) and above, the SDK reads `ApplicationExitInfo` on a
 process exit if the system killed the app for one of the following reasons:
 
 - `REASON_ANR` — reported as a Fatal ANR error, with the main thread stack trace when available.
-- `REASON_LOW_MEMORY` — reported as a Low Memory error.
 - `REASON_EXCESSIVE_RESOURCE_USAGE` — reported as an Excessive Resource Usage error.
 
 Because the exit can only be read after the app is relaunched, the error is reported on the next launch. Each exit is
