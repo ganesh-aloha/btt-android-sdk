@@ -1321,11 +1321,13 @@ class Tracker private constructor(
         url: String,
         method: String,
         statusCode: Int,
-        statusText: String,
+        statusText: String? = null,
         source: CrashSource = CrashSource.OkHttp
     ) {
         val errorMsg =
-            "$method $url failed with status code $statusCode and status text $statusText"
+            "$method $url failed with status code $statusCode" + (statusText?.takeIf { it.isNotBlank() }
+                ?.let { " and error: $it" } ?: "")
+
         val breadcrumbs = instance?.breadcrumbsManager?.snapshot()
         val timeStamp = System.currentTimeMillis().toString()
 
