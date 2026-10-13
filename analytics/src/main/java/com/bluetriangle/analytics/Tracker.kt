@@ -1365,7 +1365,6 @@ class Tracker private constructor(
         ForceRestart(BTTEvent.ForceRestart),
         FatalANR(BTTEvent.FatalANR),
         AccessResourceUsage(BTTEvent.AccessResourceUsage),
-        LowMemory(BTTEvent.LowMemory),
         NetworkError(BTTEvent.NetworkError),
         BTTConfigUpdateError;
 

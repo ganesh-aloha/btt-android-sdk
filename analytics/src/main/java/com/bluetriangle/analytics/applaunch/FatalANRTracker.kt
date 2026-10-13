@@ -115,7 +115,6 @@ internal class FatalANRTracker(
         return when (exitInfo.reason) {
             ApplicationExitInfo.REASON_ANR -> Tracker.BTErrorType.FatalANR
             ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> Tracker.BTErrorType.AccessResourceUsage
-            ApplicationExitInfo.REASON_LOW_MEMORY -> Tracker.BTErrorType.LowMemory
             else -> null
         }
     }
@@ -249,7 +248,6 @@ internal class FatalANRTracker(
         return when (this) {
             Tracker.BTErrorType.FatalANR -> "Fatal ANR:"
             Tracker.BTErrorType.AccessResourceUsage -> "Excess Resource Usage:"
-            Tracker.BTErrorType.LowMemory -> "Low Memory:"
             else -> ""
         }
     }
