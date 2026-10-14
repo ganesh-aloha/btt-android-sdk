@@ -2,6 +2,8 @@ package com.bluetriangle.android.demo.groupingpoc.tabs
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.AndroidRuntimeException
 import android.view.LayoutInflater
 import android.view.View
@@ -58,7 +60,15 @@ class FourthTabFragment : Fragment() {
         }
 
         view.findViewById<Button>(R.id.anr_button).setOnClickListener {
-            Thread.sleep(25000)
+            Thread.sleep(6000)
+
+            postDelayedUI(4000){
+                Thread.sleep(6000)
+            }
+
+            postDelayedUI(10000){
+                Thread.sleep(6000)
+            }
         }
 
         view.findViewById<Button>(R.id.launch_compose).setOnClickListener {
@@ -71,18 +81,6 @@ class FourthTabFragment : Fragment() {
 
         view.findViewById<Button>(R.id.release_memory).setOnClickListener {
             clearMemory()
-        }
-
-        view.findViewById<Button>(R.id.jank_test).setOnClickListener {
-            startActivity(Intent(context, JankTestActivity::class.java))
-        }
-
-        view.findViewById<Button>(R.id.scroll_jank_test).setOnClickListener {
-            startActivity(Intent(context, ScrollJankTestActivity::class.java))
-        }
-
-        view.findViewById<Button>(R.id.hybrid_demo).setOnClickListener {
-            startActivity(Intent(context, HybridDemoLayoutActivity::class.java))
         }
 
         view.findViewById<Button>(R.id.cpu_heavy_task).setOnClickListener {
@@ -108,4 +106,8 @@ class FourthTabFragment : Fragment() {
             }
         }
     }
+}
+
+fun postDelayedUI(delayMillis: Long, runnable: () -> Unit) {
+    Handler(Looper.getMainLooper()).postDelayed(runnable, delayMillis)
 }
