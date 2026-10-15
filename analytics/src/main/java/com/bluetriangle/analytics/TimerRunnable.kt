@@ -5,9 +5,7 @@ import com.bluetriangle.analytics.caching.classifier.CacheType
 import com.bluetriangle.analytics.eventhub.sdkeventhub.SDKEventHub
 import com.bluetriangle.analytics.networkcapture.CapturedRequestRunnable
 import org.json.JSONObject
-import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -39,6 +37,7 @@ internal class TimerRunnable(
                 listOf()
             }
 
+            val requestStartTime = System.currentTimeMillis()
             try {
                 val url = URL(configuration.trackerUrl)
                 connection = url.openConnection() as HttpsURLConnection
@@ -51,14 +50,14 @@ internal class TimerRunnable(
                 connection.doOutput = true
                 DataOutputStream(connection.outputStream).use { it.write(Utils.b64encode(payloadData)) }
                 val statusCode = connection.responseCode
+                val responseBody = BttBeaconLogger.readResponseBody(connection, statusCode)
+                BttBeaconLogger.trace(configuration.trackerUrl, payloadData, requestStartTime, responseBody)
                 if (!capturedRequestCollections.isNullOrEmpty()) {
                     CapturedRequestRunnable(configuration, capturedRequestCollections).run()
                     capturedRequestCollections = null
                 }
                 SDKEventHub.instance.onTimerSubmitted(timer)
                 if (statusCode >= 300) {
-                    val responseBody =
-                        BufferedReader(InputStreamReader(connection.errorStream)).use { it.readText() }
                     configuration.logger?.error("Server Error submitting $timer: $statusCode - $responseBody")
 
                     // If server error, cache the payload and try again later
@@ -76,6 +75,7 @@ internal class TimerRunnable(
                 }
                 connection.getHeaderField(0)
             } catch (e: Exception) {
+                BttBeaconLogger.trace(configuration.trackerUrl, payloadData, requestStartTime, error = e)
                 if (!capturedRequestCollections.isNullOrEmpty()) {
                     CapturedRequestRunnable(configuration, capturedRequestCollections).run()
                 }

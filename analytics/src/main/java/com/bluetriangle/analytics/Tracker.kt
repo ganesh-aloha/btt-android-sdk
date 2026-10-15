@@ -1500,6 +1500,7 @@ class Tracker private constructor(
 
             val isInDebugMode = isDebuggable(application)
             if (!isInDebugMode) configuration.isDebug = false
+            BttBeaconLogger.init(application, configuration)
 
             val defaultConfig = BTTRemoteConfiguration(
                 networkSampleRate = configuration.networkSampleRate,

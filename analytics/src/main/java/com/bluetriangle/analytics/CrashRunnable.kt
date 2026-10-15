@@ -10,9 +10,7 @@ import com.bluetriangle.analytics.networkstate.BTTNetworkState
 import com.bluetriangle.analytics.utility.value
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.toMap
@@ -148,6 +146,7 @@ internal class CrashRunnable(
 
     private fun submitCrashReport() {
         var connection: HttpsURLConnection? = null
+        val requestStartTime = System.currentTimeMillis()
         val crashReportUrl = buildCrashReportUrl()
         configuration.logger?.debug("Crash Report URL: $crashReportUrl")
         val payloadData = buildCrashReportData()
@@ -164,9 +163,9 @@ internal class CrashRunnable(
             connection.doInput = false
             DataOutputStream(connection.outputStream).use { it.write(Utils.b64encode(payloadData)) }
             val statusCode = connection.responseCode
+            val responseBody = BttBeaconLogger.readResponseBody(connection, statusCode)
+            BttBeaconLogger.trace(crashReportUrl, payloadData, requestStartTime, responseBody)
             if (statusCode >= 300) {
-                val responseBody =
-                    BufferedReader(InputStreamReader(connection.errorStream)).use { it.readText() }
                 configuration.logger?.error("Error submitting crash report: $statusCode - $responseBody")
             }
             // If server error, cache the payload and try again later
@@ -175,6 +174,7 @@ internal class CrashRunnable(
             }
             connection.getHeaderField(0)
         } catch (e: Exception) {
+            BttBeaconLogger.trace(crashReportUrl, payloadData, requestStartTime, error = e)
             configuration.logger?.error(e, "Error submitting crash report: ${e.message}")
             cachePayload(crashReportUrl, payloadData)
         } finally {

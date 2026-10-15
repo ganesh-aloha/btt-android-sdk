@@ -3,6 +3,7 @@ package com.bluetriangle.analytics.screenTracking.grouping
 import androidx.core.net.toUri
 import com.bluetriangle.analytics.BlueTriangleConfiguration
 import com.bluetriangle.analytics.Constants
+import com.bluetriangle.analytics.BttBeaconLogger
 import com.bluetriangle.analytics.Payload
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.Utils
@@ -14,9 +15,7 @@ import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD
 import com.bluetriangle.analytics.screenTracking.grouping.BTTChildView.Companion.ENTRY_TYPE
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -35,6 +34,7 @@ internal class GroupChildRunnable(
 
     private fun submitChildViews(childViews: List<BTTChildView>) {
         var connection: HttpsURLConnection? = null
+        val requestStartTime = System.currentTimeMillis()
         val payloadData = buildChildViewsData(childViews, if (configuration.isDebug) 2 else 0)
         var url = configuration.networkCaptureUrl
         try {
@@ -52,9 +52,9 @@ internal class GroupChildRunnable(
             connection.doOutput = true
             DataOutputStream(connection.outputStream).use { it.write(Utils.b64encode(payloadData)) }
             val statusCode = connection.responseCode
+            val responseBody = BttBeaconLogger.readResponseBody(connection, statusCode)
+            BttBeaconLogger.trace(url, payloadData, requestStartTime, responseBody)
             if (statusCode >= 300) {
-                val responseBody =
-                    BufferedReader(InputStreamReader(connection.errorStream)).use { it.readText() }
                 configuration.logger?.error("Server Error submitting $groupTimer: $statusCode - $responseBody")
 
                 // If server error, cache the payload and try again later
@@ -66,6 +66,7 @@ internal class GroupChildRunnable(
             }
             connection.getHeaderField(0)
         } catch (e: Exception) {
+            BttBeaconLogger.trace(url, payloadData, requestStartTime, error = e)
             configuration.logger?.error(
                 e,
                 "Android Error submitting $groupTimer: ${e.message}"

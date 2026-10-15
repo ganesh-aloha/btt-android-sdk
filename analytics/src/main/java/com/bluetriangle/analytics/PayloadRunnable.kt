@@ -1,8 +1,6 @@
 package com.bluetriangle.analytics
 
-import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -16,6 +14,7 @@ internal class PayloadRunnable(private val configuration: BlueTriangleConfigurat
     override fun run() {
         try {
             var connection: HttpsURLConnection? = null
+            val requestStartTime = System.currentTimeMillis()
             try {
                 val url = URL(payload.url)
                 connection = url.openConnection() as HttpsURLConnection
@@ -29,9 +28,9 @@ internal class PayloadRunnable(private val configuration: BlueTriangleConfigurat
                 DataOutputStream(connection.outputStream).use { it.write(Utils.b64encode(payload.data)) }
 
                 val statusCode = connection.responseCode
+                val responseBody = BttBeaconLogger.readResponseBody(connection, statusCode)
+                BttBeaconLogger.trace(payload.url, payload.data, requestStartTime, responseBody)
                 if (statusCode >= 300) {
-                    val responseBody =
-                        BufferedReader(InputStreamReader(connection.errorStream)).use { it.readText() }
                     configuration.logger?.error("HTTP Error $statusCode submitting payload $payload : $responseBody")
                     // If server error, cache the payload and try again later
                     if (statusCode >= 500) {
@@ -48,6 +47,7 @@ internal class PayloadRunnable(private val configuration: BlueTriangleConfigurat
                 }
                 connection.getHeaderField(0)
             } catch (e: Exception) {
+                BttBeaconLogger.trace(payload.url, payload.data, requestStartTime, error = e)
                 configuration.logger?.error(e, "Error submitting payload ${payload.id}")
                 cachePayload()
             } finally {
