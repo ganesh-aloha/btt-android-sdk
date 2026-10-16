@@ -218,7 +218,7 @@ class BlueTriangleConfiguration {
      */
     var isReportFatalAnrEnabled: Boolean = true
 
-    var isNetworkErrorTrackingEnabled: Boolean = false
+    var isNetworkErrorTrackingEnabled: Boolean = true
 
     companion object {
         const val DEFAULT_TRACKER_URL = "https://d.btttag.com/analytics.rcv"
