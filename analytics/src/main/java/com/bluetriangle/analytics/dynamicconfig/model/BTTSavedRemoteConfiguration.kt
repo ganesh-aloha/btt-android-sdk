@@ -30,7 +30,9 @@ internal class BTTSavedRemoteConfiguration(
     enableForceRestart: Boolean,
     forceRestartDuration: Double,
     enableScreenResponsiveness: Boolean,
-    enableReportFatalAnr: Boolean
+    enableReportFatalAnr: Boolean,
+    fatalErrorSampleRate: Double,
+    nonFatalErrorSampleRate: Double
 ) : BTTRemoteConfiguration(
     networkSampleRate,
     ignoreScreens,
@@ -52,7 +54,9 @@ internal class BTTSavedRemoteConfiguration(
     enableForceRestart,
     forceRestartDuration,
     enableScreenResponsiveness,
-    enableReportFatalAnr
+    enableReportFatalAnr,
+    fatalErrorSampleRate,
+    nonFatalErrorSampleRate
 ) {
 
     companion object {
@@ -78,7 +82,9 @@ internal class BTTSavedRemoteConfiguration(
             remoteConfig.enableForceRestart,
             remoteConfig.forceRestartDuration,
             remoteConfig.enableScreenResponsiveness,
-            remoteConfig.enableReportFatalAnr
+            remoteConfig.enableReportFatalAnr,
+            remoteConfig.fatalErrorSampleRate,
+            remoteConfig.nonFatalErrorSampleRate
         )
     }
 

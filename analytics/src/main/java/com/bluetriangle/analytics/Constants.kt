@@ -45,6 +45,8 @@ object Constants {
     internal const val DEFAULT_ENABLE_REPORT_FATAL_ANR = true
     internal const val DEFAULT_FORCE_RESTART_DURATION = 10.0
     internal const val DEFAULT_GROUPED_VIEW_SAMPLE_RATE = 0.05
+    internal const val DEFAULT_FATAL_ERROR_SAMPLE_RATE = 1.0
+    internal const val DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE = 0.0
 
     internal const val DEFAULT_CHECKOUT_TRACKING_ENABLED = false
     internal const val DEFAULT_CHECKOUT_AMOUNT = 1.0

@@ -1062,6 +1062,25 @@ class Tracker private constructor(
             }
         }
 
+        if (configuration.fatalErrorSampleRate != sessionData.fatalErrorSampleRate) {
+            changes.append("\nfatalErrorSampleRate: ${configuration.fatalErrorSampleRate} -> ${sessionData.fatalErrorSampleRate}")
+            configuration.fatalErrorSampleRate = sessionData.fatalErrorSampleRate
+        }
+
+        if (configuration.shouldSampleFatalErrors != sessionData.shouldSampleFatalErrors) {
+            changes.append("\nshouldSampleFatalErrors: ${configuration.shouldSampleFatalErrors} -> ${sessionData.shouldSampleFatalErrors}")
+            configuration.shouldSampleFatalErrors = sessionData.shouldSampleFatalErrors
+        }
+
+        if (configuration.nonFatalErrorSampleRate != sessionData.nonFatalErrorSampleRate) {
+            changes.append("\nnonFatalErrorSampleRate: ${configuration.nonFatalErrorSampleRate} -> ${sessionData.nonFatalErrorSampleRate}")
+            configuration.nonFatalErrorSampleRate = sessionData.nonFatalErrorSampleRate
+        }
+
+        if (configuration.shouldSampleNonFatalErrors != sessionData.shouldSampleNonFatalErrors) {
+            changes.append("\nshouldSampleNonFatalErrors: ${configuration.shouldSampleNonFatalErrors} -> ${sessionData.shouldSampleNonFatalErrors}")
+            configuration.shouldSampleNonFatalErrors = sessionData.shouldSampleNonFatalErrors
+        }
 
         if (configuration.isJankTrackingEnabled != sessionData.enableScreenResponsiveness) {
             changes.append("\nenableScreenResponsiveness: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableScreenResponsiveness}")
@@ -1353,6 +1372,9 @@ class Tracker private constructor(
         if (!configuration.isNetworkErrorTrackingEnabled)
             return
 
+        if (!BTErrorType.NetworkError.isSampled(configuration))
+            return
+
         val errorMsg =
             if (statusCode == 600)
                 "$method $url failed with" + (statusText?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
@@ -1406,6 +1428,23 @@ class Tracker private constructor(
                 BTTConfigUpdateError -> "BTTConfigUpdate"
                 else -> event?.defaultPageName ?: "Unknown"
             }
+
+        /**
+         * true for fatal errors (sampled by `fatalErrorSampleRate`), false for non-fatal errors
+         * (sampled by `nonFatalErrorSampleRate`), null for SDK-internal errors which are never sampled out.
+         */
+        internal val isFatal: Boolean?
+            get() = when (this) {
+                NativeAppCrash, FatalANR, ANRWarning, MemoryWarning -> true
+                ForceRestart, AccessResourceUsage, NetworkError -> false
+                BTTConfigUpdateError -> null
+            }
+
+        internal fun isSampled(configuration: BlueTriangleConfiguration): Boolean = when (isFatal) {
+            true -> configuration.shouldSampleFatalErrors
+            false -> configuration.shouldSampleNonFatalErrors
+            null -> true
+        }
     }
 
     fun raiseTestException() {
@@ -1554,7 +1593,9 @@ class Tracker private constructor(
                 enableForceRestart = configuration.isForceRestartEnable,
                 forceRestartDuration = configuration.forceRestartDuration,
                 enableScreenResponsiveness = configuration.isJankTrackingEnabled,
-                enableReportFatalAnr = configuration.isReportFatalAnrEnabled
+                enableReportFatalAnr = configuration.isReportFatalAnrEnabled,
+                fatalErrorSampleRate = configuration.fatalErrorSampleRate,
+                nonFatalErrorSampleRate = configuration.nonFatalErrorSampleRate
             )
 
             initializeConfigurationUpdater(application, configuration, defaultConfig)
@@ -1711,6 +1752,10 @@ class Tracker private constructor(
             forceRestartDuration = sessionData.forceRestartDuration
             isJankTrackingEnabled = sessionData.enableScreenResponsiveness
             isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
+            fatalErrorSampleRate = sessionData.fatalErrorSampleRate
+            nonFatalErrorSampleRate = sessionData.nonFatalErrorSampleRate
+            shouldSampleFatalErrors = sessionData.shouldSampleFatalErrors
+            shouldSampleNonFatalErrors = sessionData.shouldSampleNonFatalErrors
         }
 
         private lateinit var configurationRepository: IBTTConfigurationRepository

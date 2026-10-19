@@ -112,7 +112,11 @@ internal class SessionManager(
             config.enableForceRestart,
             config.forceRestartDuration,
             config.enableScreenResponsiveness,
-            config.enableReportFatalAnr
+            config.enableReportFatalAnr,
+            config.fatalErrorSampleRate,
+            config.nonFatalErrorSampleRate,
+            debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate),
+            debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate)
         )
     }
 
@@ -157,7 +161,11 @@ internal class SessionManager(
                 it.enableForceRestart,
                 it.forceRestartDuration,
                 it.enableScreenResponsiveness,
-                it.enableReportFatalAnr
+                it.enableReportFatalAnr,
+                it.fatalErrorSampleRate,
+                it.nonFatalErrorSampleRate,
+                it.shouldSampleFatalErrors,
+                it.shouldSampleNonFatalErrors
             )
             sessionStore.storeSessionData(
                 newExpirySession
@@ -215,7 +223,11 @@ internal class SessionManager(
                                 config.enableForceRestart,
                                 config.forceRestartDuration,
                                 config.enableScreenResponsiveness,
-                                config.enableReportFatalAnr
+                                config.enableReportFatalAnr,
+                                config.fatalErrorSampleRate,
+                                config.nonFatalErrorSampleRate,
+                                debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate),
+                                debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate)
                             )
                             Tracker.instance?.updateSession(sessionData)
                             sessionStore.storeSessionData(

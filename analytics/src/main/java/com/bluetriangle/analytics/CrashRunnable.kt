@@ -49,12 +49,17 @@ internal class CrashRunnable(
 
     override fun run() {
         try {
+            val isSampled = errorType.isSampled(configuration)
             mostRecentTimer?.let {
                 Tracker.instance?.applyGlobalFields(it)
                 loadTimerFields(it)
                 if(errorType == Tracker.BTErrorType.NativeAppCrash || errorType == Tracker.BTErrorType.FatalANR) {
                     submitTimer(it, true)
                 }
+            }
+            if (!isSampled) {
+                configuration.logger?.debug("${errorType.errorName} not reported: session not sampled for ${if (errorType.isFatal == true) "fatal" else "non-fatal"} errors")
+                return
             }
             if(mostRecentTimer == null) {
                 val timer = buildCrashHitsTimer()

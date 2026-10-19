@@ -18,6 +18,8 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_LAUNCH_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_MEMORY_WARNING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_NETWORK_STATE_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_REPORT_FATAL_ANR
+import com.bluetriangle.analytics.Constants.DEFAULT_FATAL_ERROR_SAMPLE_RATE
+import com.bluetriangle.analytics.Constants.DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_WEB_VIEW_STITCHING
 import com.bluetriangle.analytics.Constants.DEFAULT_FORCE_RESTART_DURATION
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfigMapper
@@ -50,6 +52,8 @@ internal object BTTSavedRemoteConfigurationMapper {
     private const val FORCE_RESTART_DURATION = "forceRestartDuration"
     private const val ENABLE_SCREEN_RESPONSIVENESS = "enableScreenResponsiveness"
     private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalANR"
+    private const val FATAL_ERROR_SAMPLE_RATE = "fatalErrorSampleRate"
+    private const val NON_FATAL_ERROR_SAMPLE_RATE = "nonFatalErrorSampleRate"
 
     private const val CONFIG_KEY = "configKey"
 
@@ -86,7 +90,9 @@ internal object BTTSavedRemoteConfigurationMapper {
             jsonObject.getBooleanOrNull(ENABLE_FORCE_RESTART) ?: DEFAULT_ENABLE_FORCE_RESTART,
             jsonObject.getDoubleOrNull(FORCE_RESTART_DURATION) ?: DEFAULT_FORCE_RESTART_DURATION,
             jsonObject.getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS,
-            jsonObject.getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: DEFAULT_ENABLE_REPORT_FATAL_ANR
+            jsonObject.getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: DEFAULT_ENABLE_REPORT_FATAL_ANR,
+            jsonObject.getDoubleOrNull(FATAL_ERROR_SAMPLE_RATE) ?: DEFAULT_FATAL_ERROR_SAMPLE_RATE,
+            jsonObject.getDoubleOrNull(NON_FATAL_ERROR_SAMPLE_RATE) ?: DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
         )
     }
 
@@ -117,6 +123,8 @@ internal object BTTSavedRemoteConfigurationMapper {
         put(FORCE_RESTART_DURATION, config.forceRestartDuration)
         put(ENABLE_SCREEN_RESPONSIVENESS, config.enableScreenResponsiveness)
         put(ENABLE_REPORT_FATAL_ANR, config.enableReportFatalAnr)
+        put(FATAL_ERROR_SAMPLE_RATE, config.fatalErrorSampleRate)
+        put(NON_FATAL_ERROR_SAMPLE_RATE, config.nonFatalErrorSampleRate)
     }
 
 }

@@ -71,7 +71,9 @@ class BTTConfigurationUpdaterTest {
                     true,
                     10.0,
                     true,
-                    true
+                    true,
+                    1.0,
+                    0.0
                 )
             }
             whenever(fetcher.fetch()).thenAnswer {
@@ -97,7 +99,9 @@ class BTTConfigurationUpdaterTest {
                         true,
                         10.0,
                         true,
-                        true
+                        true,
+                        1.0,
+                        0.0
                     )
                 )
             }
@@ -133,7 +137,9 @@ class BTTConfigurationUpdaterTest {
                         true,
                         10.0,
                         true,
-                        true
+                        true,
+                        1.0,
+                        0.0
                     )
                 )
             )
@@ -160,7 +166,9 @@ class BTTConfigurationUpdaterTest {
                     true,
                     10.0,
                     true,
-                    true
+                    true,
+                    1.0,
+                    0.0
                 )
             )
             Thread.sleep(210)

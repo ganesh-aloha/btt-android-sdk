@@ -30,7 +30,9 @@ internal open class BTTRemoteConfiguration(
     val enableForceRestart: Boolean,
     val forceRestartDuration: Double,
     val enableScreenResponsiveness: Boolean,
-    val enableReportFatalAnr: Boolean
+    val enableReportFatalAnr: Boolean,
+    val fatalErrorSampleRate: Double,
+    val nonFatalErrorSampleRate: Double
 ) {
     override fun equals(other: Any?): Boolean {
         if(other is BTTRemoteConfiguration) {
@@ -54,13 +56,15 @@ internal open class BTTRemoteConfiguration(
                     other.enableForceRestart == enableForceRestart &&
                     other.forceRestartDuration == forceRestartDuration &&
                     other.enableScreenResponsiveness == enableScreenResponsiveness &&
-                    other.enableReportFatalAnr == enableReportFatalAnr
+                    other.enableReportFatalAnr == enableReportFatalAnr &&
+                    other.fatalErrorSampleRate == fatalErrorSampleRate &&
+                    other.nonFatalErrorSampleRate == nonFatalErrorSampleRate
         }
         return false
     }
 
     override fun toString(): String {
-        return "RemoteConfig { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey, enableAppInstall; $enableAppInstall, enableForceRestart: $enableForceRestart, enableScreenResponsiveness: $enableScreenResponsiveness, enableReportFatalAnr: $enableReportFatalAnr }"
+        return "RemoteConfig { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey, enableAppInstall; $enableAppInstall, enableForceRestart: $enableForceRestart, enableScreenResponsiveness: $enableScreenResponsiveness, enableReportFatalAnr: $enableReportFatalAnr, fatalErrorSampleRate: $fatalErrorSampleRate, nonFatalErrorSampleRate: $nonFatalErrorSampleRate }"
     }
 
     override fun hashCode(): Int {
@@ -85,6 +89,8 @@ internal open class BTTRemoteConfiguration(
         result = 31 * result + forceRestartDuration.hashCode()
         result = 31 * result + enableScreenResponsiveness.hashCode()
         result = 31 * result + enableReportFatalAnr.hashCode()
+        result = 31 * result + fatalErrorSampleRate.hashCode()
+        result = 31 * result + nonFatalErrorSampleRate.hashCode()
         return result
     }
 
@@ -110,7 +116,9 @@ internal open class BTTRemoteConfiguration(
             enableForceRestart = enableForceRestart,
             forceRestartDuration = forceRestartDuration,
             enableScreenResponsiveness = enableScreenResponsiveness,
-            enableReportFatalAnr = enableReportFatalAnr
+            enableReportFatalAnr = enableReportFatalAnr,
+            fatalErrorSampleRate = fatalErrorSampleRate,
+            nonFatalErrorSampleRate = nonFatalErrorSampleRate
         )
     }
 }

@@ -220,6 +220,28 @@ class BlueTriangleConfiguration {
 
     var isNetworkErrorTrackingEnabled: Boolean = true
 
+    /**
+     * Percentage of sessions (0.0 - 1.0) for which fatal errors (crash, fatal ANR, ANR warning, memory warning)
+     * are reported. Controlled by remote config `fatalErrorSampleRate`.
+     */
+    internal var fatalErrorSampleRate = Constants.DEFAULT_FATAL_ERROR_SAMPLE_RATE
+
+    /**
+     * Percentage of sessions (0.0 - 1.0) for which non-fatal errors (force restart, excess resource usage,
+     * network error) are reported. Controlled by remote config `nonFatalErrorSampleRate`.
+     */
+    internal var nonFatalErrorSampleRate = Constants.DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
+
+    /**
+     * if fatal errors should be reported for the current session
+     */
+    internal var shouldSampleFatalErrors = true
+
+    /**
+     * if non-fatal errors should be reported for the current session
+     */
+    internal var shouldSampleNonFatalErrors = false
+
     companion object {
         const val DEFAULT_TRACKER_URL = "https://d.btttag.com/analytics.rcv"
         const val DEFAULT_ERROR_REPORTING_URL = "https://d.btttag.com/err.rcv"
@@ -267,6 +289,10 @@ class BlueTriangleConfiguration {
             bttPluginVersion : $bttPluginVersion,
             isJankTrackingEnabled : $isJankTrackingEnabled,
             isReportFatalAnrEnabled : $isReportFatalAnrEnabled,
+            fatalErrorSampleRate : $fatalErrorSampleRate,
+            shouldSampleFatalErrors : $shouldSampleFatalErrors,
+            nonFatalErrorSampleRate : $nonFatalErrorSampleRate,
+            shouldSampleNonFatalErrors : $shouldSampleNonFatalErrors,
         }
         """.trimIndent()
     }
