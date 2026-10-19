@@ -1435,8 +1435,8 @@ class Tracker private constructor(
          */
         internal val isFatal: Boolean?
             get() = when (this) {
-                NativeAppCrash, FatalANR, ANRWarning, MemoryWarning -> true
-                ForceRestart, AccessResourceUsage, NetworkError -> false
+                NativeAppCrash, FatalANR -> true
+                ANRWarning, MemoryWarning, ForceRestart, AccessResourceUsage, NetworkError -> false
                 BTTConfigUpdateError -> null
             }
 
