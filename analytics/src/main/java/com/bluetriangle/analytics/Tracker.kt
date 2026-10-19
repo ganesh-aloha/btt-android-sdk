@@ -1354,8 +1354,10 @@ class Tracker private constructor(
             return
 
         val errorMsg =
-            "$method $url failed with status code $statusCode" + (statusText?.takeIf { it.isNotBlank() }
-                ?.let { " and error: $it" } ?: "")
+            if (statusCode == 600)
+                "$method $url failed with" + (statusText?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
+            else
+                "$method $url failed with status code $statusCode" + (statusText?.takeIf { it.isNotBlank() }?.let { " and error: $it" } ?: "")
 
         val breadcrumbs = instance?.breadcrumbsManager?.snapshot()
         val timeStamp = System.currentTimeMillis().toString()
