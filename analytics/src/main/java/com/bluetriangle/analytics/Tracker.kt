@@ -52,6 +52,8 @@ import com.bluetriangle.analytics.launchtime.LaunchMonitor
 import com.bluetriangle.analytics.launchtime.LaunchReporter
 import com.bluetriangle.analytics.lifecycle.LifecycleRegistry
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
+import com.bluetriangle.analytics.networkcapture.NetworkError
+import com.bluetriangle.analytics.networkcapture.NetworkErrorHolder
 import com.bluetriangle.analytics.networkcapture.CapturedRequestCollection
 import com.bluetriangle.analytics.networkstate.NetworkStateMonitor
 import com.bluetriangle.analytics.networkstate.NetworkTimelineTracker
@@ -145,6 +147,8 @@ class Tracker private constructor(
     internal var anrReporter: ANRReporter
 
     internal var memoryWarningReporter: MemoryWarningReporter
+
+    private val networkErrorHolder = NetworkErrorHolder()
 
     private val claritySessionConnector: ClaritySessionConnector
     internal val appPackageName: String
@@ -1381,22 +1385,36 @@ class Tracker private constructor(
             else
                 "$method $url failed with status code $statusCode" + (statusText?.takeIf { it.isNotBlank() }?.let { " and error: $it" } ?: "")
 
-        val breadcrumbs = instance?.breadcrumbsManager?.snapshot()
-        val timeStamp = System.currentTimeMillis().toString()
+        val networkError = NetworkError(
+            message = errorMsg,
+            timeStamp = System.currentTimeMillis().toString(),
+            breadcrumbs = breadcrumbsManager?.snapshot(),
+            source = source
+        )
 
+        // Like ANR warnings, hold the error until the current page's analytics beacon is sent
+        val mostRecentTimer = getMostRecentTimer()
+        if (mostRecentTimer == null) {
+            submitNetworkError(null, networkError)
+        } else {
+            networkErrorHolder.recordNetworkError(mostRecentTimer, networkError)
+        }
+    }
+
+    internal fun submitNetworkError(timer: Timer?, networkError: NetworkError) {
         try {
             val thread = Thread(
                 CrashRunnable(
                     configuration,
-                    errorMsg,
-                    timeStamp,
+                    networkError.message,
+                    networkError.timeStamp,
                     BTErrorType.NetworkError,
-                    mostRecentTimer = null,
-                    title = errorMsg,
+                    mostRecentTimer = timer,
+                    title = networkError.message,
                     errorCount = 1,
                     deviceInfoProvider = deviceInfoProvider,
-                    breadcrumbs = breadcrumbs,
-                    source = source
+                    breadcrumbs = networkError.breadcrumbs,
+                    source = networkError.source
                 )
             )
             thread.start()
