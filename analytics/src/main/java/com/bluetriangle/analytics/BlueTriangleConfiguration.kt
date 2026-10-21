@@ -235,12 +235,12 @@ class BlueTriangleConfiguration {
     /**
      * if fatal errors should be reported for the current session
      */
-    internal var shouldSampleFatalErrors = true
+    var shouldSampleFatalErrors = true
 
     /**
      * if non-fatal errors should be reported for the current session
      */
-    internal var shouldSampleNonFatalErrors = false
+    var shouldSampleNonFatalErrors = false
 
     companion object {
         const val DEFAULT_TRACKER_URL = "https://d.btttag.com/analytics.rcv"

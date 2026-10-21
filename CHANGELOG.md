@@ -8,6 +8,7 @@
 - Error Sampling: errors are now sampled per session using two new remote configuration values:
   - `fatalErrorSampleRate` (defaults to 100% if not received): Crash and Fatal ANR.
   - `nonFatalErrorSampleRate` (defaults to 0% if not received): ANR Warning, Memory Warning, Force Restart, Excess Resource Usage and Network Error.
+  - `networkSampleRate` only controls capture of network requests (successful and failed); Network Error reporting is controlled by `nonFatalErrorSampleRate` alone.
 
 ### Bug Fixes and New Improvements
 - Crash, ANR and fatal ANR stack traces are formatted and sent as JSON, along with the crash source.

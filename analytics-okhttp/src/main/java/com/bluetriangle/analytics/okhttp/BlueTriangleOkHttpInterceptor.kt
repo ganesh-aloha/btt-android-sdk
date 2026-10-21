@@ -11,11 +11,18 @@ import java.io.IOException
 class BlueTriangleOkHttpInterceptor(private val configuration: BlueTriangleConfiguration) : Interceptor {
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
-        if (!configuration.shouldSampleNetwork) {
+        if (!configuration.shouldSampleNetwork && !configuration.shouldSampleNonFatalErrors) {
             return chain.proceed(chain.request())
         }
 
         val request: Request = chain.request()
+
+        if (!configuration.shouldSampleNetwork && configuration.shouldSampleNonFatalErrors) {
+            val response = chain.proceed(request)
+            submitErrorIfAny(request, response)
+            return response
+        }
+
         val capturedRequest = CapturedRequest()
         capturedRequest.url = request.url.toString()
         capturedRequest.method = request.method
@@ -33,7 +40,7 @@ class BlueTriangleOkHttpInterceptor(private val configuration: BlueTriangleConfi
     }
 
     private fun submitErrorIfAny(request: Request, response: Response) {
-        if (!response.isSuccessful && !response.isRedirect) {
+        if (configuration.shouldSampleNonFatalErrors && !response.isSuccessful && !response.isRedirect) {
             Tracker.instance?.reportNetworkError(
                 request.url.toString(),
                 request.method,

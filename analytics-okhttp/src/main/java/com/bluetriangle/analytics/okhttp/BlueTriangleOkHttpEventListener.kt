@@ -106,6 +106,15 @@ internal class BlueTriangleOkHttpEventListener(
         guarded {
             eventListener?.callFailed(call, ioe)
             printEvent("1.2. callFailed(${call.request().url}, ${ioe::class.java.simpleName}(\"${ioe.message}\"))")
+            if (configuration.shouldSampleNonFatalErrors) {
+                Tracker.instance?.reportNetworkError(
+                    call.request().url.toString(),
+                    call.request().method,
+                    600,
+                    "${ioe::class.java.simpleName} : ${ioe.message}"
+                )
+            }
+
             if (!configuration.shouldSampleNetwork) {
                 configuration.logger?.error("Not sampling network")
                 return@guarded
@@ -117,7 +126,6 @@ internal class BlueTriangleOkHttpEventListener(
                 nativeAppProperties?.err = "${ioe::class.java.simpleName} : ${ioe.message}"
                 stop()
                 submit()
-                Tracker.instance?.reportNetworkError(call.request().url.toString(), call.request().method, 600, "${ioe::class.java.simpleName} : ${ioe.message}")
             }
 
             configuration.logger?.debug("Submitted request: ${capturedRequest?.url}, ${capturedRequest?.duration}")
