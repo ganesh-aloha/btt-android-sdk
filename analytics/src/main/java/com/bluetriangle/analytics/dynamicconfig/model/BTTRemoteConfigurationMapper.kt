@@ -93,9 +93,9 @@ internal object BTTRemoteConfigurationMapper {
         val enableReportFatalAnr =
             remoteConfigJson.getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: DEFAULT_ENABLE_REPORT_FATAL_ANR
         val fatalErrorSampleRate =
-            remoteConfigJson.getDoubleOrNull(FATAL_ERROR_SAMPLE_RATE)?.div(100.0)?.coerceIn(0.0, 1.0) ?: DEFAULT_FATAL_ERROR_SAMPLE_RATE
+            remoteConfigJson.getDoubleOrNull(FATAL_ERROR_SAMPLE_RATE)?.div(100.0)
         val nonFatalErrorSampleRate =
-            remoteConfigJson.getDoubleOrNull(NON_FATAL_ERROR_SAMPLE_RATE)?.div(100.0)?.coerceIn(0.0, 1.0) ?: DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
+            remoteConfigJson.getDoubleOrNull(NON_FATAL_ERROR_SAMPLE_RATE)?.div(100.0)
         return BTTRemoteConfiguration(
             networkSampleRate,
             ignoreScreens,
