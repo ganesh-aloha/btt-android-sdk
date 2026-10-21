@@ -1381,9 +1381,9 @@ class Tracker private constructor(
 
         val errorMsg =
             if (statusCode == 600)
-                "$method $url~~failed with" + (statusText?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
+                "$method $url~~Error:" + (statusText?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
             else
-                "$method $url~~failed with status code $statusCode" + (statusText?.takeIf { it.isNotBlank() }?.let { " and error: $it" } ?: "")
+                "$method $url~~Status Code: $statusCode" + (statusText?.takeIf { it.isNotBlank() }?.let { " , Error: $it" } ?: "")
 
         val networkError = NetworkError(
             message = errorMsg,
