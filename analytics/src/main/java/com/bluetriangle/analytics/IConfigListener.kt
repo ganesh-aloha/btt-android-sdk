@@ -29,8 +29,8 @@ class SdkConfiguration(
     val forceRestartDuration: Double,
     val enableScreenResponsiveness: Boolean,
     val enableReportFatalAnr: Boolean,
-    val fatalErrorSampleRate: Double,
-    val nonFatalErrorSampleRate: Double
+    val fatalErrorSampleRate: Double?,
+    val nonFatalErrorSampleRate: Double?
 ){
     override fun toString(): String {
         return "SdkConfiguration { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey, enableAppInstall; $enableAppInstall, enableForceRestart: $enableForceRestart, enableScreenResponsiveness: $enableScreenResponsiveness, enableReportFatalAnr: $enableReportFatalAnr, fatalErrorSampleRate: $fatalErrorSampleRate, nonFatalErrorSampleRate: $nonFatalErrorSampleRate }"

@@ -31,8 +31,8 @@ internal class BTTSavedRemoteConfiguration(
     forceRestartDuration: Double,
     enableScreenResponsiveness: Boolean,
     enableReportFatalAnr: Boolean,
-    fatalErrorSampleRate: Double,
-    nonFatalErrorSampleRate: Double
+    fatalErrorSampleRate: Double?,
+    nonFatalErrorSampleRate: Double?
 ) : BTTRemoteConfiguration(
     networkSampleRate,
     ignoreScreens,

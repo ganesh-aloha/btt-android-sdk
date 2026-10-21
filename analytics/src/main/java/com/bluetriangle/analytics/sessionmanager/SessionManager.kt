@@ -113,10 +113,10 @@ internal class SessionManager(
             config.forceRestartDuration,
             config.enableScreenResponsiveness,
             config.enableReportFatalAnr,
-            config.fatalErrorSampleRate,
-            config.nonFatalErrorSampleRate,
-            debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate),
-            debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate)
+            config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!,
+            config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!,
+            debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!),
+            debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!)
         )
     }
 
@@ -224,10 +224,10 @@ internal class SessionManager(
                                 config.forceRestartDuration,
                                 config.enableScreenResponsiveness,
                                 config.enableReportFatalAnr,
-                                config.fatalErrorSampleRate,
-                                config.nonFatalErrorSampleRate,
-                                debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate),
-                                debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate)
+                                config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!,
+                                config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!,
+                                debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!),
+                                debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!)
                             )
                             Tracker.instance?.updateSession(sessionData)
                             sessionStore.storeSessionData(

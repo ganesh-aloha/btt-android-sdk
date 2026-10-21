@@ -31,8 +31,8 @@ internal open class BTTRemoteConfiguration(
     val forceRestartDuration: Double,
     val enableScreenResponsiveness: Boolean,
     val enableReportFatalAnr: Boolean,
-    val fatalErrorSampleRate: Double,
-    val nonFatalErrorSampleRate: Double
+    val fatalErrorSampleRate: Double?,
+    val nonFatalErrorSampleRate: Double?
 ) {
     override fun equals(other: Any?): Boolean {
         if(other is BTTRemoteConfiguration) {

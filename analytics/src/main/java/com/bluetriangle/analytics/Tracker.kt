@@ -1373,7 +1373,7 @@ class Tracker private constructor(
         statusText: String? = null,
         source: CrashSource = CrashSource.OkHttp
     ) {
-        if (!configuration.isNetworkErrorTrackingEnabled)
+        if (!configuration.isNetworkErrorTrackingEnabled || !configuration.shouldSampleNonFatalErrors)
             return
 
         if (!BTErrorType.NetworkError.isSampled(configuration))
