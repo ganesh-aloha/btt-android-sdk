@@ -4,6 +4,10 @@
 - Fatal ANR Reporting: ANRs that terminated the app are reported on the next launch using `ApplicationExitInfo` (Android 11 / API 30 and above). Can be disabled remotely via `enableReportFatalAnr`.
 - HTTP method is now captured for network requests, including OkHttp `BlueTriangleOkHttpInterceptor` and `BlueTriangleOkHttpEventListener`.
 - Remote configuration is exposed to cross-platform SDKs through `Tracker.configListener` (`IConfigListener`).
+- Network Error Reporting: failed network requests (error status codes and connection failures) are reported as Network Error through the error beacon.
+- Error Sampling: errors are now sampled per session using two new remote configuration values:
+  - `fatalErrorSampleRate` (defaults to 100% if not received): Crash and Fatal ANR.
+  - `nonFatalErrorSampleRate` (defaults to 0% if not received): ANR Warning, Memory Warning, Force Restart, Excess Resource Usage and Network Error.
 
 ### Bug Fixes and New Improvements
 - Crash, ANR and fatal ANR stack traces are formatted and sent as JSON, along with the crash source.
@@ -11,6 +15,7 @@
 - Tap detection for breadcrumbs now resolves button text on Compose and React Native views.
 - Native app properties now include the grouped screen count, group name source and SDK id.
 - Screen grouping is not working with the latest Jetpack Compose framework when using automatic instrumentation through the Gradle plugin.
+- In SDK debug mode, every beacon request and response (analytics, error and WCD) is logged to logcat and to `btt_logs/btt_beacons.log` in the app cache directory.
 
 # Blue Triangle 2.19.7, July 20 2026
 ### Bug Fixes and New Improvements

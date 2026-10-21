@@ -221,14 +221,14 @@ class BlueTriangleConfiguration {
     var isNetworkErrorTrackingEnabled: Boolean = true
 
     /**
-     * Percentage of sessions (0.0 - 1.0) for which fatal errors (crash, fatal ANR, ANR warning, memory warning)
+     * Percentage of sessions (0.0 - 1.0) for which fatal errors (crash, fatal ANR)
      * are reported. Controlled by remote config `fatalErrorSampleRate`.
      */
     internal var fatalErrorSampleRate = Constants.DEFAULT_FATAL_ERROR_SAMPLE_RATE
 
     /**
-     * Percentage of sessions (0.0 - 1.0) for which non-fatal errors (force restart, excess resource usage,
-     * network error) are reported. Controlled by remote config `nonFatalErrorSampleRate`.
+     * Percentage of sessions (0.0 - 1.0) for which non-fatal errors (ANR warning, memory warning, force restart,
+     * excess resource usage, network error) are reported. Controlled by remote config `nonFatalErrorSampleRate`.
      */
     internal var nonFatalErrorSampleRate = Constants.DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
 
