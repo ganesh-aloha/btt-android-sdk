@@ -1381,9 +1381,9 @@ class Tracker private constructor(
 
         val errorMsg =
             if (statusCode == 600)
-                "$method $url failed with" + (statusText?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
+                "$method $url~~failed with" + (statusText?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
             else
-                "$method $url failed with status code $statusCode" + (statusText?.takeIf { it.isNotBlank() }?.let { " and error: $it" } ?: "")
+                "$method $url~~failed with status code $statusCode" + (statusText?.takeIf { it.isNotBlank() }?.let { " and error: $it" } ?: "")
 
         val networkError = NetworkError(
             message = errorMsg,
@@ -1406,7 +1406,7 @@ class Tracker private constructor(
             val thread = Thread(
                 CrashRunnable(
                     configuration,
-                    networkError.message,
+                    "",
                     networkError.timeStamp,
                     BTErrorType.NetworkError,
                     mostRecentTimer = timer,
