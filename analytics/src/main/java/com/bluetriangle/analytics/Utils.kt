@@ -221,9 +221,6 @@ internal object Utils {
      * @return true if this instance should sample, false otherwise
      */
     fun shouldSample(sampleRate: Double): Boolean {
-        if (sampleRate >= 1.0) return true
-        if (sampleRate <= 0.0) return false
-
         val random = SecureRandom()
         return sampleRate >= random.nextDouble()
     }
