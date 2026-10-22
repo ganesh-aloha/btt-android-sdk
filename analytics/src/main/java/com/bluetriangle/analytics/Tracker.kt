@@ -76,6 +76,7 @@ import org.json.JSONObject
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.roundToInt
 
 /**
  * The tracker is a global object responsible for taking submitted timers and reporting them to the cloud server via a
@@ -1142,7 +1143,105 @@ class Tracker private constructor(
             configuration.logger?.debug("Updated configuration $changesString")
             setSessionId(sessionData.sessionId)
             BTTWebViewTracker.updateSession()
+          }
+
+        logTrackingSummary()
+    }
+
+    /**
+     * Prints a customer-facing summary of the active tracking configuration for the current session.
+     * Written directly to Logcat so it is visible whether or not SDK debug logging is enabled.
+     */
+    private fun logTrackingSummary() {
+        fun rate(value: Double) = "${(value * 100).roundToInt()}%"
+
+        // "a", "a and b", "a, b and c"
+        fun List<String>.toSentenceList() =
+            if (size <= 1) joinToString() else dropLast(1).joinToString(", ") + " and " + last()
+
+        fun captureLine(label: String, sampleRate: Double, isSampled: Boolean, captured: String) =
+            if (isSampled) "$label: sampled at ${rate(sampleRate)}, capturing $captured"
+            else "$label: not sampled at ${rate(sampleRate)}, $captured not captured for this session"
+
+        // Fatal ANRs and excessive resource usage are read from ApplicationExitInfo (Android 11+)
+        val isExitInfoSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+
+        class ErrorType(val name: String, val isEnabled: Boolean, val isSupported: Boolean = true)
+
+        // Spells out every error type's state so a missing error can be diagnosed from this one line, e.g.
+        // "Fatal errors: sampled at 100%, capturing crashes. Tracking is disabled for fatal ANRs, so they will not be captured."
+        fun errorLine(
+            label: String,
+            sampleRate: Double,
+            isSampled: Boolean,
+            types: List<ErrorType>
+        ): String {
+            val active = types.filter { it.isEnabled && it.isSupported }.map { it.name }
+            val disabled = types.filter { !it.isEnabled }.map { it.name }
+            val unsupported = types.filter { it.isEnabled && !it.isSupported }.map { it.name }
+
+            val line = StringBuilder()
+            if (active.isEmpty()) {
+                line.append(
+                    "$label: ${if (isSampled) "sampled" else "not sampled"} at ${
+                        rate(
+                            sampleRate
+                        )
+                    }, nothing to capture"
+                )
+            } else {
+                line.append(captureLine(label, sampleRate, isSampled, active.toSentenceList()))
+            }
+            if (disabled.isNotEmpty()) {
+                line.append(". Tracking is disabled for ${disabled.toSentenceList()}, so they will not be captured")
+            }
+            if (unsupported.isNotEmpty()) {
+                line.append(". Tracking for ${unsupported.toSentenceList()} requires Android 11 or later and is not available on this device")
+            }
+            return line.append(".").toString()
         }
+
+        val fatalErrors = listOf(
+            ErrorType("crashes", configuration.isTrackCrashesEnabled),
+            ErrorType("fatal ANRs", configuration.isReportFatalAnrEnabled, isExitInfoSupported)
+        )
+        val nonFatalErrors = listOf(
+            ErrorType("ANR warnings", configuration.isTrackAnrEnabled),
+            ErrorType("memory warnings", configuration.isMemoryWarningEnabled),
+            ErrorType("force restarts", configuration.isForceRestartEnable),
+            ErrorType(
+                "excessive resource usage",
+                configuration.isReportFatalAnrEnabled,
+                isExitInfoSupported
+            ),
+            ErrorType("network errors", configuration.isNetworkErrorTrackingEnabled)
+        )
+
+        val summary = listOf(
+            "Blue Triangle tracking active · SDK $sdkVersion · Site ID ${configuration.siteId} · Session ID ${configuration.sessionId}",
+            if (configuration.isScreenTrackingEnabled) "Screen tracking: enabled, capturing screen views."
+            else "Screen tracking: disabled. Tracking is disabled for screen views, so they will not be captured.",
+            captureLine(
+                "Network tracking",
+                configuration.networkSampleRate,
+                configuration.shouldSampleNetwork,
+                "network requests"
+            ) + ".",
+            errorLine(
+                "Fatal errors",
+                configuration.fatalErrorSampleRate,
+                configuration.shouldSampleFatalErrors,
+                fatalErrors
+            ),
+            errorLine(
+                "Non-fatal errors",
+                configuration.nonFatalErrorSampleRate,
+                configuration.shouldSampleNonFatalErrors,
+                nonFatalErrors
+            )
+        ).joinToString("\n")
+
+        Log.d("BlueTriangle", summary)
     }
 
     /**
