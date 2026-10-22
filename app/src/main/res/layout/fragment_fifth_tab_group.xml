@@ -41,4 +41,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/jank_test" />
 
+    <Button
+        android:id="@+id/network_tracking_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Network Tracking"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/fatal_anr_button" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.fragment.app.Fragment
 import com.bluetriangle.analytics.Tracker
+import com.bluetriangle.android.demo.NetworkPocActivity
 import com.bluetriangle.android.demo.R
 import com.bluetriangle.android.demo.kotlin.HybridDemoLayoutActivity
 import com.bluetriangle.android.demo.kotlin.JankTestActivity
@@ -44,6 +45,10 @@ class FifthTabFragment : Fragment() {
 
         view.findViewById<Button>(R.id.fatal_anr_button).setOnClickListener {
             Thread.sleep(25000)
+        }
+
+        view.findViewById<Button>(R.id.network_tracking_button).setOnClickListener {
+            startActivity(Intent(context, NetworkPocActivity::class.java))
         }
     }
 }
