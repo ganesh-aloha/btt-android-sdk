@@ -61,6 +61,8 @@ object Constants {
     internal const val APP_VERSION = "appVersion"
     internal const val APP_LAST_FOREGROUND_TIME = "appLastForegroundTime"
     internal const val APP_LAST_EXIT_INFO_TIME = "appLastExitInfoTime"
+    internal const val LAST_SCREEN_NST = "lastScreenNst"
+    internal const val LAST_SCREEN_SESSION_ID = "lastScreenSessionId"
 
     internal const val BREADCRUMBS = "breadcrumbs"
     internal const val ERROR_META = "eMeta"

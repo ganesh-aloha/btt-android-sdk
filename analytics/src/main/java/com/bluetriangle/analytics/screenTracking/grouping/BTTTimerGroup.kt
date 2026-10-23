@@ -51,6 +51,14 @@ internal class BTTTimerGroup(
     val startTime: Long
         get() = groupTimer.start
 
+    /**
+     * The timer that is actually submitted for this group
+     */
+    val timer: Timer
+        get() = groupTimer
+
+    fun contains(timer: Timer): Boolean = timers.any { it.second == timer }
+
     private var groupName: String? = null
 
     fun setGroupName(name: String) {

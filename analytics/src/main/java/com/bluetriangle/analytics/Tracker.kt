@@ -866,17 +866,17 @@ class Tracker private constructor(
         val context = context.get() ?: return
         val prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
 
-        // Save current time as last foreground time
-        prefs?.edit {
+        // Save current time as last foreground time, along with the beacon the user was on, so a
+        // force restart on the next launch can be reported against the same page view (same nst)
+        prefs.edit {
             putLong(Constants.APP_LAST_FOREGROUND_TIME, System.currentTimeMillis())
-        }
 
-        // Save pageName/PageType/txnName of most recent timer
-        timer?.let { timer ->
-            prefs?.edit {
+            timer?.let { timer ->
                 putString(FIELD_PAGE_NAME, timer.getField(FIELD_PAGE_NAME))
                 putString(FIELD_CONTENT_GROUP_NAME, timer.getField(FIELD_CONTENT_GROUP_NAME))
                 putString(FIELD_TRAFFIC_SEGMENT_NAME, timer.getField(FIELD_TRAFFIC_SEGMENT_NAME))
+                putString(Constants.LAST_SCREEN_NST, timer.getField(Timer.FIELD_NST))
+                putString(Constants.LAST_SCREEN_SESSION_ID, sessionManager.sessionData.sessionId)
             }
         }
     }

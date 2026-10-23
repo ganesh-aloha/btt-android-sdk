@@ -821,4 +821,22 @@ class Timer : Parcelable {
         return this
     }
 
+    /**
+     * Starts this timer at the given time, without a performance monitor and without registering it
+     * as the most recent timer. Used to report against a page view of a previous app process.
+     */
+    internal fun startAt(startTime: Long): Timer {
+        if (performanceSpan != null) {
+            tracker?.clearPerformanceSpan(performanceSpan!!.id)
+            performanceSpan = null
+        }
+        if (start == 0L) {
+            start = startTime
+            setField(FIELD_UNLOAD_EVENT_START, start)
+            setField(FIELD_NST, start)
+        } else {
+            logger?.error("Timer already started")
+        }
+        return this
+    }
 }

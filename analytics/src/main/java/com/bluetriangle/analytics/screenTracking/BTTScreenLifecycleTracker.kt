@@ -113,13 +113,17 @@ internal class BTTScreenLifecycleTracker(
 
         generateMetaData(screen, timer)
 
-        if(grouped(automated)) {
+        // Grouped screen timers aren't submitted themselves, save the group timer that is
+        val submittedTimer = if(grouped(automated)) {
+            val groupTimer = groupManager.groupTimerOf(timer)
             timer.end()
+            groupTimer ?: timer
         } else {
             timer.end().submit()
+            timer
         }
 
-        Tracker.instance?.onScreenPause(timer)
+        Tracker.instance?.onScreenPause(submittedTimer)
 
         timers.remove(scr)
     }

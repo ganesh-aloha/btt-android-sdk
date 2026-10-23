@@ -60,6 +60,13 @@ internal class BTTTimerGroupManager(var groupIdleTime: Int) {
         activeGroups.clear()
     }
 
+    /**
+     * The submitted group timer of the group the given screen timer belongs to
+     */
+    fun groupTimerOf(timer: Timer): Timer? {
+        return activeGroups.lastOrNull { it.contains(timer) }?.timer
+    }
+
     fun setGroupName(groupName: String) {
         activeGroups.lastOrNull { !it.isSubmitted }?.setGroupName(groupName)
     }
