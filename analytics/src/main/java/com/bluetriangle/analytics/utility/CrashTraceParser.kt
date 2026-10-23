@@ -197,10 +197,6 @@ object CrashTraceParser {
 
         val meta = JSONObject().apply {
             put("fVersion", TRACE_FORMAT_VERSION)
-//            put("appId", resolvedAppId)
-//            put("version", versionName)
-//            put("platform", "Android")
-//            put("date", timestampMs.toString())
         }
 
         val stackData = JSONObject().apply {

@@ -194,22 +194,6 @@ internal object Utils {
             appFrame
         ).joinToString("~~")
 
-//        val stacktraceLines = if (hideExceptionName) {
-//            lines.drop(1)
-//        } else {
-//            lines
-//        }
-//
-//        val prefix = when {
-//            !message.isNullOrBlank() -> "$message~~"
-//            hideExceptionName && !e.message.isNullOrBlank() -> "${e.message}~~"
-//            else -> ""
-//        }
-//
-//        val stacktrace = prefix + stacktraceLines
-//            .filter(String::isNotBlank)
-//            .joinToString("~~")
-
         val stacktrace = CrashTraceParser.exceptionToJson(e).toString()
 
         return ExceptionInfo(title, stacktrace)
