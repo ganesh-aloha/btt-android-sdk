@@ -245,6 +245,7 @@ internal class CrashRunnable(
     private fun loadTimerFields(from: Timer) {
         val keysAndDefaults = mutableMapOf(
             Timer.FIELD_NST to null,
+            Timer.FIELD_SESSION_ID to null,
             Timer.FIELD_PAGE_NAME to errorType.errorName,
             Timer.FIELD_TRAFFIC_SEGMENT_NAME to null,
             Timer.FIELD_NATIVE_OS to Constants.OS,
