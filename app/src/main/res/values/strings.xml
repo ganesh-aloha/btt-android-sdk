@@ -96,4 +96,8 @@
     <string name="grouped">Grouped</string>
     <string name="normal">Normal</string>
     <string name="title_activity_compose_main">ComposeMainActivity</string>
+    <string name="network_tracking_test">Network Tracking Test</string>
+    <string name="jank_test_">Jank Test (Hitch &amp; Hang)></string>
+    <string name="fatal_anr">Fatal ANR</string>
+    <string name="tab_container_activity">Tab Container Activity</string>
 </resources>

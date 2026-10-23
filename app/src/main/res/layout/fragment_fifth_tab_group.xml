@@ -10,7 +10,7 @@
         android:id="@+id/hybrid_demo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hybrid Demo"
+        android:text="@string/hybrid_demo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -19,7 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Scroll Jank Test (Hitch &amp; Hang)"
+        android:text="@string/scroll_jank_test"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/hybrid_demo" />
 
@@ -28,7 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Jank Test (Hitch &amp; Hang)"
+        android:text="@string/jank_test"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/scroll_jank_test" />
 
@@ -37,7 +37,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Fatal ANR"
+        android:text="@string/fatal_anr"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/jank_test" />
 
