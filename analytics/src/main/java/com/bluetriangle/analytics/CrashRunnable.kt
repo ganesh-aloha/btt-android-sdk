@@ -120,7 +120,10 @@ internal class CrashRunnable(
                 Timer.FIELD_BROWSER_VERSION,
                 timerFields[Timer.FIELD_BROWSER_VERSION]
             )
-            .appendQueryParameter(Timer.FIELD_LONG_SESSION_ID, timerFields[Timer.FIELD_SESSION_ID] ?: configuration.sessionId)
+            .appendQueryParameter(
+                Timer.FIELD_LONG_SESSION_ID,
+                timerFields[Timer.FIELD_SESSION_ID]?.takeIf { it.isNotBlank() } ?: configuration.sessionId
+            )
             .appendQueryParameter(Timer.FIELD_PAGE_TIME, timerFields[Timer.FIELD_PAGE_TIME])
             .appendQueryParameter(
                 Timer.FIELD_CONTENT_GROUP_NAME,

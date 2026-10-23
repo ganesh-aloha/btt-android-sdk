@@ -11,6 +11,7 @@ import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Logger
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.Timer.Companion.FIELD_CONTENT_GROUP_NAME
+import com.bluetriangle.analytics.Timer.Companion.FIELD_NST
 import com.bluetriangle.analytics.Timer.Companion.FIELD_PAGE_NAME
 import com.bluetriangle.analytics.Timer.Companion.FIELD_SESSION_ID
 import com.bluetriangle.analytics.Timer.Companion.FIELD_TRAFFIC_SEGMENT_NAME
@@ -104,10 +105,12 @@ internal class FatalANRTracker(
         val errorType = errorTypeOf(lastExit)
         if (errorType == null) {
             logger?.debug("AppExitInfoReporter::checkAppExitInfoAndReport - Skipping exit reason: ${lastExit.reason}")
-            return
+        } else {
+            reportAppExit(lastExit, errorType)
         }
 
-        reportAppExit(lastExit, errorType)
+        // The saved page belongs to the process of this exit, clear it so a later exit doesn't reuse it
+        clearSavedAnrFields()
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -139,7 +142,7 @@ internal class FatalANRTracker(
                 exitInfo.timestamp.toString(),
                 errorType,
                 title = exitInfoDetail.title,
-                mostRecentTimer = buildExitTimer(errorType),
+                mostRecentTimer = buildExitTimer(errorType, exitInfo.timestamp),
                 deviceInfoProvider = deviceInfoProvider,
                 breadcrumbs = tracker.breadcrumbsManager?.getCachedSnapshot(),
                 source = CrashSource.AppExitInformation
@@ -147,16 +150,31 @@ internal class FatalANRTracker(
         )
     }
 
-    private fun buildExitTimer(errorType: Tracker.BTErrorType): Timer {
+    private fun clearSavedAnrFields() {
+        context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE).edit {
+            remove("ANR_$FIELD_NST")
+            remove("ANR_$FIELD_SESSION_ID")
+            remove("ANR_$FIELD_PAGE_NAME")
+            remove("ANR_$FIELD_CONTENT_GROUP_NAME")
+            remove("ANR_$FIELD_TRAFFIC_SEGMENT_NAME")
+        }
+    }
+
+    private fun buildExitTimer(errorType: Tracker.BTErrorType, exitTime: Long): Timer {
         val prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
 
-        val sessionId = prefs.getString("ANR_$FIELD_SESSION_ID", "")
-        val pageName = prefs.getString("ANR_$FIELD_PAGE_NAME", "")
-        val pageType = prefs.getString("ANR_$FIELD_CONTENT_GROUP_NAME", "")
-        val txnName = prefs.getString("ANR_$FIELD_TRAFFIC_SEGMENT_NAME", "")
+        fun savedField(field: String): String? =
+            prefs.getString("ANR_$field", null)?.takeIf { it.isNotBlank() && it != "null" }
 
+        val nst = savedField(FIELD_NST)?.toLongOrNull()
+        val sessionId = savedField(FIELD_SESSION_ID)
+        val pageName = savedField(FIELD_PAGE_NAME)
+        val pageType = savedField(FIELD_CONTENT_GROUP_NAME)
+        val txnName = savedField(FIELD_TRAFFIC_SEGMENT_NAME)
+
+        // Started at the nst of the page the ANR happened on, so the error links to that page view
         return Timer().apply {
-            startWithoutPerformanceMonitor()
+            startAt(nst ?: exitTime)
             setPageName(pageName ?: Constants.CRASH_PAGE_NAME)
             pageType?.let { setContentGroupName(pageType) }
             txnName?.let { setTrafficSegmentName(txnName) }
@@ -233,7 +251,9 @@ internal class FatalANRTracker(
         timer?.let { timer ->
             val prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
             prefs?.edit {
-                putString("ANR_$FIELD_SESSION_ID", timer.getField(FIELD_SESSION_ID))
+                putString("ANR_$FIELD_NST", timer.getField(FIELD_NST))
+                // A running timer gets its session ID only when submitted, save the current session
+                putString("ANR_$FIELD_SESSION_ID", Tracker.instance?.configuration?.sessionId ?: timer.getField(FIELD_SESSION_ID))
                 putString("ANR_$FIELD_PAGE_NAME", timer.getField(FIELD_PAGE_NAME))
                 putString("ANR_$FIELD_CONTENT_GROUP_NAME", timer.getField(FIELD_CONTENT_GROUP_NAME))
                 putString(
