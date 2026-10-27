@@ -46,6 +46,7 @@ internal object BttBeaconLogger {
             }
             logFile = File(directory, LOG_FILE)
             configuration.logger?.debug("Network trace log file: ${logFile?.absolutePath}")
+            writeToFile("################ App Cold Launch ################")
         } catch (e: Exception) {
             configuration.logger?.error("Error initializing network trace log: ${e.message}")
         }
@@ -96,7 +97,6 @@ internal object BttBeaconLogger {
                 appendLine()
             }
 
-            configuration?.logger?.debug("Network Trace\n$entry")
             writeToFile(entry)
         } catch (e: Exception) {
             configuration?.logger?.error("Error writing network trace: ${e.message}")
@@ -137,6 +137,7 @@ internal object BttBeaconLogger {
             val rotated = File(file.parentFile, "$LOG_FILE.1")
             rotated.delete()
             file.renameTo(rotated)
+            writeToFile("################ New File Created ################")
         }
         file.appendText(entry)
     }
