@@ -3,6 +3,7 @@ package com.bluetriangle.analytics.hybrid
 import android.os.Looper
 import android.webkit.WebView
 import com.bluetriangle.analytics.Tracker
+import com.bluetriangle.analytics.Utils
 import com.bluetriangle.analytics.utility.WebViewHelper
 import java.lang.ref.WeakReference
 
@@ -34,11 +35,20 @@ object BTTWebViewTracker {
             val wcdOn = if(it.shouldSampleNetwork) "on" else "off"
             val wcdCollect = "{\"value\":\"$wcdOn\",\"expires\":\"$expiration\"}"
             val sdkVersion = "Android-${Tracker.sdkVersion}"
+            val appVersion = "{\"value\":\"${Tracker.instance?.appVersion}\",\"expires\":\"$expiration\"}"
+            val osVersion = "{\"value\":\"${Utils.os}\",\"expires\":\"$expiration\"}"
 
             setLocalStorage("BTT_X0siD", sessionID)
             setLocalStorage("BTT_SDK_VER", sdkVersion)
             setLocalStorage("BTT_WCD_Collect", wcdCollect)
-            Tracker.instance?.configuration?.logger?.info("Injected session ID and SDK version in WebView: BTT_X0siD: $sessionID, BTT_SDK_VER: $sdkVersion with expiration $expiration")
+            setLocalStorage("BTT_APP_VER", appVersion)
+            setLocalStorage("BTT_OS_VER", osVersion)
+            Tracker.instance?.deviceInfoProvider?.getDeviceInfo()?.let { deviceInfo ->
+                val deviceModel = "{\"value\":\"${deviceInfo.deviceModel}\",\"expires\":\"$expiration\"}"
+                setLocalStorage("BTT_DEVICE_MODEL", deviceModel)
+            }
+
+            Tracker.instance?.configuration?.logger?.info("Injected session ID and SDK version in WebView: BTT_X0siD: $sessionID, BTT_SDK_VER: $sdkVersion, BTT_APP_VER:$appVersion, BTT_OS_VER:$osVersion with expiration $expiration")
         }
     }
 
