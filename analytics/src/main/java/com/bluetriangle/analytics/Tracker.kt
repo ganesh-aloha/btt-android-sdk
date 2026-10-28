@@ -340,6 +340,7 @@ class Tracker private constructor(
         disableBreadcrumbs()
         stopForceRestartTracker()
         stopFatalANRTracker()
+        networkErrorHolder.stop()
         configuration.logger?.debug("SDK is disabled.")
     }
 
@@ -425,7 +426,10 @@ class Tracker private constructor(
     }
 
     private fun initializeANRMonitor() {
-        anrManager = AnrManager(configuration)
+        anrManager = AnrManager(configuration).also {
+            // A new detector doesn't carry the fatal ANR listener of the previous one
+            if (configuration.isReportFatalAnrEnabled) appLaunchReporter.attachFatalAnrListener(it.detector)
+        }
         anrManager?.start()
     }
 
@@ -1108,6 +1112,7 @@ class Tracker private constructor(
 
             if (configuration.isScreenTrackingEnabled) {
                 initializeScreenTracker()
+                if (configuration.enableScreenResponsiveness) initializeResponsivenessMonitor()
             } else {
                 deInitializeScreenTracker()
                 deInitializeResponsivenessMonitor() //  If screen tracking is disabled, disable JANK Tracking
@@ -1425,6 +1430,7 @@ class Tracker private constructor(
         globalPropertiesStore.setCustomCategory(CustomCategory.Category5, value)
     }
 
+    @JvmOverloads
     fun trackError(message: String, threadStack: String? = null) {
         trackException(message, threadStack, object : Throwable() {
             override fun fillInStackTrace(): Throwable {

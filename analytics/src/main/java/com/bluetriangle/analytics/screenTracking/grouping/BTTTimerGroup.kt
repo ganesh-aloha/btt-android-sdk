@@ -157,8 +157,9 @@ internal class BTTTimerGroup(
             return
         }
 
+        // Keyed by Screen.toString() ("name#id"), same as BTTScreenLifecycleTracker registers the screen
         timers.forEach { timer ->
-            Tracker.instance?.jankFrameMonitor?.getScreenMetrics(timer.first.name)?.let { metrics ->
+            Tracker.instance?.jankFrameMonitor?.getScreenMetrics(timer.first.toString())?.let { metrics ->
                 timer.second.setJankReportFields(metrics)
             }
         }

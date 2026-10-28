@@ -18,6 +18,7 @@ import com.bluetriangle.analytics.Timer.Companion.FIELD_TRAFFIC_SEGMENT_NAME
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.Tracker.Companion.SHARED_PREFERENCES_NAME
 import com.bluetriangle.analytics.anrwatchdog.ANRWarningException
+import com.bluetriangle.analytics.anrwatchdog.AnrDetector
 import com.bluetriangle.analytics.anrwatchdog.AnrListener
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
 import com.bluetriangle.analytics.event.CrashSource
@@ -46,7 +47,17 @@ internal class FatalANRTracker(
     private var reportJob: Job? = null
 
     private fun addAnrListener() {
-        Tracker.instance?.anrManager?.detector?.addAnrListener("Fatal ANR", this)
+        Tracker.instance?.anrManager?.detector?.let { attachAnrListener(it) }
+    }
+
+    /**
+     * Listens to ANR warnings of the given detector, to save the page the ANR happened on so a
+     * fatal ANR reported on the next launch links to it. Called again for every new ANR detector,
+     * since a detector doesn't carry the listeners of a previous one.
+     */
+    fun attachAnrListener(detector: AnrDetector) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        detector.addAnrListener("Fatal ANR", this)
     }
 
     fun start() {

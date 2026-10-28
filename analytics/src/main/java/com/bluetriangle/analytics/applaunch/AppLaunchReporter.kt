@@ -6,6 +6,7 @@ import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Logger
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.Tracker
+import com.bluetriangle.analytics.anrwatchdog.AnrDetector
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
 import com.bluetriangle.analytics.event.BTTEvent
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +46,10 @@ internal class AppLaunchReporter(
 
     fun stopFatalANRTracker() {
         fatalANRTracker?.stop()
+    }
+
+    fun attachFatalAnrListener(detector: AnrDetector) {
+        fatalANRTracker?.attachAnrListener(detector)
     }
 
     fun setForceRestartDuration(forceRestartDuration: Double) {
