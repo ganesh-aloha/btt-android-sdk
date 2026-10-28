@@ -1,7 +1,6 @@
 package com.bluetriangle.analytics.applaunch
 
 import android.content.Context
-import android.util.Log
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Logger
@@ -21,21 +20,31 @@ internal class AppLaunchReporter(
     logger: Logger?, val context: Context, val deviceInfoProvider: IDeviceInfoProvider, forceRestartDuration: Double
 ) {
     private var forceRestartTracker: ForceRestartTracker? = null
+    private var fatalANRTracker: FatalANRTracker? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var appInstallReportJob: Job? = null
 
     init {
         forceRestartTracker = ForceRestartTracker(logger, context, this, forceRestartDuration)
+        fatalANRTracker = FatalANRTracker(logger, context, deviceInfoProvider)
     }
 
-    fun start() {
+    fun startForceRestartTracker() {
         forceRestartTracker?.start()
     }
 
-    fun stop() {
+    fun stopForceRestartTracker() {
         forceRestartTracker?.stop()
         scope.cancel()
+    }
+
+    fun startFatalANRTracker() {
+        fatalANRTracker?.start()
+    }
+
+    fun stopFatalANRTracker() {
+        fatalANRTracker?.stop()
     }
 
     fun setForceRestartDuration(forceRestartDuration: Double) {
@@ -69,22 +78,20 @@ internal class AppLaunchReporter(
         }
     }
 
-    fun reportForceKill(pageName: String?, pageType: String?, txnName: String?) {
+    internal fun reportForceKill(forceRestartScreen: ForceRestartTracker.ForceRestartScreen, exitTime: Long) {
         val configuration = Tracker.instance?.configuration!!
 
-        val timeStamp = System.currentTimeMillis().toString()
-        val mostRecentTimer = Tracker.instance?.getMostRecentTimer()
+        val timeStamp = exitTime.toString()
 
+        // Built from the page the user was on in the killed process, so the error carries the nst of
+        // that page view. It isn't started with start(), which would stamp the relaunch time as nst
+        // and register it as the most recent timer of the new process.
         val timer = Timer().apply {
-            startWithoutPerformanceMonitor()
-            setPageName(pageName ?: mostRecentTimer?.getField(Timer.FIELD_PAGE_NAME) ?: "Unknown")
-            //setContentGroupName(BTTEvent.ForceRestart.defaultPageName)
-            setContentGroupName(
-                pageType ?: mostRecentTimer?.getField(Timer.FIELD_CONTENT_GROUP_NAME) ?: ""
-            )
-            setTrafficSegmentName(
-                txnName ?: mostRecentTimer?.getField(Timer.FIELD_TRAFFIC_SEGMENT_NAME) ?: ""
-            )
+            startAt(forceRestartScreen.nst ?: exitTime)
+            setPageName(forceRestartScreen.pageName ?: BTTEvent.ForceRestart.defaultPageName)
+            setContentGroupName(forceRestartScreen.pageType ?: "")
+            setTrafficSegmentName(forceRestartScreen.txnName ?: "")
+            forceRestartScreen.sessionId?.let { setField(Timer.FIELD_SESSION_ID, it) }
             setTimeOnPage(Constants.TIMER_MIN_PGTM)
             pageTimeCalculator = {
                 Constants.TIMER_MIN_PGTM

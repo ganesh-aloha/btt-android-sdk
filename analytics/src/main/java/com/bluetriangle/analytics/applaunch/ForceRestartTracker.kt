@@ -4,7 +4,6 @@ import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.Logger
 import com.bluetriangle.analytics.Timer.Companion.FIELD_CONTENT_GROUP_NAME
@@ -76,7 +75,7 @@ internal class ForceRestartTracker(
 
                 if (diedUnexpectedly && isUnexpectedReason) {
                     logger?.debug("ForceRestartTracker::checkAppPreviousExit App Unexpectedly Exit at ${lastExit.timestamp}, Status: ${lastExit.status}, Description: ${lastExit.description}")
-                    reportForceKill()
+                    reportForceKill(lastExit.timestamp)
                 } else {
                     logger?.debug("ForceRestartTracker::checkAppPreviousExit - Process Exist Reason:${lastExit.reason} Status: ${lastExit.status}, Description: ${lastExit.description}")
                 }
@@ -89,23 +88,38 @@ internal class ForceRestartTracker(
         }
     }
 
-    private fun reportForceKill() {
+    private fun reportForceKill(exitTime: Long) {
         logger?.debug("ForceRestartTracker::reportForceKill")
 
         val prefs =
             context.getSharedPreferences(Tracker.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
 
-        val pageName = prefs.getString(FIELD_PAGE_NAME, "")
-        val pageType = prefs.getString(FIELD_CONTENT_GROUP_NAME, "")
-        val txnName = prefs.getString(FIELD_TRAFFIC_SEGMENT_NAME, "")
+        // Page the user was on when the app was force restarted, saved by Tracker.onScreenPause
+        val forceRestartScreen = ForceRestartScreen(
+            nst = prefs.getString(Constants.LAST_SCREEN_NST, null)?.toLongOrNull(),
+            sessionId = prefs.getString(Constants.LAST_SCREEN_SESSION_ID, null).nonBlank(),
+            pageName = prefs.getString(FIELD_PAGE_NAME, null).nonBlank(),
+            pageType = prefs.getString(FIELD_CONTENT_GROUP_NAME, null).nonBlank(),
+            txnName = prefs.getString(FIELD_TRAFFIC_SEGMENT_NAME, null).nonBlank()
+        )
 
         appForceKillReportJob?.cancel()
 
         appForceKillReportJob = scope.launch {
             while (Tracker.instance == null) delay(5)
 
-            reporter.reportForceKill(pageName, pageType, txnName)
+            reporter.reportForceKill(forceRestartScreen, exitTime)
             appForceKillReportJob?.cancel()
         }
     }
+
+    private fun String?.nonBlank(): String? = this?.takeIf { it.isNotBlank() && it != "null" }
+
+    internal data class ForceRestartScreen(
+        val nst: Long?,
+        val sessionId: String?,
+        val pageName: String?,
+        val pageType: String?,
+        val txnName: String?
+    )
 }

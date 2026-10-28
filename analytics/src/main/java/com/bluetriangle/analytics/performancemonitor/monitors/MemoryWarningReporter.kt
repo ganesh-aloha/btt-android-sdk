@@ -4,6 +4,7 @@ import com.bluetriangle.analytics.CrashRunnable
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
+import com.bluetriangle.analytics.event.CrashSource
 
 internal class MemoryWarningReporter(val deviceInfoProvider: IDeviceInfoProvider) {
 
@@ -21,9 +22,11 @@ internal class MemoryWarningReporter(val deviceInfoProvider: IDeviceInfoProvider
                     timeStamp,
                     Tracker.BTErrorType.MemoryWarning,
                     mostRecentTimer = timer,
+                    title = exception.message ?: "",
                     errorCount = exception.count,
                     deviceInfoProvider = deviceInfoProvider,
-                    breadcrumbs = exception.breadcrumbs
+                    breadcrumbs = exception.breadcrumbs,
+                    source = CrashSource.MainThreadWatcher
                 )
             )
             thread.start()

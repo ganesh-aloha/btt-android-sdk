@@ -12,11 +12,14 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_ANR_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_CRASH_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_GROUPING_TAP_DETECTION
+import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_LAUNCH_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_MEMORY_WARNING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_NETWORK_STATE_TRACKING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_WEB_VIEW_STITCHING
 import com.bluetriangle.analytics.Constants.DEFAULT_NETWORK_SAMPLE_RATE
+import com.bluetriangle.analytics.Constants.DEFAULT_FATAL_ERROR_SAMPLE_RATE
+import com.bluetriangle.analytics.Constants.DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfig
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfigMapper
@@ -52,7 +55,13 @@ internal data class SessionData(
     val expiration: Long,
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
-    val forceRestartDuration: Double
+    val forceRestartDuration: Double,
+    val enableScreenResponsiveness: Boolean,
+    val enableReportFatalAnr: Boolean,
+    val fatalErrorSampleRate: Double,
+    val nonFatalErrorSampleRate: Double,
+    val shouldSampleFatalErrors: Boolean,
+    val shouldSampleNonFatalErrors: Boolean
 ) {
     companion object {
         private const val SESSION_ID = "sessionId"
@@ -74,6 +83,12 @@ internal data class SessionData(
         private const val ENABLE_APP_INSTALL = "enableAppInstall"
         private const val ENABLE_FORCE_RESTART = "enableForceRestart"
         private const val FORCE_RESTART_DURATION = "forceRestartDuration"
+        private const val ENABLE_SCREEN_RESPONSIVENESS = "enableScreenResponsiveness"
+        private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalANR"
+        private const val FATAL_ERROR_SAMPLE_RATE = "fatalErrorSampleRate"
+        private const val NON_FATAL_ERROR_SAMPLE_RATE = "nonFatalErrorSampleRate"
+        private const val SHOULD_SAMPLE_FATAL_ERRORS = "shouldSampleFatalErrors"
+        private const val SHOULD_SAMPLE_NON_FATAL_ERRORS = "shouldSampleNonFatalErrors"
 
         internal fun JSONObject.toSessionData(): SessionData? {
             try {
@@ -105,7 +120,13 @@ internal data class SessionData(
                     expiration = getLong(EXPIRATION),
                     enableAppInstall = getBooleanOrNull(ENABLE_APP_INSTALL) ?: false,
                     enableForceRestart = getBooleanOrNull(ENABLE_FORCE_RESTART) ?: false,
-                    forceRestartDuration = getDoubleOrNull(FORCE_RESTART_DURATION) ?: 10.0
+                    forceRestartDuration = getDoubleOrNull(FORCE_RESTART_DURATION) ?: 10.0,
+                    enableScreenResponsiveness = getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS,
+                    enableReportFatalAnr = getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: false,
+                    fatalErrorSampleRate = getDoubleOrNull(FATAL_ERROR_SAMPLE_RATE) ?: DEFAULT_FATAL_ERROR_SAMPLE_RATE,
+                    nonFatalErrorSampleRate = getDoubleOrNull(NON_FATAL_ERROR_SAMPLE_RATE) ?: DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE,
+                    shouldSampleFatalErrors = getBooleanOrNull(SHOULD_SAMPLE_FATAL_ERRORS) ?: true,
+                    shouldSampleNonFatalErrors = getBooleanOrNull(SHOULD_SAMPLE_NON_FATAL_ERRORS) ?: false
                 )
             } catch (e: Exception) {
                 Tracker.instance?.configuration?.logger?.error("Error while parsing session data: ${e::class.simpleName}(\"${e.message}\")")
@@ -136,6 +157,12 @@ internal data class SessionData(
             put(ENABLE_APP_INSTALL, enableAppInstall)
             put(ENABLE_FORCE_RESTART, enableForceRestart)
             put(FORCE_RESTART_DURATION, forceRestartDuration)
+            put(ENABLE_SCREEN_RESPONSIVENESS, enableScreenResponsiveness)
+            put(ENABLE_REPORT_FATAL_ANR, enableReportFatalAnr)
+            put(FATAL_ERROR_SAMPLE_RATE, fatalErrorSampleRate)
+            put(NON_FATAL_ERROR_SAMPLE_RATE, nonFatalErrorSampleRate)
+            put(SHOULD_SAMPLE_FATAL_ERRORS, shouldSampleFatalErrors)
+            put(SHOULD_SAMPLE_NON_FATAL_ERRORS, shouldSampleNonFatalErrors)
         }
     }
 }

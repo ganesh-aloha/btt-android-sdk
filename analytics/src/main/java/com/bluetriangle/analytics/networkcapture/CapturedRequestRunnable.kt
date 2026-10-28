@@ -2,12 +2,11 @@ package com.bluetriangle.analytics.networkcapture
 
 import com.bluetriangle.analytics.BlueTriangleConfiguration
 import com.bluetriangle.analytics.Constants
+import com.bluetriangle.analytics.BttBeaconLogger
 import com.bluetriangle.analytics.Payload
 import com.bluetriangle.analytics.Utils
 import com.bluetriangle.analytics.caching.classifier.CacheType
-import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
@@ -27,6 +26,7 @@ class CapturedRequestRunnable(
 
     private fun submitCapturedRequestCollection(capturedRequestCollection: CapturedRequestCollection) {
         var connection: HttpsURLConnection? = null
+        val requestStartTime = System.currentTimeMillis()
         val payloadData =
             capturedRequestCollection.buildCapturedRequestData(if (configuration.isDebug) 2 else 0)
         var url = configuration.networkCaptureUrl
@@ -45,9 +45,9 @@ class CapturedRequestRunnable(
             connection.doOutput = true
             DataOutputStream(connection.outputStream).use { it.write(Utils.b64encode(payloadData)) }
             val statusCode = connection.responseCode
+            val responseBody = BttBeaconLogger.readResponseBody(connection, statusCode)
+            BttBeaconLogger.trace(url, payloadData, requestStartTime, responseBody)
             if (statusCode >= 300) {
-                val responseBody =
-                    BufferedReader(InputStreamReader(connection.errorStream)).use { it.readText() }
                 configuration.logger?.error("Server Error submitting $capturedRequestCollection: $statusCode - $responseBody")
 
                 // If server error, cache the payload and try again later
@@ -59,6 +59,7 @@ class CapturedRequestRunnable(
             }
             connection.getHeaderField(0)
         } catch (e: Exception) {
+            BttBeaconLogger.trace(url, payloadData, requestStartTime, error = e)
             configuration.logger?.error(
                 e,
                 "Android Error submitting $capturedRequestCollection: ${e.message}"

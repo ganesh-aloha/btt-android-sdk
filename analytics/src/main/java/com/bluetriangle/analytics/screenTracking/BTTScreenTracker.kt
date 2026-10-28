@@ -4,10 +4,9 @@ import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.model.Screen
 import com.bluetriangle.analytics.model.ScreenType
 
-class BTTScreenTracker(private val pageName: String) {
+class BTTScreenTracker(private val pageName: String, private val screenType: ScreenType) {
 
     private val id = "${pageName}#${System.currentTimeMillis()}"
-    var screenType: String = ""
     private var isConsumed = false
 
     fun onLoadStarted() {
@@ -18,8 +17,8 @@ class BTTScreenTracker(private val pageName: String) {
         Tracker.instance?.screenTrackMonitor?.onLoadStarted(Screen(
             id,
             pageName,
-            ScreenType.Custom(screenType)
-        ))
+            screenType
+        ), true)
     }
 
     fun onLoadEnded() {
@@ -30,8 +29,8 @@ class BTTScreenTracker(private val pageName: String) {
         Tracker.instance?.screenTrackMonitor?.onLoadEnded(Screen(
             id,
             pageName,
-            ScreenType.Custom(screenType)
-        ))
+            screenType
+        ), true)
     }
 
     fun onViewStarted() {
@@ -42,8 +41,8 @@ class BTTScreenTracker(private val pageName: String) {
         Tracker.instance?.screenTrackMonitor?.onViewStarted(Screen(
             id,
             pageName,
-            ScreenType.Custom(screenType)
-        ))
+            screenType
+        ), true)
     }
 
     fun onViewEnded() {
@@ -55,8 +54,8 @@ class BTTScreenTracker(private val pageName: String) {
         Tracker.instance?.screenTrackMonitor?.onViewEnded(Screen(
             id,
             pageName,
-            ScreenType.Custom(screenType)
-        ))
+            screenType
+        ), true)
     }
 
     private fun logConsumedError() {

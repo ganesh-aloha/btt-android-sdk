@@ -110,7 +110,13 @@ internal class SessionManager(
             getNewExpiration(),
             config.enableAppInstall,
             config.enableForceRestart,
-            config.forceRestartDuration
+            config.forceRestartDuration,
+            config.enableScreenResponsiveness,
+            config.enableReportFatalAnr,
+            config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!,
+            config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!,
+            debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!),
+            debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!)
         )
     }
 
@@ -153,7 +159,13 @@ internal class SessionManager(
                 getNewExpiration(),
                 it.enableAppInstall,
                 it.enableForceRestart,
-                it.forceRestartDuration
+                it.forceRestartDuration,
+                it.enableScreenResponsiveness,
+                it.enableReportFatalAnr,
+                it.fatalErrorSampleRate,
+                it.nonFatalErrorSampleRate,
+                it.shouldSampleFatalErrors,
+                it.shouldSampleNonFatalErrors
             )
             sessionStore.storeSessionData(
                 newExpirySession
@@ -209,7 +221,13 @@ internal class SessionManager(
                                 session.expiration,
                                 config.enableAppInstall,
                                 config.enableForceRestart,
-                                config.forceRestartDuration
+                                config.forceRestartDuration,
+                                config.enableScreenResponsiveness,
+                                config.enableReportFatalAnr,
+                                config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!,
+                                config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!,
+                                debugConfig.fullSampleRate || Utils.shouldSample(config.fatalErrorSampleRate ?: defaultConfig.fatalErrorSampleRate!!),
+                                debugConfig.fullSampleRate || Utils.shouldSample(config.nonFatalErrorSampleRate ?: defaultConfig.nonFatalErrorSampleRate!!)
                             )
                             Tracker.instance?.updateSession(sessionData)
                             sessionStore.storeSessionData(

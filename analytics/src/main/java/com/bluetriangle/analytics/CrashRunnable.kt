@@ -5,13 +5,12 @@ import com.bluetriangle.analytics.Constants.TIMER_MIN_PGTM
 import com.bluetriangle.analytics.Timer.Companion.FIELD_NATIVE_APP
 import com.bluetriangle.analytics.caching.classifier.CacheType
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
+import com.bluetriangle.analytics.event.CrashSource
 import com.bluetriangle.analytics.networkstate.BTTNetworkState
 import com.bluetriangle.analytics.utility.value
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
 import java.io.DataOutputStream
-import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.toMap
@@ -39,21 +38,28 @@ internal class CrashRunnable(
     private val timeStamp: String,
     private val errorType: Tracker.BTErrorType = Tracker.BTErrorType.NativeAppCrash,
     private val mostRecentTimer: Timer? = null,
+    private val title: String? = null,
     private val errorCount: Int = 1,
     private val deviceInfoProvider: IDeviceInfoProvider,
-    private val breadcrumbs: JSONArray? = null
+    private val breadcrumbs: JSONArray? = null,
+    private val source: CrashSource? = null
 ) : Runnable {
 
     private var timerFields = mutableMapOf<String, String?>()
 
     override fun run() {
         try {
+            val isSampled = errorType.isSampled(configuration)
             mostRecentTimer?.let {
                 Tracker.instance?.applyGlobalFields(it)
                 loadTimerFields(it)
-                if(errorType == Tracker.BTErrorType.NativeAppCrash) {
+                if(errorType == Tracker.BTErrorType.NativeAppCrash || errorType == Tracker.BTErrorType.FatalANR) {
                     submitTimer(it, true)
                 }
+            }
+            if (!isSampled) {
+                configuration.logger?.debug("${errorType.errorName} not reported: session not sampled for ${if (errorType.isFatal == true) "fatal" else "non-fatal"} errors")
+                return
             }
             if(mostRecentTimer == null) {
                 val timer = buildCrashHitsTimer()
@@ -114,7 +120,10 @@ internal class CrashRunnable(
                 Timer.FIELD_BROWSER_VERSION,
                 timerFields[Timer.FIELD_BROWSER_VERSION]
             )
-            .appendQueryParameter(Timer.FIELD_LONG_SESSION_ID, configuration.sessionId)
+            .appendQueryParameter(
+                Timer.FIELD_LONG_SESSION_ID,
+                timerFields[Timer.FIELD_SESSION_ID]?.takeIf { it.isNotBlank() } ?: configuration.sessionId
+            )
             .appendQueryParameter(Timer.FIELD_PAGE_TIME, timerFields[Timer.FIELD_PAGE_TIME])
             .appendQueryParameter(
                 Timer.FIELD_CONTENT_GROUP_NAME,
@@ -145,6 +154,7 @@ internal class CrashRunnable(
 
     private fun submitCrashReport() {
         var connection: HttpsURLConnection? = null
+        val requestStartTime = System.currentTimeMillis()
         val crashReportUrl = buildCrashReportUrl()
         configuration.logger?.debug("Crash Report URL: $crashReportUrl")
         val payloadData = buildCrashReportData()
@@ -161,9 +171,9 @@ internal class CrashRunnable(
             connection.doInput = false
             DataOutputStream(connection.outputStream).use { it.write(Utils.b64encode(payloadData)) }
             val statusCode = connection.responseCode
+            val responseBody = BttBeaconLogger.readResponseBody(connection, statusCode)
+            BttBeaconLogger.trace(crashReportUrl, payloadData, requestStartTime, responseBody)
             if (statusCode >= 300) {
-                val responseBody =
-                    BufferedReader(InputStreamReader(connection.errorStream)).use { it.readText() }
                 configuration.logger?.error("Error submitting crash report: $statusCode - $responseBody")
             }
             // If server error, cache the payload and try again later
@@ -172,6 +182,7 @@ internal class CrashRunnable(
             }
             connection.getHeaderField(0)
         } catch (e: Exception) {
+            BttBeaconLogger.trace(crashReportUrl, payloadData, requestStartTime, error = e)
             configuration.logger?.error(e, "Error submitting crash report: ${e.message}")
             cachePayload(crashReportUrl, payloadData)
         } finally {
@@ -203,7 +214,7 @@ internal class CrashRunnable(
      */
     private fun buildCrashReportData(): String {
         val crashReport = mutableMapOf<String, Any?>(
-            "msg" to stackTrace,
+            "msg" to (title ?: stackTrace),
             "eTp" to errorType.errorName,
             "eCnt" to errorCount.toString(),
             "url" to configuration.applicationName,
@@ -215,6 +226,8 @@ internal class CrashRunnable(
         val netStateMonitor = Tracker.instance?.networkStateMonitor
 
         val nativeAppProperties = ErrorNativeAppProperties()
+        nativeAppProperties.source = source?.name
+        nativeAppProperties.stackTrace = stackTrace
 
         netStateMonitor?.state?.value?.let {
             nativeAppProperties.netState = it.value
@@ -235,6 +248,7 @@ internal class CrashRunnable(
     private fun loadTimerFields(from: Timer) {
         val keysAndDefaults = mutableMapOf(
             Timer.FIELD_NST to null,
+            Timer.FIELD_SESSION_ID to null,
             Timer.FIELD_PAGE_NAME to errorType.errorName,
             Timer.FIELD_TRAFFIC_SEGMENT_NAME to null,
             Timer.FIELD_NATIVE_OS to Constants.OS,

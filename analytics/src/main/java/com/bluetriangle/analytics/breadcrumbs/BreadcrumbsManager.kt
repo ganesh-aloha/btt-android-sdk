@@ -88,4 +88,9 @@ internal class BreadcrumbsManager(var config: BreadcrumbsConfig, private val sho
     fun dump() {
         breadcrumbsCollector?.dump()
     }
+
+    // Exposed for React Native UI Action events
+    fun addEvent(event: BreadcrumbEvent)  {
+        breadcrumbsCollector?.add(event)
+    }
 }

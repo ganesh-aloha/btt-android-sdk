@@ -11,6 +11,8 @@ import com.bluetriangle.analytics.Constants.FULL_TIME
 import com.bluetriangle.analytics.Constants.GROUPED
 import com.bluetriangle.analytics.Constants.GROUPING_CAUSE
 import com.bluetriangle.analytics.Constants.GROUPING_CAUSE_INTERVAL
+import com.bluetriangle.analytics.Constants.GROUP_NAME_SOURCE
+import com.bluetriangle.analytics.Constants.GROUP_SCREEN_COUNT
 import com.bluetriangle.analytics.Constants.INSTALL_TIME
 import com.bluetriangle.analytics.Constants.LAUNCH_SCREEN_NAME
 import com.bluetriangle.analytics.Constants.LOAD_TIME
@@ -21,14 +23,19 @@ import com.bluetriangle.analytics.Constants.NETWORK_TYPE_OFFLINE
 import com.bluetriangle.analytics.Constants.NETWORK_TYPE_WIFI
 import com.bluetriangle.analytics.Constants.NUMBER_OF_CPU_CORES
 import com.bluetriangle.analytics.Constants.SCREEN_TYPE
+import com.bluetriangle.analytics.Constants.SDK_ID
 import com.bluetriangle.analytics.Constants.SDK_VERSION
+import com.bluetriangle.analytics.Constants.RESPONSIVENESS_GRADE
+import com.bluetriangle.analytics.Constants.RESPONSIVENESS_META
 import com.bluetriangle.analytics.Timer
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
+import com.bluetriangle.analytics.jank.JankMetrics
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
 import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD_DEVICE_MODEL
 import com.bluetriangle.analytics.networkstate.BTTNetworkState
 import com.bluetriangle.analytics.networkstate.data.BTTNetworkProtocol
 import com.bluetriangle.analytics.event.BTTEvent
+import com.bluetriangle.analytics.jank.responsivenessGrade
 import com.bluetriangle.analytics.utility.value
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
@@ -49,6 +56,7 @@ internal data class NativeAppProperties(
     var netStateSource: String? = null,
     var appVersion: String? = null,
     var sdkVersion: String? = null,
+    var sdkId: String? = null,
     var grouped: Boolean = false,
     var confidenceRate: Int? = null,
     var confidenceMsg: String? = null,
@@ -61,15 +69,17 @@ internal data class NativeAppProperties(
     var event: BTTEvent? = null,
     var autoCheckout: Boolean? = null,
     var configKey: String? = null,
-    var installTime: Long? = null
+    var installTime: Long? = null,
+    var jankMetrics: JankMetrics? = null,
+    var groupNameSource: String? = null
 ) : Parcelable {
 
     private val cellularTotal
         get() = cellular?.entries?.map { it.value }?.let {
-            if(it.isEmpty()) 0L else it.reduce(Long::plus)
+            if (it.isEmpty()) 0L else it.reduce(Long::plus)
         }
 
-    fun toJSONObject(): JSONObject {
+    fun toJSONObject(sendResponsiveNess: Boolean = true): JSONObject {
         val obj = JSONObject()
         obj.put(LOAD_TIME, loadTime)
         obj.put(FULL_TIME, fullTime)
@@ -78,8 +88,13 @@ internal data class NativeAppProperties(
         obj.put(NUMBER_OF_CPU_CORES, numberOfCPUCores)
         obj.put(APP_VERSION, appVersion)
         obj.put(SDK_VERSION, sdkVersion)
+        obj.put(SDK_ID, sdkId)
         obj.put(GROUPED, grouped)
+        if(!sendResponsiveNess) obj.put(GROUP_SCREEN_COUNT, 1) // for child view wcd only
         obj.put(GROUPING_CAUSE, groupingCause)
+        groupNameSource?.let{
+            obj.put(GROUP_NAME_SOURCE, it)
+        }
         obj.put(GROUPING_CAUSE_INTERVAL, groupingCauseInterval)
         obj.put(EVENT_ID, event?.id?.toString())
         installTime?.let {
@@ -98,7 +113,7 @@ internal data class NativeAppProperties(
             obj.putNetStateField(networkStates)
         }
 
-        if(!netStateSource.isNullOrEmpty()) {
+        if (!netStateSource.isNullOrEmpty()) {
             obj.put(Timer.FIELD_NET_STATE_SOURCE, netStateSource)
         }
 
@@ -106,6 +121,12 @@ internal data class NativeAppProperties(
         obj.put(FIELD_DEVICE_MODEL, deviceModel)
         obj.put(CONFIDENCE_RATE, confidenceRate)
         obj.put(CONFIDENCE_MSG, confidenceMsg)
+
+        if (sendResponsiveNess) {
+            val metrics = jankMetrics
+            obj.put(RESPONSIVENESS_GRADE, metrics?.responsivenessGrade ?: 0)
+            obj.put(RESPONSIVENESS_META, metrics?.toJsonString() ?: "")
+        }
 
         return obj
     }
@@ -136,7 +157,7 @@ internal data class NativeAppProperties(
         val maxField = netStateFields.maxByOrNull { it.second ?: -1L }
 
         maxField?.let { max ->
-            if(max.second == null || max.second == 0L) {
+            if (max.second == null || max.second == 0L) {
                 return@let
             }
             if (max.first == NETWORK_TYPE_CELLULAR) {

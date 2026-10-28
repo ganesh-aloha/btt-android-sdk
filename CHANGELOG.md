@@ -1,4 +1,24 @@
-# Blue Triangle 2.19.7 Latest, July 20 2026
+# Blue Triangle 2.20.0 Latest, October 07 2026
+### New Features
+- Screen Responsiveness Tracking: BlueTriangle now tracks jank, hitch and hang frames per screen using AndroidX JankStats. Each screen timer reports hitch/hang metrics, a hitch histogram and a responsiveness grade. Can be disabled with the `com.blue-triangle.screen-responsiveness.enable` meta-data or remotely via `enableScreenResponsiveness`.
+- Fatal ANR Reporting: ANRs that terminated the app are reported on the next launch using `ApplicationExitInfo` (Android 11 / API 30 and above). Can be disabled remotely via `enableReportFatalAnr`.
+- HTTP method is now captured for network requests, including OkHttp `BlueTriangleOkHttpInterceptor` and `BlueTriangleOkHttpEventListener`.
+- Remote configuration is exposed to cross-platform SDKs through `Tracker.configListener` (`IConfigListener`).
+- Network Error Reporting: failed network requests (error status codes and connection failures) are reported as Network Error through the error beacon.
+- Error Sampling: errors are now sampled per session using two new remote configuration values:
+  - `fatalErrorSampleRate` (defaults to 100% if not received): Crash and Fatal ANR.
+  - `nonFatalErrorSampleRate` (defaults to 0% if not received): ANR Warning, Memory Warning, Force Restart, Excess Resource Usage and Network Error.
+  - `networkSampleRate` only controls capture of network requests (successful and failed); Network Error reporting is controlled by `nonFatalErrorSampleRate` alone.
+
+### Bug Fixes and New Improvements
+- Crash, ANR and fatal ANR stack traces are formatted and sent as JSON, along with the crash source.
+- Query parameters are removed from captured network request URLs.
+- Tap detection for breadcrumbs now resolves button text on Compose and React Native views.
+- Native app properties now include the grouped screen count, group name source and SDK id.
+- Screen grouping is not working with the latest Jetpack Compose framework when using automatic instrumentation through the Gradle plugin.
+- In SDK debug mode, every beacon request and response (analytics, error and WCD) is logged to logcat and to `btt_logs/btt_beacons.log` in the app cache directory.
+
+# Blue Triangle 2.19.7, July 20 2026
 ### Bug Fixes and New Improvements
 - SDK logging was not printing in logcat in app debug mode; needed sdk debug mode issue fixed.
 - Make `androidx.navigation:navigation-compose` dependency compileOnly to avoid version conflict in consuming app.

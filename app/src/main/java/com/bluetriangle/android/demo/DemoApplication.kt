@@ -53,11 +53,11 @@ class DemoApplication : Application() {
         //sdkdemo26621z
         //bluetriangledemo500z
 
-        demoWebsiteUrl = "file://${filesDir.absolutePath}/index.html"
-
-        if(!hasTagUrl()) {
-            setTagUrl(DEFAULT_TAG_URL)
-        }
+        demoWebsiteUrl = "https://ganesh-aloha.github.io/sdk_demo_page/index.html?siteId=${DEFAULT_SITE_ID}&redirectToHome=true"
+        //demoWebsiteUrl = "file://${filesDir.absolutePath}/index.html"
+//        if(!hasTagUrl()) {
+//            setTagUrl(DEFAULT_TAG_URL)
+//        }
         checkANRTestOnAppCreate()
         checkLaunchTest(LaunchTestScenario.OnApplicationCreate)
     }

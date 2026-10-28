@@ -1,69 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hybrid Demo</title>
-    <style>
-      body {
-        margin: 0;
-      }
-      .container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        padding: 1rem;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hybrid Demo</title>
+  <style>
+    body {
+      margin: 0;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1rem;
+    }
 
-      img {
-        display: inline-block;
-        border-radius: 1rem;
-        border: 4px solid black;
-        max-width: 300px;
-        min-width: 0;
-      }
-      .ajaxblock {
-        padding:2rem;
-      }
-    </style>
-  </head>
-  <body>
+    img {
+      display: inline-block;
+      border-radius: 1rem;
+      border: 4px solid black;
+      max-width: 300px;
+      min-width: 0;
+    }
+    .ajaxblock {
+      padding:2rem;
+    }
+  </style>
+</head>
+<body>
 
-  <div class="ajaxblock">
-    <button onclick="makeAjaxCall()">Get Data</button>
-    <div id="result"></div>
-    <button onclick="throwError()">Throw Error</button>
-  </div>
-  <div class="container">
-    <img src="https://picsum.photos/id/20/1080" alt="Image 1" />
-    <img src="https://picsum.photos/id/28/1080" alt="Image 2" />
-    <img src="https://picsum.photos/id/57/1080" alt="Image 3" />
-    <img src="https://picsum.photos/id/59/1080" alt="Image 4" />
-  </div>
+<div class="ajaxblock">
+  <button onclick="makeAjaxCall()">Get Data</button>
+  <div id="result"></div>
+  <button onclick="throwError()">Throw Error</button>
+</div>
+<div class="container">
+  <img src="https://picsum.photos/id/20/1080" alt="Image 1" />
+  <img src="https://picsum.photos/id/28/1080" alt="Image 2" />
+  <img src="https://picsum.photos/id/57/1080" alt="Image 3" />
+  <img src="https://picsum.photos/id/59/1080" alt="Image 4" />
+</div>
 
-  <script type="text/javascript">
-      function makeAjaxCall() {
-        // Create a new XMLHttpRequest object
-        var xhr = new XMLHttpRequest();
-        // Configure it: specify the type of request and the URL
-        xhr.open("GET", "https://jsonplaceholder.typicode.com/todos/1", true);
-        // Set up a function to handle the response
-        xhr.onreadystatechange = function () {
-          // Check if the request is complete
-          if (xhr.readyState == 4 && xhr.status == 200) {
-            // Parse the JSON response
-            var response = JSON.parse(xhr.responseText);
-            // Display the result
-            document.getElementById("result").innerHTML =
-              "User ID: " + response.userId + "<br>Title: " + response.title;
-          }
-        };
-        // Send the request
-        xhr.send();
+<script type="text/javascript">
+  function makeAjaxCall() {
+    // Create a new XMLHttpRequest object
+    var xhr = new XMLHttpRequest();
+    // Configure it: specify the type of request and the URL
+    xhr.open("GET", "https://jsonplaceholder.typicode.com/todos/1", true);
+    // Set up a function to handle the response
+    xhr.onreadystatechange = function () {
+      // Check if the request is complete
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        // Parse the JSON response
+        var response = JSON.parse(xhr.responseText);
+        // Display the result
+        document.getElementById("result").innerHTML =
+          "User ID: " + response.userId + "<br>Title: " + response.title;
       }
-      var page_name = "Hybrid Demo";
-    </script>
-    <!-- DO NOT TOUCH THE LINE BELOW (SCRIPT_TAG...). IT's USED PROGRAMMATICALLY -->
-    <!--- SCRIPT_TAG_GOES_HERE --->
-  </body>
+    };
+    // Send the request
+    xhr.send();
+  }
+
+  function getRandomIntInclusive(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  var page_name = "Hybrid Demo";
+  var order_number = getRandomIntInclusive(10000, 20000);//crypto.randomUUID(); //  Order Number Collection Variable
+  var cart_total = getRandomIntInclusive(200, 700); // Thank You Page Collection Variable
+  var cart_items_count = getRandomIntInclusive(5, 15); // Cart Count Variable
+</script>
+<!-- DO NOT TOUCH THE LINE BELOW (SCRIPT_TAG...). IT's USED PROGRAMMATICALLY -->
+<!--- SCRIPT_TAG_GOES_HERE --->
+</body>
 </html>

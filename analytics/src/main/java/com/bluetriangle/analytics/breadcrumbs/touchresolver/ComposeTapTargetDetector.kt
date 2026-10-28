@@ -7,6 +7,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNodeLayoutDelegate
 import androidx.compose.ui.node.Owner
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsModifier
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -120,6 +121,54 @@ internal class ComposeTapTargetDetector {
         return null
     }
 
+    private fun getNodeText(node: LayoutNode, checkClickable: Boolean = true): String? {
+        if (checkClickable && !node.isClickable)
+            return null
+
+        // Check if the current layout node contains text properties
+        val currentText = getTextFromNode(node)
+        if (currentText != null)
+            return currentText
+
+        // Fallback: Loop down into children ordered by visual Z-index
+        // This is vital for complex components like Buttons wrapping a Text item.
+        for (child in node.zSortedChildren.asMutableList()) {
+            val childText = getNodeText(child, false)
+            if (childText != null)
+                return childText
+        }
+
+        return null
+    }
+
+    private fun getTextFromNode(node: LayoutNode): String? {
+        // collapsedSemantics automatically flattens old modifiers
+        // and modern Modifier.Node API structures into one target object.
+        val config = node.collapsedSemantics ?: return null
+
+        with(config) {
+            // Priority 1: Check actual Text content (e.g., Text/TextField composables)
+            val textList = getOrNull(SemanticsProperties.Text)
+            if (!textList.isNullOrEmpty()) {
+                return textList.joinToString(separator = " ") { it.text }
+            }
+
+            // Priority 2: Check Accessible Content Description labels (e.g., Icon labels)
+            val contentDescList = getOrNull(SemanticsProperties.ContentDescription)
+            if (!contentDescList.isNullOrEmpty()) {
+                return contentDescList.joinToString(separator = " ")
+            }
+
+            // Priority 3: Check if an OnClick accessibility action label was explicitly set
+            val onClickAction = getOrNull(SemanticsActions.OnClick)
+            if (onClickAction?.label != null) {
+                return onClickAction.label
+            }
+        }
+
+        return null
+    }
+
     private fun getLayoutNodeBoundsInWindow(node: LayoutNode): Rect? =
         try {
             node.layoutDelegate.outerCoordinator.coordinates
@@ -156,3 +205,26 @@ internal class ComposeTapTargetDetector {
             "androidx.compose.foundation.selection.ToggleableElement"
     }
 }
+
+private val LayoutNode.isClickable: Boolean
+    get() {
+        val config = collapsedSemantics ?: return false
+        val role = config.getOrNull(SemanticsProperties.Role)
+
+        return role == Role.Button ||
+                role == Role.Tab ||
+                config.contains(SemanticsActions.OnClick)
+    }
+
+private val LayoutNode.isInteractive: Boolean
+    get() {
+        val config = collapsedSemantics ?: return false
+        val role = config.getOrNull(SemanticsProperties.Role)
+
+        return role == Role.Button ||
+                role == Role.Checkbox ||
+                role == Role.RadioButton ||
+                role == Role.Switch ||
+                role == Role.Tab ||
+                config.contains(SemanticsActions.OnClick)
+    }

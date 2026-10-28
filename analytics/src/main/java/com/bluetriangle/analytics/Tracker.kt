@@ -41,15 +41,19 @@ import com.bluetriangle.analytics.dynamicconfig.repository.IBTTConfigurationRepo
 import com.bluetriangle.analytics.dynamicconfig.updater.BTTConfigurationUpdater
 import com.bluetriangle.analytics.dynamicconfig.updater.IBTTConfigurationUpdater
 import com.bluetriangle.analytics.event.BTTEvent
+import com.bluetriangle.analytics.event.CrashSource
 import com.bluetriangle.analytics.eventhub.AppEventHub
 import com.bluetriangle.analytics.eventhub.sdkeventhub.SDKEventHub
 import com.bluetriangle.analytics.globalproperties.CustomCategory
 import com.bluetriangle.analytics.globalproperties.GlobalPropertiesStore
 import com.bluetriangle.analytics.hybrid.BTTWebViewTracker
+import com.bluetriangle.analytics.jank.JankFrameMonitor
 import com.bluetriangle.analytics.launchtime.LaunchMonitor
 import com.bluetriangle.analytics.launchtime.LaunchReporter
 import com.bluetriangle.analytics.lifecycle.LifecycleRegistry
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
+import com.bluetriangle.analytics.networkcapture.NetworkError
+import com.bluetriangle.analytics.networkcapture.NetworkErrorHolder
 import com.bluetriangle.analytics.networkcapture.CapturedRequestCollection
 import com.bluetriangle.analytics.networkstate.NetworkStateMonitor
 import com.bluetriangle.analytics.networkstate.NetworkTimelineTracker
@@ -63,6 +67,7 @@ import com.bluetriangle.analytics.sessionmanager.ISessionManager
 import com.bluetriangle.analytics.sessionmanager.SessionData
 import com.bluetriangle.analytics.sessionmanager.SessionManager
 import com.bluetriangle.analytics.thirdpartyintegration.ClaritySessionConnector
+import com.bluetriangle.analytics.utility.postDelayedMain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -71,6 +76,7 @@ import org.json.JSONObject
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.roundToInt
 
 /**
  * The tracker is a global object responsible for taking submitted timers and reporting them to the cloud server via a
@@ -82,8 +88,8 @@ class Tracker private constructor(
     internal var performanceMonitor: PerformanceMonitor? = null
         @Synchronized set
 
-    private var anrManager: AnrManager? = null
-        @Synchronized set
+    internal var anrManager: AnrManager? = null
+        @Synchronized private set
 
     /**
      * Weak reference to Android application context
@@ -91,6 +97,7 @@ class Tracker private constructor(
     private val context: WeakReference<Context>
 
     private var timerStack = ArrayDeque<WeakReference<Timer>>()
+
     /**
      * The tracker's configuration
      */
@@ -133,16 +140,25 @@ class Tracker private constructor(
     internal var networkStateMonitor: NetworkStateMonitor? = null
         @Synchronized set
 
+    internal var jankFrameMonitor: JankFrameMonitor? = null
+        @Synchronized set
+
     internal var deviceInfoProvider: IDeviceInfoProvider
 
     internal var anrReporter: ANRReporter
 
     internal var memoryWarningReporter: MemoryWarningReporter
 
-    private val claritySessionConnector:ClaritySessionConnector
+    private val networkErrorHolder = NetworkErrorHolder()
+
+    private val claritySessionConnector: ClaritySessionConnector
+    internal val appPackageName: String
     internal val appVersion: String
+    internal val appVersionCode: Long
     internal var firstInstallTime: Long? = null
         @Synchronized set
+
+    var configListener: IConfigListener? = null
 
     internal var appLaunchReporter: AppLaunchReporter
 
@@ -165,11 +181,20 @@ class Tracker private constructor(
         this.configuration = configuration
         this.deviceInfoProvider = DeviceInfoProvider
         this.anrReporter = ANRReporter(deviceInfoProvider)
-        this.appLaunchReporter = AppLaunchReporter(configuration.logger, application.applicationContext, deviceInfoProvider, configuration.forceRestartDuration)
+        this.appLaunchReporter = AppLaunchReporter(
+            configuration.logger,
+            application.applicationContext,
+            deviceInfoProvider,
+            configuration.forceRestartDuration
+        )
         this.memoryWarningReporter = MemoryWarningReporter(deviceInfoProvider)
         this.globalPropertiesStore = GlobalPropertiesStore(application.applicationContext)
 
-        appVersion = Utils.getAppVersion(application.applicationContext)
+        val appVersionDetails = Utils.getAppDetails(application.applicationContext)
+
+        appPackageName = appVersionDetails.first
+        appVersion = appVersionDetails.second
+        appVersionCode = appVersionDetails.third
 
         trackerExecutor = TrackerExecutor(configuration)
 
@@ -181,7 +206,7 @@ class Tracker private constructor(
         configuration.globalUserId = globalUserId
 
         enable()
-        Log.d("BlueTriangle","BlueTriangleSDK Initialized: $configuration")
+        Log.d("BlueTriangle", "BlueTriangleSDK Initialized: $configuration")
     }
 
     private fun enableLaunchMonitor() {
@@ -204,7 +229,7 @@ class Tracker private constructor(
     }
 
     private fun logLaunchMonitorErrors() {
-        val logs = LaunchMonitor.instance?.logs?:return
+        val logs = LaunchMonitor.instance?.logs ?: return
         for (log in logs) {
             configuration.logger?.log(log.level, log.message)
         }
@@ -219,7 +244,11 @@ class Tracker private constructor(
 
         checkoutEventReporter = CheckoutEventReporter(sessionData.checkoutConfig)
 
-        if(configuration.isScreenTrackingEnabled) {
+        if (configuration.isScreenTrackingEnabled && configuration.isJankTrackingEnabled) {
+            initializeJankTracking()
+        }
+
+        if (configuration.isScreenTrackingEnabled) {
             initializeScreenTracker()
         }
 
@@ -230,24 +259,29 @@ class Tracker private constructor(
         if (configuration.isTrackCrashesEnabled) {
             trackCrashes()
         }
-        if(configuration.isPerformanceMonitorEnabled) {
+        if (configuration.isPerformanceMonitorEnabled) {
             startPerformanceMonitoring()
         }
-        if(configuration.isLaunchTimeEnabled) {
+        if (configuration.isLaunchTimeEnabled) {
             enableLaunchMonitor()
         }
+
         initializeNetworkStateTracking()
 
         (context.get()?.applicationContext as? Application)?.let {
             LifecycleRegistry.install(it)
         }
-        if(sessionData.breadcrumbsConfig.isEnabled) {
+        if (sessionData.breadcrumbsConfig.isEnabled) {
             enableBreadcrumbs(sessionData.breadcrumbsConfig, configuration.shouldDetectTap)
         }
 
         if (configuration.isForceRestartEnable) {
             appLaunchReporter.setForceRestartDuration(sessionData.forceRestartDuration)
-            startAppLaunchReporter()
+            startForceRestartTracker()
+        }
+
+        if (configuration.isReportFatalAnrEnabled) {
+            startFatalANRTracker()
         }
 
         checkAppVersion()
@@ -267,7 +301,7 @@ class Tracker private constructor(
     private fun checkAppVersion() {
         sharedPreferences?.let {
             val lastAppVersion = it.getString(APP_VERSION, null)
-            if(lastAppVersion == null) {
+            if (lastAppVersion == null) {
                 context.get()?.let { ct ->
                     val installTime: Long =
                         ct.packageManager.getPackageInfo(ct.packageName, 0).firstInstallTime
@@ -278,7 +312,7 @@ class Tracker private constructor(
                         SDKEventHub.instance.onAppInstall(appVersion)
                     }
                 }
-            } else if(lastAppVersion != appVersion) {
+            } else if (lastAppVersion != appVersion) {
                 SDKEventHub.instance.onAppUpdate(lastAppVersion, appVersion)
             }
             it.edit {
@@ -297,14 +331,30 @@ class Tracker private constructor(
 
         stopPerformanceMonitoring()
         deInitializeScreenTracker()
+        deInitializeJankTracking()
         deInitializeANRMonitor()
         stopTrackCrashes()
         deInitializeNetworkStateTracking()
         disableLaunchMonitor()
         LifecycleRegistry.uninstall()
         disableBreadcrumbs()
-        stopAppLaunchReporter()
+        stopForceRestartTracker()
+        stopFatalANRTracker()
         configuration.logger?.debug("SDK is disabled.")
+    }
+
+    @Synchronized
+    private fun initializeJankTracking() {
+        if (jankFrameMonitor != null) return
+        val application = context.get()?.applicationContext as? Application ?: return
+        jankFrameMonitor = JankFrameMonitor(configuration).also { it.start(application) }
+    }
+
+    @Synchronized
+    private fun deInitializeJankTracking() {
+        // JankFrameMonitor retains the Application from start(); stop() works even if our weak context is cleared.
+        jankFrameMonitor?.stop(context.get()?.applicationContext as? Application)
+        jankFrameMonitor = null
     }
 
     private fun startPerformanceMonitoring() {
@@ -317,12 +367,20 @@ class Tracker private constructor(
         performanceMonitor = null
     }
 
-    private fun startAppLaunchReporter() {
-        appLaunchReporter.start()
+    private fun startForceRestartTracker() {
+        appLaunchReporter.startForceRestartTracker()
     }
 
-    private fun stopAppLaunchReporter() {
-        appLaunchReporter.stop()
+    private fun stopForceRestartTracker() {
+        appLaunchReporter.stopForceRestartTracker()
+    }
+
+    private fun startFatalANRTracker() {
+        appLaunchReporter.startFatalANRTracker()
+    }
+
+    private fun stopFatalANRTracker() {
+        appLaunchReporter.stopFatalANRTracker()
     }
 
     fun trackCrashes() {
@@ -377,7 +435,7 @@ class Tracker private constructor(
     }
 
     private fun initializeScreenTracker() {
-        if(screenTrackMonitor != null) return
+        if (screenTrackMonitor != null) return
 
         screenTrackMonitor = BTTScreenLifecycleTracker(
             configuration.isScreenTrackingEnabled,
@@ -519,7 +577,10 @@ class Tracker private constructor(
         trackerExecutor.submit(timerRunnable)
     }
 
-    internal fun prepareTimerRunnable(timer: Timer, shouldSendCapturedRequests: Boolean = true): TimerRunnable {
+    internal fun prepareTimerRunnable(
+        timer: Timer,
+        shouldSendCapturedRequests: Boolean = true
+    ): TimerRunnable {
         if (!timer.hasEnded()) {
             timer.end()
         }
@@ -548,11 +609,15 @@ class Tracker private constructor(
         synchronized(customVariables) {
             if (customVariables.isNotEmpty()) {
                 kotlin.runCatching {
-                    val extendedCustomVariables = JSONObject(customVariables as Map<*, *>?).toString()
+                    val extendedCustomVariables =
+                        JSONObject(customVariables as Map<*, *>?).toString()
                     if (extendedCustomVariables.length > Constants.EXTENDED_CUSTOM_VARIABLE_MAX_PAYLOAD) {
                         configuration.logger?.warn("Dropping extended custom variables for $timer. Payload ${extendedCustomVariables.length} exceeds max size of ${Constants.EXTENDED_CUSTOM_VARIABLE_MAX_PAYLOAD}")
                     } else {
-                        timer.setField(Timer.FIELD_EXTENDED_CUSTOM_VARIABLES, extendedCustomVariables)
+                        timer.setField(
+                            Timer.FIELD_EXTENDED_CUSTOM_VARIABLES,
+                            extendedCustomVariables
+                        )
                     }
                 }
             }
@@ -564,6 +629,7 @@ class Tracker private constructor(
     internal fun registerTouchEvent() {
         lastTouchEventTimestamp = System.currentTimeMillis()
     }
+
     /**
      * Submit a captured network request to the tracker to send to
      *
@@ -574,7 +640,12 @@ class Tracker private constructor(
         if (capturedRequest == null) return
 
         SDKEventHub.instance.onNetworkRequestCaptured(capturedRequest)
-        checkoutEventReporter?.onCheckoutEvent(CheckoutEvent.NetworkEvent(capturedRequest.url, capturedRequest.responseStatusCode))
+        checkoutEventReporter?.onCheckoutEvent(
+            CheckoutEvent.NetworkEvent(
+                capturedRequest.url,
+                capturedRequest.responseStatusCode
+            )
+        )
 
         if (configuration.shouldSampleNetwork) {
             getMostRecentTimer()?.let { timer ->
@@ -664,7 +735,7 @@ class Tracker private constructor(
      * @param abTestIdentifier the AB test identifier
      */
     fun setSessionAbTestIdentifier(abTestIdentifier: String?) {
-        if(abTestIdentifier == null) {
+        if (abTestIdentifier == null) {
             clearGlobalField(Timer.FIELD_AB_TEST_ID)
             configuration.logger?.debug("Cleared AB test identifier value")
         } else {
@@ -683,7 +754,7 @@ class Tracker private constructor(
      * @param dataCenter the value for the data center
      */
     fun setSessionDataCenter(dataCenter: String?) {
-        if(dataCenter == null) {
+        if (dataCenter == null) {
             clearGlobalField(Timer.FIELD_DATACENTER)
             configuration.logger?.debug("Cleared data center value")
         } else {
@@ -699,7 +770,10 @@ class Tracker private constructor(
      * @param trafficSegmentName name of the traffic segment for this session
      */
     fun setSessionTrafficSegmentName(trafficSegmentName: String) {
-        setGlobalField(Timer.FIELD_TRAFFIC_SEGMENT_NAME, trafficSegmentName.take(MAX_FIELD_CHAR_LENGTH))
+        setGlobalField(
+            Timer.FIELD_TRAFFIC_SEGMENT_NAME,
+            trafficSegmentName.take(MAX_FIELD_CHAR_LENGTH)
+        )
     }
 
     /**
@@ -711,7 +785,7 @@ class Tracker private constructor(
      * @param campaignName name of campaign
      */
     fun setSessionCampaignName(campaignName: String?) {
-        if(campaignName == null) {
+        if (campaignName == null) {
             clearGlobalField(Timer.FIELD_CAMPAIGN_NAME)
             configuration.logger?.debug("Cleared campaign name value")
         } else {
@@ -730,7 +804,7 @@ class Tracker private constructor(
      * @param campaignSource source of campaign
      */
     fun setSessionCampaignSource(campaignSource: String?) {
-        if(campaignSource == null) {
+        if (campaignSource == null) {
             clearGlobalField(Timer.FIELD_CAMPAIGN_SOURCE)
             configuration.logger?.debug("Cleared campaign source value")
         } else {
@@ -749,7 +823,7 @@ class Tracker private constructor(
      * @param campaignMedium medium of campaign
      */
     fun setSessionCampaignMedium(campaignMedium: String?) {
-        if(campaignMedium == null) {
+        if (campaignMedium == null) {
             clearGlobalField(Timer.FIELD_CAMPAIGN_MEDIUM)
             configuration.logger?.debug("Cleared campaign medium value")
         } else {
@@ -778,7 +852,8 @@ class Tracker private constructor(
     internal fun isGlobalFieldSet(fieldName: String): Boolean {
         return synchronized(globalFields) {
             val exists = globalFields.containsKey(fieldName)
-            val hasDefaultValue = DEFAULT_VALUES.containsKey(fieldName) && globalFields[fieldName] == DEFAULT_VALUES[fieldName]
+            val hasDefaultValue =
+                DEFAULT_VALUES.containsKey(fieldName) && globalFields[fieldName] == DEFAULT_VALUES[fieldName]
 
             exists && !hasDefaultValue
         }
@@ -791,17 +866,17 @@ class Tracker private constructor(
         val context = context.get() ?: return
         val prefs = context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
 
-        // Save current time as last foreground time
-        prefs?.edit {
+        // Save current time as last foreground time, along with the beacon the user was on, so a
+        // force restart on the next launch can be reported against the same page view (same nst)
+        prefs.edit {
             putLong(Constants.APP_LAST_FOREGROUND_TIME, System.currentTimeMillis())
-        }
 
-        // Save pageName/PageType/txnName of most recent timer
-        timer?.let { timer ->
-            prefs?.edit {
+            timer?.let { timer ->
                 putString(FIELD_PAGE_NAME, timer.getField(FIELD_PAGE_NAME))
                 putString(FIELD_CONTENT_GROUP_NAME, timer.getField(FIELD_CONTENT_GROUP_NAME))
                 putString(FIELD_TRAFFIC_SEGMENT_NAME, timer.getField(FIELD_TRAFFIC_SEGMENT_NAME))
+                putString(Constants.LAST_SCREEN_NST, timer.getField(Timer.FIELD_NST))
+                putString(Constants.LAST_SCREEN_SESSION_ID, sessionManager.sessionData.sessionId)
             }
         }
     }
@@ -879,87 +954,87 @@ class Tracker private constructor(
     internal fun updateSession(sessionData: SessionData) {
         val changes = StringBuilder()
 
-        if(configuration.sessionId != sessionData.sessionId) {
+        if (configuration.sessionId != sessionData.sessionId) {
             changes.append("\nsessionId: ${configuration.sessionId} -> ${sessionData.sessionId}")
             configuration.sessionId = sessionData.sessionId
         }
 
-        if(configuration.networkSampleRate != sessionData.networkSampleRate) {
+        if (configuration.networkSampleRate != sessionData.networkSampleRate) {
             changes.append("\nnetworkSampleRate: ${configuration.networkSampleRate} -> ${sessionData.networkSampleRate}")
             configuration.networkSampleRate = sessionData.networkSampleRate
         }
 
-        if(configuration.shouldSampleNetwork != sessionData.shouldSampleNetwork) {
+        if (configuration.shouldSampleNetwork != sessionData.shouldSampleNetwork) {
             changes.append("\nshouldSampleNetwork: ${configuration.shouldSampleNetwork} -> ${sessionData.shouldSampleNetwork}")
             configuration.shouldSampleNetwork = sessionData.shouldSampleNetwork
         }
 
-        if(configuration.isGroupingEnabled != sessionData.enableGrouping) {
+        if (configuration.isGroupingEnabled != sessionData.enableGrouping) {
             changes.append("\nisGroupingEnabled: ${configuration.isGroupingEnabled} -> ${sessionData.enableGrouping}")
             configuration.isGroupingEnabled = sessionData.enableGrouping
             screenTrackMonitor?.groupingEnabled = configuration.isGroupingEnabled
-            if(configuration.shouldDetectTap) {
+            if (configuration.shouldDetectTap) {
                 activityLifecycleTracker?.enableTapDetection()
             } else {
                 activityLifecycleTracker?.disableTapDetection()
             }
         }
 
-        if(configuration.groupingIdleTime != sessionData.groupingIdleTime) {
+        if (configuration.groupingIdleTime != sessionData.groupingIdleTime) {
             changes.append("\ngroupingIdleTime: ${configuration.groupingIdleTime} -> ${sessionData.groupingIdleTime}")
             configuration.groupingIdleTime = sessionData.groupingIdleTime
             screenTrackMonitor?.groupIdleTime = configuration.groupingIdleTime
         }
 
-        if(configuration.isGroupingTapDetectionEnabled != sessionData.enableGroupingTapDetection) {
+        if (configuration.isGroupingTapDetectionEnabled != sessionData.enableGroupingTapDetection) {
             changes.append("\nenableGroupingTapDetection: ${configuration.isGroupingTapDetectionEnabled} -> ${sessionData.enableGroupingTapDetection}")
             configuration.isGroupingTapDetectionEnabled = sessionData.enableGroupingTapDetection
-            if(configuration.shouldDetectTap) {
+            if (configuration.shouldDetectTap) {
                 activityLifecycleTracker?.enableTapDetection()
             } else {
                 activityLifecycleTracker?.disableTapDetection()
             }
         }
 
-        if(configuration.isTrackNetworkStateEnabled != sessionData.enableNetworkStateTracking) {
+        if (configuration.isTrackNetworkStateEnabled != sessionData.enableNetworkStateTracking) {
             changes.append("\nenableNetworkStateTracking: ${configuration.isTrackNetworkStateEnabled} -> ${sessionData.enableNetworkStateTracking}")
             configuration.isTrackNetworkStateEnabled = sessionData.enableNetworkStateTracking
-            if(configuration.isTrackNetworkStateEnabled) {
+            if (configuration.isTrackNetworkStateEnabled) {
                 initializeNetworkStateTracking()
             } else {
                 deInitializeNetworkStateTracking()
             }
         }
 
-        if(configuration.isTrackCrashesEnabled != sessionData.enableCrashTracking) {
+        if (configuration.isTrackCrashesEnabled != sessionData.enableCrashTracking) {
             changes.append("\nenableCrashTracking: ${configuration.isTrackCrashesEnabled} -> ${sessionData.enableCrashTracking}")
             configuration.isTrackCrashesEnabled = sessionData.enableCrashTracking
-            if(configuration.isTrackCrashesEnabled) {
+            if (configuration.isTrackCrashesEnabled) {
                 trackCrashes()
             } else {
                 stopTrackCrashes()
             }
         }
 
-        if(configuration.isTrackAnrEnabled != sessionData.enableANRTracking) {
+        if (configuration.isTrackAnrEnabled != sessionData.enableANRTracking) {
             changes.append("\nenableANRTracking: ${configuration.isTrackAnrEnabled} -> ${sessionData.enableANRTracking}")
             configuration.isTrackAnrEnabled = sessionData.enableANRTracking
-            if(configuration.isTrackAnrEnabled) {
+            if (configuration.isTrackAnrEnabled) {
                 initializeANRMonitor()
             } else {
                 deInitializeANRMonitor()
             }
         }
 
-        if(configuration.isMemoryWarningEnabled != sessionData.enableMemoryWarning) {
+        if (configuration.isMemoryWarningEnabled != sessionData.enableMemoryWarning) {
             changes.append("\nenableMemoryWarning: ${configuration.isMemoryWarningEnabled} -> ${sessionData.enableMemoryWarning}")
             configuration.isMemoryWarningEnabled = sessionData.enableMemoryWarning
         }
 
-        if(configuration.isLaunchTimeEnabled != sessionData.enableLaunchTime) {
+        if (configuration.isLaunchTimeEnabled != sessionData.enableLaunchTime) {
             changes.append("\nenableLaunchTime: ${configuration.isLaunchTimeEnabled} -> ${sessionData.enableLaunchTime}")
             configuration.isLaunchTimeEnabled = sessionData.enableLaunchTime
-            if(configuration.isLaunchTimeEnabled) {
+            if (configuration.isLaunchTimeEnabled) {
                 enableLaunchMonitor()
             } else {
                 disableLaunchMonitor()
@@ -976,55 +1051,197 @@ class Tracker private constructor(
             changes.append("\nenableForceRestart: ${configuration.isForceRestartEnable} -> ${sessionData.enableForceRestart}")
             configuration.isForceRestartEnable = sessionData.enableForceRestart
             if (configuration.isForceRestartEnable) {
-                startAppLaunchReporter()
+                startForceRestartTracker()
             } else {
-                stopAppLaunchReporter()
+                stopForceRestartTracker()
             }
         }
 
-        if(configuration.isWebViewStitchingEnabled != sessionData.enableWebViewStitching) {
+        if (configuration.isReportFatalAnrEnabled != sessionData.enableReportFatalAnr) {
+            changes.append("\nreportFatalANR: ${configuration.isReportFatalAnrEnabled} -> ${sessionData.enableReportFatalAnr}")
+            configuration.isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
+            if (configuration.isReportFatalAnrEnabled) {
+                startFatalANRTracker()
+            } else {
+                stopFatalANRTracker()
+            }
+        }
+
+        if (configuration.fatalErrorSampleRate != sessionData.fatalErrorSampleRate) {
+            changes.append("\nfatalErrorSampleRate: ${configuration.fatalErrorSampleRate} -> ${sessionData.fatalErrorSampleRate}")
+            configuration.fatalErrorSampleRate = sessionData.fatalErrorSampleRate
+        }
+
+        if (configuration.shouldSampleFatalErrors != sessionData.shouldSampleFatalErrors) {
+            changes.append("\nshouldSampleFatalErrors: ${configuration.shouldSampleFatalErrors} -> ${sessionData.shouldSampleFatalErrors}")
+            configuration.shouldSampleFatalErrors = sessionData.shouldSampleFatalErrors
+        }
+
+        if (configuration.nonFatalErrorSampleRate != sessionData.nonFatalErrorSampleRate) {
+            changes.append("\nnonFatalErrorSampleRate: ${configuration.nonFatalErrorSampleRate} -> ${sessionData.nonFatalErrorSampleRate}")
+            configuration.nonFatalErrorSampleRate = sessionData.nonFatalErrorSampleRate
+        }
+
+        if (configuration.shouldSampleNonFatalErrors != sessionData.shouldSampleNonFatalErrors) {
+            changes.append("\nshouldSampleNonFatalErrors: ${configuration.shouldSampleNonFatalErrors} -> ${sessionData.shouldSampleNonFatalErrors}")
+            configuration.shouldSampleNonFatalErrors = sessionData.shouldSampleNonFatalErrors
+        }
+
+        if (configuration.isJankTrackingEnabled != sessionData.enableScreenResponsiveness) {
+            changes.append("\nenableScreenResponsiveness: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableScreenResponsiveness}")
+            configuration.isJankTrackingEnabled = sessionData.enableScreenResponsiveness
+            if (sessionData.enableScreenTracking && configuration.isJankTrackingEnabled) {
+                initializeJankTracking()
+            } else {
+                deInitializeJankTracking()
+            }
+        }
+
+        if (configuration.isWebViewStitchingEnabled != sessionData.enableWebViewStitching) {
             changes.append("\nenableWebViewStitching: ${configuration.isWebViewStitchingEnabled} -> ${sessionData.enableWebViewStitching}")
             configuration.isWebViewStitchingEnabled = sessionData.enableWebViewStitching
         }
 
-        if(configuration.isScreenTrackingEnabled != sessionData.enableScreenTracking) {
+        if (configuration.isScreenTrackingEnabled != sessionData.enableScreenTracking) {
             changes.append("\nisScreenTrackingEnabled: ${configuration.isScreenTrackingEnabled} -> ${sessionData.enableScreenTracking}")
             configuration.isScreenTrackingEnabled = sessionData.enableScreenTracking
 
-            if(configuration.isScreenTrackingEnabled) {
+            if (configuration.isScreenTrackingEnabled) {
                 initializeScreenTracker()
             } else {
                 deInitializeScreenTracker()
+                deInitializeJankTracking() //  If screen tracking is disabled, disable JANK Tracking
             }
-        } else if(screenTrackMonitor?.ignoreScreens != sessionData.ignoreScreens) {
+        } else if (screenTrackMonitor?.ignoreScreens != sessionData.ignoreScreens) {
             screenTrackMonitor?.ignoreScreens = sessionData.ignoreScreens
         }
 
-        if(checkoutEventReporter?.config != sessionData.checkoutConfig) {
+        if (checkoutEventReporter?.config != sessionData.checkoutConfig) {
             changes.append("\ncheckoutConfig: ${checkoutEventReporter?.config} -> ${sessionData.checkoutConfig}")
             checkoutEventReporter?.updateConfig(sessionData.checkoutConfig)
         }
 
         val isBreadcrumbsEnabled = breadcrumbsManager != null
-        if(sessionData.breadcrumbsConfig.isEnabled != isBreadcrumbsEnabled) {
+        if (sessionData.breadcrumbsConfig.isEnabled != isBreadcrumbsEnabled) {
             changes.append("\nenableBreadcrumbs: $isBreadcrumbsEnabled -> ${sessionData.breadcrumbsConfig.isEnabled}")
-            if(sessionData.breadcrumbsConfig.isEnabled) {
+            if (sessionData.breadcrumbsConfig.isEnabled) {
                 enableBreadcrumbs(sessionData.breadcrumbsConfig, configuration.shouldDetectTap)
             } else {
                 disableBreadcrumbs()
             }
         }
 
-        if(sessionData.breadcrumbsConfig.ignoredFeatures != breadcrumbsManager?.config?.ignoredFeatures || configuration.isGroupingTapDetectionEnabled != sessionData.enableGroupingTapDetection) {
+        if (sessionData.breadcrumbsConfig.ignoredFeatures != breadcrumbsManager?.config?.ignoredFeatures || configuration.isGroupingTapDetectionEnabled != sessionData.enableGroupingTapDetection) {
             changes.append("\nignoreBreadcrumbs: ${breadcrumbsManager?.config?.ignoredFeatures} -> ${sessionData.breadcrumbsConfig.ignoredFeatures}")
-            breadcrumbsManager?.updateConfig(sessionData.breadcrumbsConfig, configuration.shouldDetectTap)
+            breadcrumbsManager?.updateConfig(
+                sessionData.breadcrumbsConfig,
+                configuration.shouldDetectTap
+            )
         }
         val changesString = changes.toString()
-        if(changesString.isNotEmpty()) {
+        if (changesString.isNotEmpty()) {
             configuration.logger?.debug("Updated configuration $changesString")
             setSessionId(sessionData.sessionId)
             BTTWebViewTracker.updateSession()
+          }
+
+        logTrackingSummary()
+    }
+
+    /**
+     * Prints a customer-facing summary of the active tracking configuration for the current session.
+     * Written directly to Logcat so it is visible whether or not SDK debug logging is enabled.
+     */
+    private fun logTrackingSummary() {
+        fun rate(value: Double) = "${(value * 100).roundToInt()}%"
+
+        // "a", "a and b", "a, b and c"
+        fun List<String>.toSentenceList() =
+            if (size <= 1) joinToString() else dropLast(1).joinToString(", ") + " and " + last()
+
+        fun captureLine(label: String, sampleRate: Double, isSampled: Boolean, captured: String) =
+            if (isSampled) "$label: sampled at ${rate(sampleRate)}, capturing $captured"
+            else "$label: not sampled at ${rate(sampleRate)}, $captured not captured for this session"
+
+        // Fatal ANRs and excessive resource usage are read from ApplicationExitInfo (Android 11+)
+        val isExitInfoSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+
+        class ErrorType(val name: String, val isEnabled: Boolean, val isSupported: Boolean = true)
+
+        // Spells out every error type's state so a missing error can be diagnosed from this one line, e.g.
+        // "Fatal errors: sampled at 100%, capturing crashes. Tracking is disabled for fatal ANRs, so they will not be captured."
+        fun errorLine(
+            label: String,
+            sampleRate: Double,
+            isSampled: Boolean,
+            types: List<ErrorType>
+        ): String {
+            val active = types.filter { it.isEnabled && it.isSupported }.map { it.name }
+            val disabled = types.filter { !it.isEnabled }.map { it.name }
+            val unsupported = types.filter { it.isEnabled && !it.isSupported }.map { it.name }
+
+            val line = StringBuilder()
+            if (active.isEmpty()) {
+                line.append(
+                    "$label: ${if (isSampled) "sampled" else "not sampled"} at ${
+                        rate(
+                            sampleRate
+                        )
+                    }, nothing to capture"
+                )
+            } else {
+                line.append(captureLine(label, sampleRate, isSampled, active.toSentenceList()))
+            }
+            if (disabled.isNotEmpty()) {
+                line.append(". Tracking is disabled for ${disabled.toSentenceList()}, so they will not be captured")
+            }
+            if (unsupported.isNotEmpty()) {
+                line.append(". Tracking for ${unsupported.toSentenceList()} requires Android 11 or later and is not available on this device")
+            }
+            return line.append(".").toString()
         }
+
+        val fatalErrors = listOf(
+            ErrorType("crashes", configuration.isTrackCrashesEnabled),
+            ErrorType("fatal ANRs", configuration.isReportFatalAnrEnabled, isExitInfoSupported)
+        )
+        val nonFatalErrors = listOf(
+            ErrorType("ANR warnings", configuration.isTrackAnrEnabled),
+            ErrorType("memory warnings", configuration.isMemoryWarningEnabled),
+            ErrorType("force restarts", configuration.isForceRestartEnable),
+            ErrorType(
+                "excessive resource usage",
+                configuration.isReportFatalAnrEnabled,
+                isExitInfoSupported
+            ),
+            ErrorType("network errors", configuration.isNetworkErrorTrackingEnabled)
+        )
+
+        val summary = listOf(
+            "Blue Triangle tracking active · SDK $sdkVersion · Site ID ${configuration.siteId} · Session ID ${configuration.sessionId}",
+            if (configuration.isScreenTrackingEnabled) "Screen tracking: enabled, capturing screen views."
+            else "Screen tracking: disabled. Tracking is disabled for screen views, so they will not be captured.",
+            captureLine(
+                "Network tracking",
+                configuration.networkSampleRate,
+                configuration.shouldSampleNetwork,
+                "network requests"
+            ) + ".",
+            errorLine(
+                "Fatal errors",
+                configuration.fatalErrorSampleRate,
+                configuration.shouldSampleFatalErrors,
+                fatalErrors
+            ),
+            errorLine(
+                "Non-fatal errors",
+                configuration.nonFatalErrorSampleRate,
+                configuration.shouldSampleNonFatalErrors,
+                nonFatalErrors
+            )
+        ).joinToString("\n")
+
+        Log.d("BlueTriangle", summary)
     }
 
     /**
@@ -1121,7 +1338,7 @@ class Tracker private constructor(
      */
     fun setCustomCategory1(value: String?) {
         synchronized(this) {
-            if(value == null) {
+            if (value == null) {
                 clearGlobalField(CustomCategory.Category1.fieldName)
                 configuration.logger?.debug("Cleared custom category 1 value")
             } else {
@@ -1141,7 +1358,7 @@ class Tracker private constructor(
      * @param value value of the custom category
      */
     fun setCustomCategory2(value: String?) {
-        if(value == null) {
+        if (value == null) {
             clearGlobalField(CustomCategory.Category2.fieldName)
             configuration.logger?.debug("Cleared custom category 2 value")
         } else {
@@ -1160,7 +1377,7 @@ class Tracker private constructor(
      * @param value value of the custom category
      */
     fun setCustomCategory3(value: String?) {
-        if(value == null) {
+        if (value == null) {
             clearGlobalField(CustomCategory.Category3.fieldName)
             configuration.logger?.debug("Cleared custom category 3 value")
         } else {
@@ -1179,7 +1396,7 @@ class Tracker private constructor(
      * @param value value of the custom category
      */
     fun setCustomCategory4(value: String?) {
-        if(value == null) {
+        if (value == null) {
             clearGlobalField(CustomCategory.Category4.fieldName)
             configuration.logger?.debug("Cleared custom category 4 value")
         } else {
@@ -1198,7 +1415,7 @@ class Tracker private constructor(
      * @param value value of the custom category
      */
     fun setCustomCategory5(value: String?) {
-        if(value == null) {
+        if (value == null) {
             clearGlobalField(CustomCategory.Category5.fieldName)
             configuration.logger?.debug("Cleared custom category 5 value")
         } else {
@@ -1208,8 +1425,8 @@ class Tracker private constructor(
         globalPropertiesStore.setCustomCategory(CustomCategory.Category5, value)
     }
 
-    fun trackError(message: String) {
-        trackException(message, object : Throwable() {
+    fun trackError(message: String, threadStack: String?) {
+        trackException(message, threadStack, object : Throwable() {
             override fun fillInStackTrace(): Throwable {
                 stackTrace = arrayOf()
                 return this
@@ -1224,24 +1441,93 @@ class Tracker private constructor(
      * @param exception the exception to track
      */
     fun trackException(
-        message: String?, exception: Throwable, errorType: BTErrorType = BTErrorType.NativeAppCrash
+        message: String?,
+        stackTrace: String?,
+        exception: Throwable,
+        errorType: BTErrorType = BTErrorType.NativeAppCrash
     ) {
         val timeStamp = System.currentTimeMillis().toString()
         val mostRecentTimer = getMostRecentTimer()
         mostRecentTimer?.generateNativeAppProperties()
 
-        val stacktrace = Utils.exceptionToStacktrace(message, exception)
+        val exceptionInfo = Utils.exceptionToStacktrace(message, exception)
         trackerExecutor.submit(
             CrashRunnable(
                 configuration,
-                stacktrace,
+                stackTrace ?: exceptionInfo.stackTrace,
                 timeStamp,
                 errorType,
                 mostRecentTimer,
+                exceptionInfo.title,
                 deviceInfoProvider = deviceInfoProvider,
                 breadcrumbs = breadcrumbsManager?.snapshot()
             )
         )
+    }
+
+    fun reportNetworkError(
+        url: String,
+        method: String,
+        statusCode: Int,
+        statusText: String? = null,
+        source: CrashSource = CrashSource.OkHttp
+    ) {
+        if (!configuration.isNetworkErrorTrackingEnabled || !configuration.shouldSampleNonFatalErrors)
+            return
+
+        if (!BTErrorType.NetworkError.isSampled(configuration))
+            return
+
+        val errorMsg =
+            if (statusCode == 600)
+                "$method $url~~Error:" + (statusText?.takeIf { it.isNotBlank() }?.let { " $it" } ?: "")
+            else
+                "$method $url~~Status Code: $statusCode" + (statusText?.takeIf { it.isNotBlank() }?.let { " , Error: $it" } ?: "")
+
+        val networkError = NetworkError(
+            message = errorMsg,
+            timeStamp = System.currentTimeMillis().toString(),
+            breadcrumbs = breadcrumbsManager?.snapshot(),
+            source = source
+        )
+
+        // Like ANR warnings, hold the error until the current page's analytics beacon is sent
+        val mostRecentTimer = getMostRecentTimer()
+        if (mostRecentTimer == null) {
+            submitNetworkError(null, networkError)
+        } else {
+            networkErrorHolder.recordNetworkError(mostRecentTimer, networkError)
+        }
+    }
+
+    internal fun submitNetworkError(timer: Timer?, networkError: NetworkError) {
+        try {
+            val thread = Thread(
+                CrashRunnable(
+                    configuration,
+                    "",
+                    networkError.timeStamp,
+                    BTErrorType.NetworkError,
+                    mostRecentTimer = timer,
+                    title = networkError.message,
+                    errorCount = 1,
+                    deviceInfoProvider = deviceInfoProvider,
+                    breadcrumbs = networkError.breadcrumbs,
+                    source = networkError.source
+                )
+            )
+            thread.start()
+            thread.join()
+        } catch (interruptedException: InterruptedException) {
+            interruptedException.printStackTrace()
+        }
+    }
+
+    internal fun getStackTracePackageFrame(lines: List<String>): String? {
+        val packageName = context.get()?.packageName ?: return null
+        return lines.asSequence()
+            .map(String::trim)
+            .firstOrNull { it.contains(packageName) }
     }
 
     enum class BTErrorType(val event: BTTEvent? = null) {
@@ -1249,13 +1535,33 @@ class Tracker private constructor(
         ANRWarning(BTTEvent.ANRWarning),
         MemoryWarning(BTTEvent.MemoryWarning),
         ForceRestart(BTTEvent.ForceRestart),
+        FatalANR(BTTEvent.FatalANR),
+        AccessResourceUsage(BTTEvent.AccessResourceUsage),
+        NetworkError(BTTEvent.NetworkError),
         BTTConfigUpdateError;
 
         val errorName: String
-            get() = when(this) {
+            get() = when (this) {
                 BTTConfigUpdateError -> "BTTConfigUpdate"
-                else -> event?.defaultPageName?:"Unknown"
+                else -> event?.defaultPageName ?: "Unknown"
             }
+
+        /**
+         * true for fatal errors (sampled by `fatalErrorSampleRate`), false for non-fatal errors
+         * (sampled by `nonFatalErrorSampleRate`), null for SDK-internal errors which are never sampled out.
+         */
+        internal val isFatal: Boolean?
+            get() = when (this) {
+                NativeAppCrash, FatalANR -> true
+                ANRWarning, MemoryWarning, ForceRestart, AccessResourceUsage, NetworkError -> false
+                BTTConfigUpdateError -> null
+            }
+
+        internal fun isSampled(configuration: BlueTriangleConfiguration): Boolean = when (isFatal) {
+            true -> configuration.shouldSampleFatalErrors
+            false -> configuration.shouldSampleNonFatalErrors
+            null -> true
+        }
     }
 
     fun raiseTestException() {
@@ -1263,6 +1569,11 @@ class Tracker private constructor(
         val b = 0
         println(a / b)
     }
+
+    data class SdkInfo(
+        val sdkVersion: String,
+        val sdkId: String
+    )
 
     companion object {
         internal const val SHARED_PREFERENCES_NAME = "BTT_SHARED_PREFERENCES"
@@ -1283,6 +1594,35 @@ class Tracker private constructor(
         @JvmStatic
         var instance: Tracker? = null
             private set
+
+        private var _sdkVersion: String? = null
+
+        @JvmStatic
+        internal var sdkVersion: String
+            get() = _sdkVersion ?: BuildConfig.SDK_VERSION
+            set(value) {
+                _sdkVersion = value
+            }
+
+        private var _sdkId: String? = null
+
+        @JvmStatic
+        internal var sdkId: String
+            get() = _sdkId ?: BuildConfig.SDK_ID
+            set(value) {
+                _sdkId = value
+            }
+
+        @JvmStatic
+        fun setSdkInfo(info: SdkInfo) {
+            _sdkVersion = info.sdkVersion
+            _sdkId = info.sdkId
+        }
+
+        @JvmStatic
+        fun getSdkInfo(): SdkInfo {
+            return SdkInfo(sdkVersion, sdkId)
+        }
 
         /**
          * Initialize the tracker with default tracker URL and Site ID from string resources.
@@ -1347,6 +1687,7 @@ class Tracker private constructor(
 
             val isInDebugMode = isDebuggable(application)
             if (!isInDebugMode) configuration.isDebug = false
+            BttBeaconLogger.init(application, configuration)
 
             val defaultConfig = BTTRemoteConfiguration(
                 networkSampleRate = configuration.networkSampleRate,
@@ -1367,7 +1708,11 @@ class Tracker private constructor(
                 configKey = DEFAULT_CONFIG_KEY,
                 enableAppInstall = configuration.isAppInstallEnabled,
                 enableForceRestart = configuration.isForceRestartEnable,
-                forceRestartDuration = configuration.forceRestartDuration
+                forceRestartDuration = configuration.forceRestartDuration,
+                enableScreenResponsiveness = configuration.isJankTrackingEnabled,
+                enableReportFatalAnr = configuration.isReportFatalAnrEnabled,
+                fatalErrorSampleRate = configuration.fatalErrorSampleRate,
+                nonFatalErrorSampleRate = configuration.nonFatalErrorSampleRate
             )
 
             initializeConfigurationUpdater(application, configuration, defaultConfig)
@@ -1466,12 +1811,16 @@ class Tracker private constructor(
             repositoryUpdatesJob = GlobalScope.launch(Dispatchers.IO) {
                 configurationRepository.getLiveUpdates(notifyCurrent = false).collect {
                     if (it?.enableAllTracking == true) {
-                        if(instance == null) {
-                            initializeSessionManager(application, configuration, defaultConfig = defaultConfig)
+                        if (instance == null) {
+                            initializeSessionManager(
+                                application,
+                                configuration,
+                                defaultConfig = defaultConfig
+                            )
                             instance = init(application, configuration)
                         }
                     } else {
-                        if(instance != null) {
+                        if (instance != null) {
                             instance?.disable()
                             deInitializeSessionManager()
                             instance = null
@@ -1484,8 +1833,21 @@ class Tracker private constructor(
                             instance?.appLaunchReporter?.reportAppInstall(installTime)
                         }
                     }
+
+                    notifyConfigToCrossPlatformSDK()
                 }
             }
+
+            notifyConfigToCrossPlatformSDK()
+        }
+
+        private fun notifyConfigToCrossPlatformSDK() {
+            // wait for configListener initialization
+            postDelayedMain({
+                instance?.configListener?.onConfigurationChanged(
+                    configurationRepository.get().toSdkConfiguration()
+                )
+            }, 500)
         }
 
         private fun BlueTriangleConfiguration.updateConfiguration(sessionData: SessionData) {
@@ -1505,6 +1867,12 @@ class Tracker private constructor(
             isAppInstallEnabled = sessionData.enableAppInstall
             isForceRestartEnable = sessionData.enableForceRestart
             forceRestartDuration = sessionData.forceRestartDuration
+            isJankTrackingEnabled = sessionData.enableScreenResponsiveness
+            isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
+            fatalErrorSampleRate = sessionData.fatalErrorSampleRate
+            nonFatalErrorSampleRate = sessionData.nonFatalErrorSampleRate
+            shouldSampleFatalErrors = sessionData.shouldSampleFatalErrors
+            shouldSampleNonFatalErrors = sessionData.shouldSampleNonFatalErrors
         }
 
         private lateinit var configurationRepository: IBTTConfigurationRepository
@@ -1512,7 +1880,9 @@ class Tracker private constructor(
         private lateinit var sessionManager: ISessionManager
 
         private fun initializeConfigurationUpdater(
-            application: Application, configuration: BlueTriangleConfiguration, defaultConfig: BTTRemoteConfiguration
+            application: Application,
+            configuration: BlueTriangleConfiguration,
+            defaultConfig: BTTRemoteConfiguration
         ) {
             configurationRepository = BTTConfigurationRepository(
                 configuration.logger,
@@ -1521,7 +1891,10 @@ class Tracker private constructor(
                 defaultConfig = defaultConfig
             )
 
-            val configUrl = "https://${configuration.siteId}.btttag.com/config.php?siteID=${configuration.siteId}&os=${Constants.OS}&osver=${Build.VERSION.RELEASE}&app=${Utils.getAppVersion(application)}&sdk=${BuildConfig.SDK_VERSION}"
+            val configUrl =
+                "https://${configuration.siteId}.btttag.com/config.php?siteID=${configuration.siteId}&os=${Constants.OS}&osver=${Build.VERSION.RELEASE}&app=${
+                    Utils.getAppVersion(application)
+                }&sdk=${Tracker.sdkVersion}&sdkId=${Tracker.sdkId}"
             configurationUpdater = BTTConfigurationUpdater(
                 logger = configuration.logger,
                 repository = this.configurationRepository,
@@ -1550,7 +1923,7 @@ class Tracker private constructor(
         }
 
         private fun deInitializeSessionManager() {
-            if(::sessionManager.isInitialized) {
+            if (::sessionManager.isInitialized) {
                 sessionManager.endSession()
                 AppEventHub.instance.removeConsumer(sessionManager)
             }
@@ -1561,7 +1934,7 @@ class Tracker private constructor(
         private val DEFAULT_VALUES: Map<String, String> = mapOf(
             Timer.FIELD_BROWSER to Constants.BROWSER,
             Timer.FIELD_NA_FLG to "1",
-            Timer.FIELD_SDK_VERSION to BuildConfig.SDK_VERSION,
+            Timer.FIELD_SDK_VERSION to sdkVersion,
             Timer.FIELD_TRAFFIC_SEGMENT_NAME to Constants.DEFAULT_TRAFFIC_SEGMENT_NAME,
             Timer.FIELD_CONTENT_GROUP_NAME to Constants.DEFAULT_CONTENT_GROUP_NAME
         )

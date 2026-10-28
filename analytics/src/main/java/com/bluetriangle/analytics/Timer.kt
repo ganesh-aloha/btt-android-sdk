@@ -4,6 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
 import com.bluetriangle.analytics.eventhub.sdkeventhub.SDKEventHub
+import com.bluetriangle.analytics.jank.JankMetrics
 import com.bluetriangle.analytics.model.NativeAppProperties
 import com.bluetriangle.analytics.performancemonitor.PerformanceSpan
 import com.bluetriangle.analytics.utility.getNumberOfCPUCores
@@ -163,6 +164,9 @@ class Timer : Parcelable {
     }
 
     fun generateNativeAppProperties() {
+        // Carry frame health metrics across regeneration - they're stamped when the screen is
+        // hidden, which can happen before this rebuild (e.g. Tracker.prepareTimerRunnable).
+        val stampedJankMetrics = nativeAppProperties.jankMetrics
         nativeAppProperties = NativeAppProperties(
             null,
             null,
@@ -170,7 +174,9 @@ class Timer : Parcelable {
             null,
             getNumberOfCPUCores(),
             appVersion = tracker?.appVersion,
-            sdkVersion = BuildConfig.SDK_VERSION
+            sdkVersion = Tracker.sdkVersion,
+            sdkId = Tracker.sdkId,
+            jankMetrics = stampedJankMetrics
         )
         Tracker.instance?.networkTimelineTracker?.let {
             val networkSlice = it.sliceStats(
@@ -605,6 +611,27 @@ class Timer : Parcelable {
     }
 
     /**
+     * Stamps the per-screen frame health metrics captured while this screen was visible (set by
+     * [com.bluetriangle.analytics.screenTracking.BTTScreenLifecycleTracker] when a Fragment/Activity
+     * is hidden) onto [nativeAppProperties], where they ship inside the NATIVEAPP beacon field.
+     * Metrics already stamped are never overwritten.
+     */
+    internal fun setJankReportFields(metrics: JankMetrics): Timer {
+        nativeAppProperties.jankMetrics = metrics
+        return this
+    }
+
+    /**
+     * A grouped screen's own Timer is never submitted directly - only the synthetic group Timer
+     * is - so [com.bluetriangle.analytics.screenTracking.grouping.BTTTimerGroup] uses this to carry
+     * jank/hang numbers from a chosen member Timer (the one with the most observed frames)
+     * onto the group Timer that actually gets submitted.
+     */
+    internal fun copyJankReportFieldsFrom(other: Timer) {
+        other.nativeAppProperties.jankMetrics?.let { setJankReportFields(it) }
+    }
+
+    /**
      * Sets a field name with the given value
      *
      * @param fieldName the name of the field to set
@@ -794,4 +821,22 @@ class Timer : Parcelable {
         return this
     }
 
+    /**
+     * Starts this timer at the given time, without a performance monitor and without registering it
+     * as the most recent timer. Used to report against a page view of a previous app process.
+     */
+    internal fun startAt(startTime: Long): Timer {
+        if (performanceSpan != null) {
+            tracker?.clearPerformanceSpan(performanceSpan!!.id)
+            performanceSpan = null
+        }
+        if (start == 0L) {
+            start = startTime
+            setField(FIELD_UNLOAD_EVENT_START, start)
+            setField(FIELD_NST, start)
+        } else {
+            logger?.error("Timer already started")
+        }
+        return this
+    }
 }

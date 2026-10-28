@@ -2,21 +2,28 @@ package com.bluetriangle.analytics
 
 import com.bluetriangle.analytics.Constants.APP_VERSION
 import com.bluetriangle.analytics.Constants.BREADCRUMBS
+import com.bluetriangle.analytics.Constants.ERROR_META
+import com.bluetriangle.analytics.Constants.SDK_ID
 import com.bluetriangle.analytics.Constants.SDK_VERSION
+import com.bluetriangle.analytics.Constants.STACK_TRACE
 import com.bluetriangle.analytics.Timer.Companion.FIELD_NET_STATE_SOURCE
 import com.bluetriangle.analytics.deviceinfo.DeviceInfo
 import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD_DEVICE_MODEL
 import com.bluetriangle.analytics.networkcapture.CapturedRequest.Companion.FIELD_NETWORK_STATE
+import org.json.JSONObject
 
 data class ErrorNativeAppProperties(
     var netState: String? = null,
     private var deviceModel: String? = null,
     var netStateSource: String? = null,
-    var breadcrumbs: String? = null
+    var breadcrumbs: String? = null,
+    var stackTrace: String? = null,
+    var source:String? = null
 ) {
-
+    val appVersionCode: Long? = Tracker.instance?.appVersionCode
     val appVersion: String? = Tracker.instance?.appVersion
-    val sdkVersion: String = BuildConfig.SDK_VERSION
+    val sdkVersion: String = Tracker.sdkVersion
+    val sdkId: String = Tracker.sdkId
 
     fun add(deviceInfo: DeviceInfo) {
         deviceModel = deviceInfo.deviceModel
@@ -30,10 +37,25 @@ data class ErrorNativeAppProperties(
         }
         appVersion?.let {
             this[SDK_VERSION] = sdkVersion
+            this[SDK_ID] = sdkId
             this[APP_VERSION] = appVersion
         }
         breadcrumbs?.let {
             this[BREADCRUMBS] = breadcrumbs
         }
+        stackTrace?.let {
+            this[STACK_TRACE] = stackTrace
+        }
+
+        this[ERROR_META] = getErrorMeta()
+    }
+
+    fun getErrorMeta():String{
+        return JSONObject().apply {
+            put("platform", "Android")
+            appVersionCode?.let{put("build", appVersionCode.toString())}
+            put("arch", Utils.getDeviceArchitecture())
+            put("source", source ?: "Unknown")
+        }.toString()
     }
 }

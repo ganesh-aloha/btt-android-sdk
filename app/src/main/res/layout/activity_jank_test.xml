@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".kotlin.JankTestActivity">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="The box below animates continuously so frames are rendered the whole time this screen is visible. The buttons block the main thread inside animation frames so JankStats records slow frames, which show up in this screen's timer beacon."
+        android:textSize="14sp" />
+
+    <View
+        android:id="@+id/animated_box"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginTop="32dp"
+        android:background="#3F51B5" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Animating smoothly"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/simulate_hitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Simulate Hitches (5s of ~130ms frames)" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/simulate_hang"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Simulate Hang (1s frozen frame)" />
+
+</androidx.appcompat.widget.LinearLayoutCompat>

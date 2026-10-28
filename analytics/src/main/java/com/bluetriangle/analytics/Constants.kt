@@ -42,8 +42,11 @@ object Constants {
     internal const val DEFAULT_ENABLE_WEB_VIEW_STITCHING = true
     internal const val DEFAULT_ENABLE_APP_INSTALL = true
     internal const val DEFAULT_ENABLE_FORCE_RESTART = true
+    internal const val DEFAULT_ENABLE_REPORT_FATAL_ANR = true
     internal const val DEFAULT_FORCE_RESTART_DURATION = 10.0
     internal const val DEFAULT_GROUPED_VIEW_SAMPLE_RATE = 0.05
+    internal const val DEFAULT_FATAL_ERROR_SAMPLE_RATE = 1.0
+    internal const val DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE = 0.0
 
     internal const val DEFAULT_CHECKOUT_TRACKING_ENABLED = false
     internal const val DEFAULT_CHECKOUT_AMOUNT = 1.0
@@ -54,10 +57,16 @@ object Constants {
     internal const val DEFAULT_CONFIG_KEY = UNKNOWN
 
     internal const val SDK_VERSION = "sdkVersion"
+    internal const val SDK_ID = "sdkId"
     internal const val APP_VERSION = "appVersion"
     internal const val APP_LAST_FOREGROUND_TIME = "appLastForegroundTime"
+    internal const val APP_LAST_EXIT_INFO_TIME = "appLastExitInfoTime"
+    internal const val LAST_SCREEN_NST = "lastScreenNst"
+    internal const val LAST_SCREEN_SESSION_ID = "lastScreenSessionId"
 
     internal const val BREADCRUMBS = "breadcrumbs"
+    internal const val ERROR_META = "eMeta"
+    internal const val STACK_TRACE = "stackTrace"
     internal const val NUMBER_OF_CPU_CORES = "numberOfCPUCores"
     internal const val SCREEN_TYPE = "screenType"
     internal const val MAX_MAIN_THREAD_USAGE = "maxMainThreadUsage"
@@ -71,6 +80,8 @@ object Constants {
     internal const val NETWORK_TYPE_OFFLINE = "offline"
     internal const val GROUPED = "grouped"
     internal const val GROUPING_CAUSE = "groupingCause"
+    internal const val GROUP_NAME_SOURCE = "groupNameSource"
+    internal const val GROUP_SCREEN_COUNT = "screenCount"
     internal const val GROUPING_CAUSE_INTERVAL = "groupingCauseInterval"
     internal const val EVENT_ID = "eventID"
     internal const val CONFIDENCE_RATE = "confidenceRate"
@@ -86,4 +97,37 @@ object Constants {
 
     internal const val DEFAULT_ENABLE_BREADCRUMBS = true
     internal const val DEFAULT_BREADCRUMBS_CAPACITY = 150
+
+    internal const val DEFAULT_ENABLE_SCREEN_RESPONSIVENESS = true
+
+//    hitchCount
+//    totalHithcDuration
+//    longestHitch
+//
+//    hangCount
+//    totalHangDuration
+//    longestHang
+//
+//    totalFrameCount
+
+    internal const val DEFAULT_SCREEN_REFRESH_RATE = 60f
+    // Per-screen frame health report fields (see [com.bluetriangle.analytics.jank.JankMetrics])
+    internal const val RESPONSIVENESS_META =  "responsivenessMeta"
+    internal const val RESPONSIVENESS_GRADE =  "responsivenessGrade"
+
+    /**
+     * Frames at or above this full duration are classified as hangs (Apple's hang convention).
+     */
+    internal const val HANG_THRESHOLD_MS = 750L
+
+    /**
+     * Passed to [androidx.metrics.performance.JankStats.jankHeuristicMultiplier]: a frame is only
+     * classified as janky once its duration exceeds this multiple of the device's per-frame
+     * budget. Raw frame duration routinely runs above a single vsync interval even for visually
+     * smooth frames (double/triple-buffered GPU command issue + swap time), so a bare "any
+     * overrun" check flags nearly every frame. This is JankStats' own default multiplier, set
+     * explicitly here so behavior doesn't silently shift if the library's default ever changes.
+     * Library default is 2.0f, don't change without discussion.
+     */
+    internal const val JANK_HEURISTIC_MULTIPLIER = 2.0f
 }

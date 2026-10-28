@@ -6,12 +6,11 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Base64
+import androidx.core.content.pm.PackageInfoCompat
+import com.bluetriangle.analytics.utility.CrashTraceParser
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.io.UnsupportedEncodingException
-import java.io.Writer
 import java.security.SecureRandom
 import java.util.*
 
@@ -102,6 +101,34 @@ internal object Utils {
         } else "UNKNOWN"
     }
 
+    fun getAppDetails(context: Context): Triple<String, String, Long> {
+        val packageInfo = getAppPackageInfo(context)
+
+        return if (packageInfo != null) {
+            Triple(
+                packageInfo.packageName,
+                packageInfo.versionName ?: "UNKNOWN",
+                PackageInfoCompat.getLongVersionCode(packageInfo)
+            )
+        } else {
+            Triple(context.packageName, "UNKNOWN", 0L)
+        }
+    }
+
+    fun getDeviceArchitecture(): String {
+        // Build.SUPPORTED_ABIS returns an array of string ABIs ordered by preference
+        val supportedAbis = Build.SUPPORTED_ABIS
+
+        if (!supportedAbis.isNullOrEmpty()) {
+            // The first element is the primary ABI of the device
+            return supportedAbis[0]
+        }
+
+        // Fallback for older devices (deprecated but safe as a fallback)
+        @Suppress("DEPRECATION")
+        return Build.CPU_ABI
+    }
+
     val os: String
         get() = "${Constants.OS} ${Build.VERSION.RELEASE}"
 
@@ -133,7 +160,7 @@ internal object Utils {
     fun buildUserAgent(context: Context): String {
         val appName = getAppName(context)
         val appVersion = getAppVersion(context)
-        return "$appName/$appVersion Android/${Build.VERSION.RELEASE} ($deviceName) btt-android-sdk/${BuildConfig.SDK_VERSION}"
+        return "$appName/$appVersion Android/${Build.VERSION.RELEASE} ($deviceName) ${Tracker.sdkId}/${Tracker.sdkVersion}"
     }
 
     val deviceName: String
@@ -156,29 +183,20 @@ internal object Utils {
         return Base64.encode(data.toByteArray(), Base64.DEFAULT)
     }
 
-    fun exceptionToStacktrace(message: String?, e: Throwable, hideExceptionName: Boolean = false): String {
-        val result: Writer = StringWriter()
-        val printWriter = PrintWriter(result)
-        e.printStackTrace(printWriter)
-        printWriter.close()
-        val lines = result.toString().split("\\r?\\n".toRegex())
-        return buildString {
-            if (!message.isNullOrBlank()) {
-                append(message)
-                append("~~")
-            } else if(hideExceptionName) {
-                append(e.message)
-                append("~~")
-            }
+    fun exceptionToStacktrace(message: String?, e: Throwable, hideExceptionName: Boolean = false): ExceptionInfo {
+        val lines = e.stackTraceToString().lines()
 
-            for (line in lines.takeLast(if(hideExceptionName) lines.size - 1 else lines.size)) {
-                if (line.isNotBlank()) {
-                    append(line)
-                    append("~~")
-                }
-            }
-            append(lines.last().trim())
-        }
+        val appFrame = Tracker.instance?.getStackTracePackageFrame(lines)
+
+        val title = listOfNotNull(
+            message?.takeIf(String::isNotBlank)
+                ?: if (hideExceptionName) e.message else lines.first(),
+            appFrame
+        ).joinToString("~~")
+
+        val stacktrace = CrashTraceParser.exceptionToJson(e).toString()
+
+        return ExceptionInfo(title, stacktrace)
     }
 
     /**
@@ -192,6 +210,7 @@ internal object Utils {
     }
 }
 
+internal data class ExceptionInfo(val title: String?, val stackTrace: String)
 
 /**
  * Extension to JSONObject to add a method to convert a JSON object to a Map<String, String>

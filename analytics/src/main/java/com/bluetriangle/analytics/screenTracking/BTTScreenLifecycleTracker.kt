@@ -77,6 +77,13 @@ internal class BTTScreenLifecycleTracker(
                 timers[screen.toString()]?.setPageName(screen.pageName(grouped(automated)))
             }
         }
+
+        // Host Activities are isContent=false so frames go to Fragments/Compose when present;
+        // Activity-only screens still receive frames when no content screens are visible.
+        Tracker.instance?.jankFrameMonitor?.onScreenVisible(
+            screen.toString(),
+            isContent = screen.type != ScreenType.Activity
+        )
     }
 
     @Synchronized
@@ -100,15 +107,23 @@ internal class BTTScreenLifecycleTracker(
         val scr = screen.toString()
         val timer = timers[scr] ?: return
 
-        generateMetaData(screen, timer)
-
-        if(grouped(automated)) {
-            timer.end()
-        } else {
-            timer.end().submit()
+        Tracker.instance?.jankFrameMonitor?.onScreenHidden(scr)?.let { metrics ->
+            timer.setJankReportFields(metrics)
         }
 
-        Tracker.instance?.onScreenPause(timer)
+        generateMetaData(screen, timer)
+
+        // Grouped screen timers aren't submitted themselves, save the group timer that is
+        val submittedTimer = if(grouped(automated)) {
+            val groupTimer = groupManager.groupTimerOf(timer)
+            timer.end()
+            groupTimer ?: timer
+        } else {
+            timer.end().submit()
+            timer
+        }
+
+        Tracker.instance?.onScreenPause(submittedTimer)
 
         timers.remove(scr)
     }
@@ -128,6 +143,7 @@ internal class BTTScreenLifecycleTracker(
             confidenceMsg = when(screen.type) {
                 ScreenType.Activity, ScreenType.Fragment -> "onCreate/onStart not called on ${screen.name}"
                 ScreenType.Composable -> "Composable load time could not be calculated"
+                ScreenType.ReactNative -> "React Native load time could not be calculated"
                 is ScreenType.Custom -> "onLoadStarted/onLoadEnded methods were not called"
             }
         } else if(viewStartTm == 0L) {
@@ -135,6 +151,7 @@ internal class BTTScreenLifecycleTracker(
             confidenceMsg = when(screen.type) {
                 ScreenType.Activity, ScreenType.Fragment -> "onResume not called on ${screen.name}"
                 ScreenType.Composable -> "Composable load time could not be calculated"
+                ScreenType.ReactNative -> "React Native load time could not be calculated"
                 is ScreenType.Custom -> "onViewStarted method was not called"
             }
         } else if(pgTm > 20_000) {

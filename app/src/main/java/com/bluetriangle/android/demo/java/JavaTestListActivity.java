@@ -143,7 +143,7 @@ public class JavaTestListActivity extends AppCompatActivity {
         try {
             Objects.requireNonNull(Tracker.getInstance()).raiseTestException();
         } catch (Throwable e) {
-            Objects.requireNonNull(Tracker.getInstance()).trackException("A test exception caught!", e, Tracker.BTErrorType.NativeAppCrash);
+            Objects.requireNonNull(Tracker.getInstance()).trackException("A test exception caught!", null, e, Tracker.BTErrorType.NativeAppCrash);
         }
     }
 

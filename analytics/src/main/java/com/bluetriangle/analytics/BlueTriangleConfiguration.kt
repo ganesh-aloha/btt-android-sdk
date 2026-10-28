@@ -206,6 +206,42 @@ class BlueTriangleConfiguration {
      */
     var forceRestartDuration: Double = 10.0
 
+    /**
+     * Enable or disable jank frame and hang rate tracking via AndroidX [androidx.metrics.performance.JankStats].
+     * On API 24+ JankStats uses the platform FrameMetrics API; below API 24 it falls back to an
+     * OnPreDrawListener-based approximation (minSdk is 21), so this is not a hard no-op on older devices.
+     */
+    var isJankTrackingEnabled: Boolean = true
+
+    /**
+     * Enable or disable reporting of fatal ANRs.
+     */
+    var isReportFatalAnrEnabled: Boolean = true
+
+    var isNetworkErrorTrackingEnabled: Boolean = true
+
+    /**
+     * Percentage of sessions (0.0 - 1.0) for which fatal errors (crash, fatal ANR)
+     * are reported. Controlled by remote config `fatalErrorSampleRate`.
+     */
+    internal var fatalErrorSampleRate = Constants.DEFAULT_FATAL_ERROR_SAMPLE_RATE
+
+    /**
+     * Percentage of sessions (0.0 - 1.0) for which non-fatal errors (ANR warning, memory warning, force restart,
+     * excess resource usage, network error) are reported. Controlled by remote config `nonFatalErrorSampleRate`.
+     */
+    internal var nonFatalErrorSampleRate = Constants.DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
+
+    /**
+     * if fatal errors should be reported for the current session
+     */
+    var shouldSampleFatalErrors = true
+
+    /**
+     * if non-fatal errors should be reported for the current session
+     */
+    var shouldSampleNonFatalErrors = false
+
     companion object {
         const val DEFAULT_TRACKER_URL = "https://d.btttag.com/analytics.rcv"
         const val DEFAULT_ERROR_REPORTING_URL = "https://d.btttag.com/err.rcv"
@@ -250,7 +286,13 @@ class BlueTriangleConfiguration {
             isAppInstallEnabled : $isAppInstallEnabled,
             isForceRestartEnable : $isForceRestartEnable,
             forceRestartDuration : $forceRestartDuration,
-            bttPluginVersion : $bttPluginVersion
+            bttPluginVersion : $bttPluginVersion,
+            isJankTrackingEnabled : $isJankTrackingEnabled,
+            isReportFatalAnrEnabled : $isReportFatalAnrEnabled,
+            fatalErrorSampleRate : $fatalErrorSampleRate,
+            shouldSampleFatalErrors : $shouldSampleFatalErrors,
+            nonFatalErrorSampleRate : $nonFatalErrorSampleRate,
+            shouldSampleNonFatalErrors : $shouldSampleNonFatalErrors,
         }
         """.trimIndent()
     }

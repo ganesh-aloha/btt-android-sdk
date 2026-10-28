@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.bluetriangle.analytics.Utils.exceptionToStacktrace
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
+import com.bluetriangle.analytics.event.CrashSource
 
 internal class BtCrashHandler(
     private val configuration: BlueTriangleConfiguration,
@@ -17,9 +18,9 @@ internal class BtCrashHandler(
         val mostRecentTimer = Tracker.instance?.getMostRecentTimer()
         configuration.logger?.debug("Most Recent Timer: $mostRecentTimer")
 
-        val stacktrace = exceptionToStacktrace(null, e)
+        val exceptionInfo = exceptionToStacktrace(null, e)
         try {
-            sendToServer(mostRecentTimer, stacktrace, timeStamp)
+            sendToServer(mostRecentTimer, exceptionInfo.title, exceptionInfo.stackTrace, timeStamp)
         } catch (interruptedException: InterruptedException) {
             interruptedException.printStackTrace()
         }
@@ -27,12 +28,14 @@ internal class BtCrashHandler(
     }
 
     @Throws(InterruptedException::class)
-    private fun sendToServer(mostRecentTimer:Timer?, stacktrace: String, timeStamp: String) {
+    private fun sendToServer(mostRecentTimer:Timer?, title:String?, stacktrace: String, timeStamp: String) {
         val thread = Thread(CrashRunnable(
             configuration, stacktrace, timeStamp,
             mostRecentTimer = mostRecentTimer,
+            title = title,
             deviceInfoProvider = deviceInfoProvider,
-            breadcrumbs = Tracker.instance?.breadcrumbsManager?.snapshot()
+            breadcrumbs = Tracker.instance?.breadcrumbsManager?.snapshot(),
+            source = CrashSource.GlobalExceptionHandler
         ))
         thread.start()
         thread.join()

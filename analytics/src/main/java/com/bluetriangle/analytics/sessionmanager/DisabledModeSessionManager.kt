@@ -42,7 +42,13 @@ internal class DisabledModeSessionManager(
         expiration = 0L,
         enableAppInstall = false,
         enableForceRestart = false,
-        forceRestartDuration = 10.0
+        forceRestartDuration = 10.0,
+        enableScreenResponsiveness = false,
+        enableReportFatalAnr = false,
+        fatalErrorSampleRate = 0.0,
+        nonFatalErrorSampleRate = 0.0,
+        shouldSampleFatalErrors = false,
+        shouldSampleNonFatalErrors = false
     )
 
     override val sessionData: SessionData

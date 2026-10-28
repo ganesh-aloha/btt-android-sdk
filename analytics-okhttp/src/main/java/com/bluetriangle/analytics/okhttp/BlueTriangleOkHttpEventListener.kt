@@ -2,6 +2,7 @@ package com.bluetriangle.analytics.okhttp
 
 import android.util.Log
 import com.bluetriangle.analytics.BlueTriangleConfiguration
+import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
 import com.bluetriangle.analytics.networkcapture.NetworkNativeAppProperties
 import okhttp3.Call
@@ -93,6 +94,7 @@ internal class BlueTriangleOkHttpEventListener(
             capturedRequest = CapturedRequest().apply {
                 start()
                 url = call.request().url.toString()
+                method = call.request().method
                 val mediaType = call.request().headers["Content-Type"]?.toMediaType()
                 requestType = requestTypeFromMediaType(file, mediaType)
             }
@@ -104,6 +106,15 @@ internal class BlueTriangleOkHttpEventListener(
         guarded {
             eventListener?.callFailed(call, ioe)
             printEvent("1.2. callFailed(${call.request().url}, ${ioe::class.java.simpleName}(\"${ioe.message}\"))")
+            if (configuration.shouldSampleNonFatalErrors) {
+                Tracker.instance?.reportNetworkError(
+                    call.request().url.toString(),
+                    call.request().method,
+                    600,
+                    "${ioe::class.java.simpleName} : ${ioe.message}"
+                )
+            }
+
             if (!configuration.shouldSampleNetwork) {
                 configuration.logger?.error("Not sampling network")
                 return@guarded

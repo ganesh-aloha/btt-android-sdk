@@ -17,6 +17,7 @@ import com.bluetriangle.analytics.model.Screen
 import com.bluetriangle.analytics.model.ScreenType
 import com.bluetriangle.analytics.networkstate.BTTNetworkState
 import java.io.File
+import kotlin.math.round
 
 fun logD(tag: String? = null, message: String) {
     val prefix = tag?.plus(": ").orEmpty()
@@ -119,3 +120,7 @@ internal inline fun Boolean.onFalse(block: () -> Unit): Boolean {
 internal fun postDelayedMain(runnable: ()->Unit, delayInMillis: Long) {
     Handler(Looper.getMainLooper()).postDelayed(runnable, delayInMillis)
 }
+
+internal fun Double.roundTo2Decimals(): Double = round(this * 100) / 100
+
+internal fun Double.roundTo4Decimals(): Double = round(this * 10_000) / 10_000
