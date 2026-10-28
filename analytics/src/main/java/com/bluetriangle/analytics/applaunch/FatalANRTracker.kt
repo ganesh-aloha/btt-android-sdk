@@ -131,14 +131,12 @@ internal class FatalANRTracker(
                     "Status: ${exitInfo.status}, Description: ${exitInfo.description}, at ${exitInfo.timestamp}"
         )
 
-        // A trace is only attached to ANR (and native crash) exits, describe the exit otherwise
-        //val stackTrace = readExitStackTrace(exitInfo) ?: describeAppExit(exitInfo)
         val exitInfoDetail = CrashTraceParser.parseApplicationExitInfo(exitInfo, errorType, errorType.getPrefix())
 
         tracker.trackerExecutor.submit(
             CrashRunnable(
                 tracker.configuration,
-                exitInfoDetail.stackTrace.toString(),
+                exitInfoDetail.stackTrace?.toString().orEmpty(),
                 exitInfo.timestamp.toString(),
                 errorType,
                 title = exitInfoDetail.title,
@@ -189,62 +187,6 @@ internal class FatalANRTracker(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun readExitStackTrace(exitInfo: ApplicationExitInfo): String? {
-        return try {
-            exitInfo.traceInputStream?.use { stream ->
-                // ANR traces hold every thread of the process and can be a few MB, cap what gets uploaded
-                val trace = stream.bufferedReader().readText().take(MAX_EXIT_TRACE_CHAR_LENGTH).trim().removePrefix(ANR_TRACE_SUBJECT_PREFIX)
-                formatAnrTrace(trace)
-            }
-        } catch (e: Throwable) {
-            logger?.error("Error while reading last exit trace: ${e.message}")
-            null
-        }
-    }
-
-    private fun formatAnrTrace(rawTrace: String): String {
-        val lines = rawTrace.lines()
-        val subLines = arrayListOf("$FATAL_ANR_PREFIX${lines.first()}")
-
-        val threadDump = lines.drop(1)
-        val appFrame = appFrameOf(threadDump)
-        appFrame?.let{
-            subLines.add(it)
-            subLines.add("")
-            subLines.add("")
-        }
-
-        val stackTrace = subLines.joinToString("\n") + rawTrace
-        return stackTrace.replace(Regex("\\r?\\n"), "~~")
-    }
-
-    /**
-     * The app's topmost stack frame of the thread dump, ie the first "at <package>..." line
-     */
-    private fun appFrameOf(threadDump: List<String>): String? {
-        val threadsIndex = threadDump.indexOfFirst { it.contains(DALVIK_THREADS_MARKER) }
-        if (threadsIndex < 0) return null
-
-        return threadDump.asSequence()
-            .drop(threadsIndex + 1)
-            .map(String::trim)
-            .firstOrNull { it.startsWith(STACK_FRAME_PREFIX) && it.contains(context.packageName) }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun describeAppExit(exitInfo: ApplicationExitInfo): String {
-        val reason = when (exitInfo.reason) {
-            ApplicationExitInfo.REASON_ANR -> "ANR"
-            ApplicationExitInfo.REASON_LOW_MEMORY -> "Low Memory"
-            else -> exitInfo.reason.toString()
-        }
-
-        return "App process was killed by the system. Reason: $reason, " +
-                "Description: ${exitInfo.description}, Status: ${exitInfo.status}, " +
-                "Importance: ${exitInfo.importance}, PSS: ${exitInfo.pss} kB, RSS: ${exitInfo.rss} kB"
-    }
-
     override fun onAppNotResponding(error: ANRWarningException) {
         Tracker.instance?.breadcrumbsManager?.dump()
         val timer = Tracker.instance?.getMostRecentTimer()
@@ -270,34 +212,5 @@ internal class FatalANRTracker(
             Tracker.BTErrorType.AccessResourceUsage -> "Excess Resource Usage:"
             else -> ""
         }
-    }
-
-    companion object {
-        /**
-         * Maximum number of characters of an exit trace that gets reported
-         */
-        private const val MAX_EXIT_TRACE_CHAR_LENGTH = 100_000
-
-        /**
-         * Header the platform puts in front of the ANR reason in the trace
-         */
-        private const val ANR_TRACE_SUBJECT_PREFIX = "Subject: "
-
-        /**
-         * Prefix the ANR reason is reported with
-         */
-        private const val FATAL_ANR_PREFIX = "Fatal ANR: "
-
-        /**
-         * Start of the thread dump section of an ANR trace
-         */
-        private const val DALVIK_THREADS_MARKER = "DALVIK THREADS"
-
-        private const val STACK_FRAME_PREFIX = "at "
-
-        /**
-         * Line break of the reported trace
-         */
-        private const val LINE_SEPARATOR = "~~"
     }
 }

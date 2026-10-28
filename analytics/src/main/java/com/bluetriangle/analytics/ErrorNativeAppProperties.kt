@@ -43,9 +43,7 @@ data class ErrorNativeAppProperties(
         breadcrumbs?.let {
             this[BREADCRUMBS] = breadcrumbs
         }
-        stackTrace?.let {
-            this[STACK_TRACE] = stackTrace
-        }
+        stackTrace?.takeIf { it.isNotBlank() }?.let { this[STACK_TRACE] = it }
 
         this[ERROR_META] = getErrorMeta()
     }

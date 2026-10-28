@@ -16,6 +16,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_SCREEN_RESPONSIVENESS
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_LAUNCH_TIME
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_MEMORY_WARNING
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_NETWORK_STATE_TRACKING
+import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_REPORT_FATAL_ANR
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_WEB_VIEW_STITCHING
 import com.bluetriangle.analytics.Constants.DEFAULT_NETWORK_SAMPLE_RATE
 import com.bluetriangle.analytics.Constants.DEFAULT_FATAL_ERROR_SAMPLE_RATE
@@ -122,7 +123,7 @@ internal data class SessionData(
                     enableForceRestart = getBooleanOrNull(ENABLE_FORCE_RESTART) ?: false,
                     forceRestartDuration = getDoubleOrNull(FORCE_RESTART_DURATION) ?: 10.0,
                     enableScreenResponsiveness = getBooleanOrNull(ENABLE_SCREEN_RESPONSIVENESS) ?: DEFAULT_ENABLE_SCREEN_RESPONSIVENESS,
-                    enableReportFatalAnr = getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: false,
+                    enableReportFatalAnr = getBooleanOrNull(ENABLE_REPORT_FATAL_ANR) ?: DEFAULT_ENABLE_REPORT_FATAL_ANR,
                     fatalErrorSampleRate = getDoubleOrNull(FATAL_ERROR_SAMPLE_RATE) ?: DEFAULT_FATAL_ERROR_SAMPLE_RATE,
                     nonFatalErrorSampleRate = getDoubleOrNull(NON_FATAL_ERROR_SAMPLE_RATE) ?: DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE,
                     shouldSampleFatalErrors = getBooleanOrNull(SHOULD_SAMPLE_FATAL_ERRORS) ?: true,

@@ -4,7 +4,7 @@ import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.model.Screen
 import com.bluetriangle.analytics.model.ScreenType
 
-class BTTScreenTracker(private val pageName: String, private val screenType: ScreenType) {
+class BTTScreenTracker(private val pageName: String, private val screenType: ScreenType = ScreenType.Custom("")) {
 
     private val id = "${pageName}#${System.currentTimeMillis()}"
     private var isConsumed = false

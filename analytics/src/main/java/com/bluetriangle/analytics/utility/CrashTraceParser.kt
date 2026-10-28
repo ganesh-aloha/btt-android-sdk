@@ -232,6 +232,49 @@ object CrashTraceParser {
     private fun normalize(text: String): String =
         text.replace("\\\"", "\"").replace("\\/", "/")
 
+    /**
+     * An ANR dump holds every thread of the process and can be several MB, while the error beacon is
+     * accepted only up to 1 MB after base64 encoding (+33%). When the trace is over [MAX_TRACE_CHAR_LENGTH],
+     * keep only the crashed and main threads, and trim their frames if that is still too large.
+     */
+    private fun JSONObject.fitToPayloadLimit(): JSONObject {
+        if (toString().length <= MAX_TRACE_CHAR_LENGTH) return this
+
+        val allThreads = getJSONArray("threads")
+        val keptThreads = JSONArray()
+        for (i in 0 until allThreads.length()) {
+            val thread = allThreads.getJSONObject(i)
+            if (thread.optBoolean("crashed") || thread.optString("name") == MAIN_THREAD_NAME) {
+                keptThreads.put(thread)
+            }
+        }
+        put("threads", keptThreads)
+
+        while (toString().length > MAX_TRACE_CHAR_LENGTH && trimLongestStack(keptThreads)) {
+            // trim until the trace fits or there is nothing left to trim
+        }
+        return this
+    }
+
+    /**
+     * Halves the frames of the thread with the longest stack, returns false when no stack can be trimmed further
+     */
+    private fun trimLongestStack(threads: JSONArray): Boolean {
+        var longest: JSONObject? = null
+        for (i in 0 until threads.length()) {
+            val thread = threads.getJSONObject(i)
+            val size = thread.getJSONArray("stack").length()
+            if (size > 1 && size > (longest?.getJSONArray("stack")?.length() ?: 0)) longest = thread
+        }
+        val thread = longest ?: return false
+
+        val stack = thread.getJSONArray("stack")
+        val trimmed = JSONArray()
+        for (i in 0 until stack.length() / 2) trimmed.put(stack.get(i))
+        thread.put("stack", trimmed)
+        return true
+    }
+
     private const val TRACE_SUBJECT_PREFIX = "Subject: "
 
     /**
@@ -241,6 +284,14 @@ object CrashTraceParser {
     private const val STACK_FRAME_PREFIX = "at "
 
     private const val TRACE_FORMAT_VERSION: String = "1.0.0"
+
+    private const val MAIN_THREAD_NAME = "main"
+
+    /**
+     * Maximum length of a reported trace, leaves room for base64 encoding and the rest of the
+     * error payload (breadcrumbs, device info) within the server's 1 MB limit
+     */
+    private const val MAX_TRACE_CHAR_LENGTH = 600_000
 }
 
 data class AppExitError(val title: String?, val stackTrace: JSONObject?)

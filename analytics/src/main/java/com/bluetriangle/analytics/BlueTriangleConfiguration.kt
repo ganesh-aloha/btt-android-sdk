@@ -211,7 +211,7 @@ class BlueTriangleConfiguration {
      * On API 24+ JankStats uses the platform FrameMetrics API; below API 24 it falls back to an
      * OnPreDrawListener-based approximation (minSdk is 21), so this is not a hard no-op on older devices.
      */
-    var isJankTrackingEnabled: Boolean = true
+    var enableScreenResponsiveness: Boolean = true
 
     /**
      * Enable or disable reporting of fatal ANRs.
@@ -287,7 +287,7 @@ class BlueTriangleConfiguration {
             isForceRestartEnable : $isForceRestartEnable,
             forceRestartDuration : $forceRestartDuration,
             bttPluginVersion : $bttPluginVersion,
-            isJankTrackingEnabled : $isJankTrackingEnabled,
+            enableScreenResponsiveness : $enableScreenResponsiveness,
             isReportFatalAnrEnabled : $isReportFatalAnrEnabled,
             fatalErrorSampleRate : $fatalErrorSampleRate,
             shouldSampleFatalErrors : $shouldSampleFatalErrors,

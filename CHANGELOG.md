@@ -12,7 +12,6 @@
 
 ### Bug Fixes and New Improvements
 - Crash, ANR and fatal ANR stack traces are formatted and sent as JSON, along with the crash source.
-- Query parameters are removed from captured network request URLs.
 - Tap detection for breadcrumbs now resolves button text on Compose and React Native views.
 - Native app properties now include the grouped screen count, group name source and SDK id.
 - Screen grouping is not working with the latest Jetpack Compose framework when using automatic instrumentation through the Gradle plugin.

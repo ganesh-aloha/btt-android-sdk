@@ -244,8 +244,8 @@ class Tracker private constructor(
 
         checkoutEventReporter = CheckoutEventReporter(sessionData.checkoutConfig)
 
-        if (configuration.isScreenTrackingEnabled && configuration.isJankTrackingEnabled) {
-            initializeJankTracking()
+        if (configuration.isScreenTrackingEnabled && configuration.enableScreenResponsiveness) {
+            initializeResponsivenessMonitor()
         }
 
         if (configuration.isScreenTrackingEnabled) {
@@ -331,7 +331,7 @@ class Tracker private constructor(
 
         stopPerformanceMonitoring()
         deInitializeScreenTracker()
-        deInitializeJankTracking()
+        deInitializeResponsivenessMonitor()
         deInitializeANRMonitor()
         stopTrackCrashes()
         deInitializeNetworkStateTracking()
@@ -344,14 +344,14 @@ class Tracker private constructor(
     }
 
     @Synchronized
-    private fun initializeJankTracking() {
+    private fun initializeResponsivenessMonitor() {
         if (jankFrameMonitor != null) return
         val application = context.get()?.applicationContext as? Application ?: return
         jankFrameMonitor = JankFrameMonitor(configuration).also { it.start(application) }
     }
 
     @Synchronized
-    private fun deInitializeJankTracking() {
+    private fun deInitializeResponsivenessMonitor() {
         // JankFrameMonitor retains the Application from start(); stop() works even if our weak context is cleared.
         jankFrameMonitor?.stop(context.get()?.applicationContext as? Application)
         jankFrameMonitor = null
@@ -1087,13 +1087,13 @@ class Tracker private constructor(
             configuration.shouldSampleNonFatalErrors = sessionData.shouldSampleNonFatalErrors
         }
 
-        if (configuration.isJankTrackingEnabled != sessionData.enableScreenResponsiveness) {
-            changes.append("\nenableScreenResponsiveness: ${configuration.isJankTrackingEnabled} -> ${sessionData.enableScreenResponsiveness}")
-            configuration.isJankTrackingEnabled = sessionData.enableScreenResponsiveness
-            if (sessionData.enableScreenTracking && configuration.isJankTrackingEnabled) {
-                initializeJankTracking()
+        if (configuration.enableScreenResponsiveness != sessionData.enableScreenResponsiveness) {
+            changes.append("\nenableScreenResponsiveness: ${configuration.enableScreenResponsiveness} -> ${sessionData.enableScreenResponsiveness}")
+            configuration.enableScreenResponsiveness = sessionData.enableScreenResponsiveness
+            if (sessionData.enableScreenTracking && configuration.enableScreenResponsiveness) {
+                initializeResponsivenessMonitor()
             } else {
-                deInitializeJankTracking()
+                deInitializeResponsivenessMonitor()
             }
         }
 
@@ -1110,7 +1110,7 @@ class Tracker private constructor(
                 initializeScreenTracker()
             } else {
                 deInitializeScreenTracker()
-                deInitializeJankTracking() //  If screen tracking is disabled, disable JANK Tracking
+                deInitializeResponsivenessMonitor() //  If screen tracking is disabled, disable JANK Tracking
             }
         } else if (screenTrackMonitor?.ignoreScreens != sessionData.ignoreScreens) {
             screenTrackMonitor?.ignoreScreens = sessionData.ignoreScreens
@@ -1425,7 +1425,7 @@ class Tracker private constructor(
         globalPropertiesStore.setCustomCategory(CustomCategory.Category5, value)
     }
 
-    fun trackError(message: String, threadStack: String?) {
+    fun trackError(message: String, threadStack: String? = null) {
         trackException(message, threadStack, object : Throwable() {
             override fun fillInStackTrace(): Throwable {
                 stackTrace = arrayOf()
@@ -1440,6 +1440,14 @@ class Tracker private constructor(
      * @param message   optional message included with the stack trace
      * @param exception the exception to track
      */
+    fun trackException(
+        message: String?,
+        exception: Throwable,
+        errorType: BTErrorType = BTErrorType.NativeAppCrash
+    ) {
+        trackException(message, null, exception, errorType)
+    }
+
     fun trackException(
         message: String?,
         stackTrace: String?,
@@ -1709,7 +1717,7 @@ class Tracker private constructor(
                 enableAppInstall = configuration.isAppInstallEnabled,
                 enableForceRestart = configuration.isForceRestartEnable,
                 forceRestartDuration = configuration.forceRestartDuration,
-                enableScreenResponsiveness = configuration.isJankTrackingEnabled,
+                enableScreenResponsiveness = configuration.enableScreenResponsiveness,
                 enableReportFatalAnr = configuration.isReportFatalAnrEnabled,
                 fatalErrorSampleRate = configuration.fatalErrorSampleRate,
                 nonFatalErrorSampleRate = configuration.nonFatalErrorSampleRate
@@ -1867,7 +1875,7 @@ class Tracker private constructor(
             isAppInstallEnabled = sessionData.enableAppInstall
             isForceRestartEnable = sessionData.enableForceRestart
             forceRestartDuration = sessionData.forceRestartDuration
-            isJankTrackingEnabled = sessionData.enableScreenResponsiveness
+            enableScreenResponsiveness = sessionData.enableScreenResponsiveness
             isReportFatalAnrEnabled = sessionData.enableReportFatalAnr
             fatalErrorSampleRate = sessionData.fatalErrorSampleRate
             nonFatalErrorSampleRate = sessionData.nonFatalErrorSampleRate

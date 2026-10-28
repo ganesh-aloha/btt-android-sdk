@@ -86,8 +86,8 @@ internal object MetadataReader {
                     readBool(metadata, FORCE_RESTART_ENABLE, configuration.isForceRestartEnable)
                 configuration.forceRestartDuration = readDouble(
                     metadata, FORCE_RESTART_DURATION_SECONDS, configuration.forceRestartDuration)
-                configuration.isJankTrackingEnabled =
-                    readBool(metadata, SCREEN_RESPONSIVENESS_ENABLE, configuration.isJankTrackingEnabled)
+                configuration.enableScreenResponsiveness =
+                    readBool(metadata, SCREEN_RESPONSIVENESS_ENABLE, configuration.enableScreenResponsiveness)
             }
         } catch (e: Throwable) {
             configuration.logger?.error(e, "Error reading metadata configuration")
