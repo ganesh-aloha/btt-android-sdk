@@ -9,8 +9,6 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.ProcessLifecycleOwner
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.Utils
 import com.bluetriangle.analytics.dynamicconfig.model.BTTRemoteConfiguration
@@ -42,10 +40,6 @@ internal class SessionManager(
     private var debugConfig = DebugConfig.getCurrent(context)
     private var scope: CoroutineScope? = null
 
-    // Session never expires while the app is in foreground, expiration is only checked on coming back from background
-    @Volatile
-    private var isInForeground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-
     override val sessionData: SessionData
         @Synchronized get() {
             invalidateSessionData()
@@ -76,9 +70,6 @@ internal class SessionManager(
             if (currentSession == null) {
                 currentSession = generateNewSession()
             }
-            return false
-        }
-        if (isInForeground && currentSession != null) {
             return false
         }
         if (isSessionExpired()) {
@@ -186,11 +177,9 @@ internal class SessionManager(
     override fun onActivityResumed(activity: Activity) {
         initScope()
         onLaunch()
-        isInForeground = true
     }
 
     override fun onAppMovedToBackground(application: Application) {
-        isInForeground = false
         onOffScreen()
         destroyScope()
     }
