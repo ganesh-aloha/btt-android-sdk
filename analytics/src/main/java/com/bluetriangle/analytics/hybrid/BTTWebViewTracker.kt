@@ -5,6 +5,7 @@ import android.webkit.WebView
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.Utils
 import com.bluetriangle.analytics.utility.WebViewHelper
+import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 object BTTWebViewTracker {
@@ -27,29 +28,9 @@ object BTTWebViewTracker {
     }
 
     private fun WebView.stitchWebViewSession() {
-        Tracker.instance?.configuration?.let {
-            if(!it.isWebViewStitchingEnabled) return@let
-            val expiration = (System.currentTimeMillis() + (it.sessionExpiryDuration)).toString()
-            val sessionID = "{\"value\":\"${it.sessionId}\",\"expires\":\"$expiration\"}"
-
-            val wcdOn = if(it.shouldSampleNetwork) "on" else "off"
-            val wcdCollect = "{\"value\":\"$wcdOn\",\"expires\":\"$expiration\"}"
-            val sdkVersion = "Android-${Tracker.sdkVersion}"
-            val appVersion = "{\"value\":\"${Tracker.instance?.appVersion}\",\"expires\":\"$expiration\"}"
-            val osVersion = "{\"value\":\"${Utils.os}\",\"expires\":\"$expiration\"}"
-
-            setLocalStorage("BTT_X0siD", sessionID)
-            setLocalStorage("BTT_SDK_VER", sdkVersion)
-            setLocalStorage("BTT_WCD_Collect", wcdCollect)
-            setLocalStorage("BTT_APP_VER", appVersion)
-            setLocalStorage("BTT_OS_VER", osVersion)
-            Tracker.instance?.deviceInfoProvider?.getDeviceInfo()?.let { deviceInfo ->
-                val deviceModel = "{\"value\":\"${deviceInfo.deviceModel}\",\"expires\":\"$expiration\"}"
-                setLocalStorage("BTT_DEVICE_MODEL", deviceModel)
-            }
-
-            Tracker.instance?.configuration?.logger?.info("Injected session ID and SDK version in WebView: BTT_X0siD: $sessionID, BTT_SDK_VER: $sdkVersion, BTT_APP_VER:$appVersion, BTT_OS_VER:$osVersion with expiration $expiration")
-        }
+        val values = sessionStorageValues() ?: return
+        values.forEach { (key, value) -> setLocalStorage(key, value) }
+        Tracker.instance?.configuration?.logger?.info("Injected session information in WebView localStorage: $values")
     }
 
     @JvmStatic
@@ -98,4 +79,28 @@ object BTTWebViewTracker {
         evaluateJavascript(js, null)
     }
 
+    /**
+     * The session values shared with btt.js, keyed by their localStorage key. Null when stitching is disabled.
+     */
+    internal fun sessionStorageValues(): Map<String, String>? {
+        val config = Tracker.instance?.configuration ?: return null
+        if (!config.isWebViewStitchingEnabled) return null
+        val expiration = (System.currentTimeMillis() + (config.sessionExpiryDuration)).toString()
+        val wcdOn = if(config.shouldSampleNetwork) "on" else "off"
+        val values = linkedMapOf(
+            "BTT_X0siD" to valueJson(config.sessionId.orEmpty(), expiration),
+            "BTT_SDK_VER" to "Android-${Tracker.sdkVersion}",
+            "BTT_WCD_Collect" to valueJson(wcdOn, expiration),
+            "BTT_APP_VER" to valueJson(Tracker.instance?.appVersion.orEmpty(), expiration),
+            "BTT_OS_VER" to valueJson(Utils.os, expiration),
+        )
+        Tracker.instance?.deviceInfoProvider?.getDeviceInfo()?.let { deviceInfo ->
+            values["BTT_DEVICE_MODEL"] = valueJson(deviceInfo.deviceModel, expiration)
+        }
+
+        return values
+    }
+
+    private fun valueJson(value: String, expiration: String): String =
+        JSONObject().put("value", value).put("expires", expiration).toString()
 }
