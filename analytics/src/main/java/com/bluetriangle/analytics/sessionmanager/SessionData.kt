@@ -85,7 +85,7 @@ internal data class SessionData(
         private const val ENABLE_FORCE_RESTART = "enableForceRestart"
         private const val FORCE_RESTART_DURATION = "forceRestartDuration"
         private const val ENABLE_SCREEN_RESPONSIVENESS = "enableScreenResponsiveness"
-        private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalANR"
+        private const val ENABLE_REPORT_FATAL_ANR = "enableReportFatalAnr"
         private const val FATAL_ERROR_SAMPLE_RATE = "fatalErrorSampleRate"
         private const val NON_FATAL_ERROR_SAMPLE_RATE = "nonFatalErrorSampleRate"
         private const val SHOULD_SAMPLE_FATAL_ERRORS = "shouldSampleFatalErrors"

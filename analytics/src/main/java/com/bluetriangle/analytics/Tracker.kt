@@ -158,7 +158,6 @@ class Tracker private constructor(
     internal var firstInstallTime: Long? = null
         @Synchronized set
 
-
     internal var appLaunchReporter: AppLaunchReporter
 
     private var launchReporter: LaunchReporter? = null
@@ -1873,7 +1872,7 @@ class Tracker private constructor(
                 sharedConfigListener?.onConfigurationChanged(
                     configurationRepository.get().toSdkConfiguration()
                 )
-            }, 0)
+            }, 50)
         }
 
         private fun BlueTriangleConfiguration.updateConfiguration(sessionData: SessionData) {

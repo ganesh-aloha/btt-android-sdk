@@ -1,4 +1,4 @@
-# Blue Triangle 2.20.0 Latest, October 07 2026
+# Blue Triangle 2.20.0 Latest, October 30 2026
 ### New Features
 - Screen Responsiveness Tracking: BlueTriangle now tracks jank, hitch and hang frames per screen using AndroidX JankStats. Each screen timer reports hitch/hang metrics, a hitch histogram and a responsiveness grade. Can be disabled with the `com.blue-triangle.screen-responsiveness.enable` meta-data or remotely via `enableScreenResponsiveness`.
 - Fatal ANR Reporting: ANRs that terminated the app are reported on the next launch using `ApplicationExitInfo` (Android 11 / API 30 and above). Can be disabled remotely via `enableReportFatalAnr`.
@@ -7,7 +7,7 @@
 - Network Error Reporting: failed network requests (error status codes and connection failures) are reported as Network Error through the error beacon.
 - Error Sampling: errors are now sampled per session using two new remote configuration values:
   - `fatalErrorSampleRate` (defaults to 100% if not received): Crash and Fatal ANR.
-  - `nonFatalErrorSampleRate` (defaults to 0% if not received): ANR Warning, Memory Warning, Force Restart, Excess Resource Usage and Network Error.
+  - `nonFatalErrorSampleRate` (defaults to 5% if not received): ANR Warning, Memory Warning, Force Restart, Excess Resource Usage and Network Error.
   - `networkSampleRate` only controls capture of network requests (successful and failed); Network Error reporting is controlled by `nonFatalErrorSampleRate` alone.
 
 ### Bug Fixes and New Improvements
