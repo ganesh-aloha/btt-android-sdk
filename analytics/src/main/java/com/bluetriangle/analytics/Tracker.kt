@@ -158,7 +158,6 @@ class Tracker private constructor(
     internal var firstInstallTime: Long? = null
         @Synchronized set
 
-    var configListener: IConfigListener? = null
 
     internal var appLaunchReporter: AppLaunchReporter
 
@@ -1854,13 +1853,27 @@ class Tracker private constructor(
             notifyConfigToCrossPlatformSDK()
         }
 
+        @Volatile
+        private var sharedConfigListener: IConfigListener? = null
+
+        /**
+         * Registers the cross-platform config listener. Usable even while [instance] is null (tracking
+         * disabled by remote config), and immediately delivers the current configuration if one is known.
+         */
+        @JvmStatic
+        fun setConfigurationListener(listener: IConfigListener?) {
+            sharedConfigListener = listener
+            if (listener != null && ::configurationRepository.isInitialized) {
+                notifyConfigToCrossPlatformSDK()
+            }
+        }
+
         private fun notifyConfigToCrossPlatformSDK() {
-            // wait for configListener initialization
             postDelayedMain({
-                instance?.configListener?.onConfigurationChanged(
+                sharedConfigListener?.onConfigurationChanged(
                     configurationRepository.get().toSdkConfiguration()
                 )
-            }, 500)
+            }, 0)
         }
 
         private fun BlueTriangleConfiguration.updateConfiguration(sessionData: SessionData) {
