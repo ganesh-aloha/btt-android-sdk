@@ -7,6 +7,7 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
+import java.net.HttpURLConnection
 
 class BlueTriangleOkHttpInterceptor(private val configuration: BlueTriangleConfiguration) : Interceptor {
     @Throws(IOException::class)
@@ -40,7 +41,7 @@ class BlueTriangleOkHttpInterceptor(private val configuration: BlueTriangleConfi
     }
 
     private fun submitErrorIfAny(request: Request, response: Response) {
-        if (configuration.shouldSampleNonFatalErrors && !response.isSuccessful && !response.isRedirect) {
+        if (configuration.shouldSampleNonFatalErrors && !response.isSuccessful && !response.isRedirect && response.code != HttpURLConnection.HTTP_NOT_MODIFIED) {
             Tracker.instance?.reportNetworkError(
                 request.url.toString(),
                 request.method,

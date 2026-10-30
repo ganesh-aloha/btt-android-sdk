@@ -122,10 +122,11 @@ internal data class NativeAppProperties(
         obj.put(CONFIDENCE_RATE, confidenceRate)
         obj.put(CONFIDENCE_MSG, confidenceMsg)
 
-        if (sendResponsiveNess) {
-            val metrics = jankMetrics
-            obj.put(RESPONSIVENESS_GRADE, metrics?.responsivenessGrade ?: 0)
-            obj.put(RESPONSIVENESS_META, metrics?.toJsonString() ?: "")
+        // No metrics (custom timer, feature off, no monitor attached) -> emit nothing; grade 0 would read as "smooth"
+        val metrics = jankMetrics
+        if (sendResponsiveNess && metrics != null) {
+            obj.put(RESPONSIVENESS_GRADE, metrics.responsivenessGrade)
+            obj.put(RESPONSIVENESS_META, metrics.toJsonString())
         }
 
         return obj

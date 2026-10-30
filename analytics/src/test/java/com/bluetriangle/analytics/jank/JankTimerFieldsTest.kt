@@ -155,13 +155,13 @@ class JankTimerFieldsTest {
     }
 
     @Test
-    fun `toJSONObject reports grade 0 and an empty meta when no metrics were stamped`() {
+    fun `toJSONObject omits frame health fields when no metrics were stamped`() {
         val timer = Timer("Page", "Segment")
 
         val json = timer.nativeAppProperties.toJSONObject()
 
-        assertEquals(0, json.getInt(Constants.RESPONSIVENESS_GRADE))
-        assertEquals("", json.getString(Constants.RESPONSIVENESS_META))
+        assertFalse(json.has(Constants.RESPONSIVENESS_GRADE))
+        assertFalse(json.has(Constants.RESPONSIVENESS_META))
     }
 
     @Test

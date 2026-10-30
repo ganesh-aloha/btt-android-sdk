@@ -2,11 +2,15 @@ package com.bluetriangle.analytics.breadcrumbs.touchresolver
 
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 
 fun View.toViewTargetInfo(tapX: Float, tapY: Float): TapTarget.ViewTarget {
-    // React Native compiles 'testID' props into the view's Tag property on Android.
-    val reactTestId = this.tag?.toString()?.takeIf { it.isNotEmpty() }
+    val isReactView = isReactNativeView()
+
+    // React Native compiles 'testID' props into the view's Tag property on Android. Only trust the tag
+    // on RN views: native apps often keep ViewHolders/models there, whose toString() may carry PII.
+    val reactTestId = if (isReactView) (tag as? String)?.takeIf { it.isNotEmpty() } else null
 
     // Use testID first if available; otherwise, look for a native XML resource identifier.
     val resourceId: String? = reactTestId ?: runCatching {
@@ -17,7 +21,7 @@ fun View.toViewTargetInfo(tapX: Float, tapY: Float): TapTarget.ViewTarget {
 
     // React Native views (ReactViewGroup) house text inside nested ReactTextView children.
     // If text is null and this is a container, look deep into its hierarchy.
-    if (text == null && this is ViewGroup) {
+    if (text == null && isReactView && this is ViewGroup) {
         text = this.findDeepText()
     }
 
@@ -34,7 +38,8 @@ fun View.toViewTargetInfo(tapX: Float, tapY: Float): TapTarget.ViewTarget {
 private fun ViewGroup.findDeepText(): String? {
     for (i in 0 until childCount) {
         val child = getChildAt(i)
-        if (child is TextView && child.text.isNotEmpty()) {
+        // Never pick up typed user input from an EditText inside the container
+        if (child is TextView && child !is EditText && child.text.isNotEmpty()) {
             return child.text.toString()
         } else if (child is ViewGroup) {
             val nestedText = child.findDeepText()
@@ -44,3 +49,5 @@ private fun ViewGroup.findDeepText(): String? {
 
     return null
 }
+
+private fun View.isReactNativeView(): Boolean = javaClass.name.startsWith("com.facebook.react.")

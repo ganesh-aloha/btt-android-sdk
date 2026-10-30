@@ -61,7 +61,12 @@ internal object BttBeaconLogger {
      */
     fun readResponseBody(connection: HttpURLConnection, statusCode: Int): String? {
         if (statusCode >= 300) {
-            return connection.errorStream.bufferedReader().use { it.readText() }
+            // errorStream is null when the error response has no body
+            return try {
+                connection.errorStream?.bufferedReader()?.use { it.readText() }
+            } catch (e: Exception) {
+                null
+            }
         }
         if (!isEnabled) return null
         return try {

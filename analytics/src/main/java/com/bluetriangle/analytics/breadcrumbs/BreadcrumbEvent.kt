@@ -119,7 +119,7 @@ internal sealed class BreadcrumbEvent(
                 fun fromJson(json: JSONObject): NetworkRequestData {
                     return NetworkRequestData(
                         url = json.getString("url"),
-                        method = json.getString("method"),
+                        method = json.optString("method", ""),
                         statusCode = json.getString("statusCode").toInt()
                     )
                 }
