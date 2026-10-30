@@ -1514,27 +1514,25 @@ class Tracker private constructor(
         }
     }
 
+    /**
+     * Queued on [trackerExecutor] rather than posted inline: callers include the app's OkHttp thread
+     * and [NetworkErrorHolder], which runs inside the SDKEventHub lock that the main thread also takes.
+     */
     internal fun submitNetworkError(timer: Timer?, networkError: NetworkError) {
-        try {
-            val thread = Thread(
-                CrashRunnable(
-                    configuration,
-                    "",
-                    networkError.timeStamp,
-                    BTErrorType.NetworkError,
-                    mostRecentTimer = timer,
-                    title = networkError.message,
-                    errorCount = 1,
-                    deviceInfoProvider = deviceInfoProvider,
-                    breadcrumbs = networkError.breadcrumbs,
-                    source = networkError.source
-                )
+        trackerExecutor.submit(
+            CrashRunnable(
+                configuration,
+                "",
+                networkError.timeStamp,
+                BTErrorType.NetworkError,
+                mostRecentTimer = timer,
+                title = networkError.message,
+                errorCount = 1,
+                deviceInfoProvider = deviceInfoProvider,
+                breadcrumbs = networkError.breadcrumbs,
+                source = networkError.source
             )
-            thread.start()
-            thread.join()
-        } catch (interruptedException: InterruptedException) {
-            interruptedException.printStackTrace()
-        }
+        )
     }
 
     internal fun getStackTracePackageFrame(lines: List<String>): String? {
