@@ -66,7 +66,7 @@ class BTTConfigurationUpdaterTest {
                     CheckoutConfig.DEFAULT,
                     BreadcrumbsConfig.DEFAULT,
                     "",
-                    System.currentTimeMillis(),
+                    0L,
                     true,
                     true,
                     10.0,

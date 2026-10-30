@@ -36,7 +36,9 @@ class BTTConfigurationFetcherTest {
                                                  "groupingIdleTime": %d,
                                                  "configKey": "sdkdemo26621z_SDKConfigJSON",
                                                  "configVersion": "2.0.0",
-                                                 "configGenerated": "Sat, 01 Nov 2025 16:09:16 GMT"
+                                                 "configGenerated": "Sat, 01 Nov 2025 16:09:16 GMT",
+                                                 "fatalErrorSampleRate": %d,
+                                                 "nonFatalErrorSampleRate": %d
                                                }
                                                """
 
@@ -94,15 +96,15 @@ class BTTConfigurationFetcherTest {
     @Throws
     fun `Should return success with correct configuration object`() {
         runBlocking {
-            mockWebServer.enqueue(MockResponse().setBody(String.format(Locale.ENGLISH, MOCK_RESPONSE, true, 70, "HomeActivity", "ProductsFragment", false, true, 30, 5)))
+            mockWebServer.enqueue(MockResponse().setBody(String.format(Locale.ENGLISH, MOCK_RESPONSE, true, 70, "HomeActivity", "ProductsFragment", false, true, 30, 5, 100, 50)))
 
             val config = BTTRemoteConfiguration(
                 networkSampleRate = 0.7,
                 ignoreScreens = listOf("HomeActivity", "ProductsFragment"),
                 true,
-                false,
                 true,
-                2,
+                false,
+                5,
                 true,
                 true,
                 true,
@@ -112,14 +114,14 @@ class BTTConfigurationFetcherTest {
                 true,
                 CheckoutConfig.DEFAULT,
                 BreadcrumbsConfig.DEFAULT,
-                "",
+                "sdkdemo26621z_SDKConfigJSON",
                 true,
                 true,
                 10.0,
                 true,
                 true,
                 1.0,
-                0.0
+                0.5
             )
             val result = fetcher.fetch()
 
