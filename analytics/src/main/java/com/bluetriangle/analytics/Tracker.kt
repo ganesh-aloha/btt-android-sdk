@@ -1629,6 +1629,7 @@ class Tracker private constructor(
         fun setSdkInfo(info: SdkInfo) {
             _sdkVersion = info.sdkVersion
             _sdkId = info.sdkId
+            instance?.setGlobalField(Timer.FIELD_SDK_VERSION, info.sdkVersion)
         }
 
         @JvmStatic
@@ -1943,13 +1944,15 @@ class Tracker private constructor(
             AppEventHub.instance.addConsumer(sessionManager)
         }
 
-        private val DEFAULT_VALUES: Map<String, String> = mapOf(
-            Timer.FIELD_BROWSER to Constants.BROWSER,
-            Timer.FIELD_NA_FLG to "1",
-            Timer.FIELD_SDK_VERSION to sdkVersion,
-            Timer.FIELD_TRAFFIC_SEGMENT_NAME to Constants.DEFAULT_TRAFFIC_SEGMENT_NAME,
-            Timer.FIELD_CONTENT_GROUP_NAME to Constants.DEFAULT_CONTENT_GROUP_NAME
-        )
+        // A getter, not a stored map: sdkVersion can change via setSdkInfo after the companion is initialised
+        private val DEFAULT_VALUES: Map<String, String>
+            get() = mapOf(
+                Timer.FIELD_BROWSER to Constants.BROWSER,
+                Timer.FIELD_NA_FLG to "1",
+                Timer.FIELD_SDK_VERSION to sdkVersion,
+                Timer.FIELD_TRAFFIC_SEGMENT_NAME to Constants.DEFAULT_TRAFFIC_SEGMENT_NAME,
+                Timer.FIELD_CONTENT_GROUP_NAME to Constants.DEFAULT_CONTENT_GROUP_NAME
+            )
 
         internal fun getConfigKey(): String? {
             return sessionManager.sessionData.configKey.takeIf { it != UNKNOWN }
