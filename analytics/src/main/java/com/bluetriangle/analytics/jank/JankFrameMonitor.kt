@@ -124,7 +124,14 @@ internal class JankFrameMonitor(
     override fun onActivityStarted(activity: Activity) {}
     override fun onActivityStopped(activity: Activity) {}
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-    override fun onActivityDestroyed(activity: Activity) {}
+    override fun onActivityDestroyed(activity: Activity) {
+        val window = activity.window ?: return
+        try {
+            synchronized(jankStatsByWindow) { jankStatsByWindow.remove(window) }?.isTrackingEnabled = false
+        } catch (e: Exception) {
+            logger?.error(e, "Unable to release JankStats listener")
+        }
+    }
 
     @Synchronized
     private fun validateFrameData(frameData: FrameData, frameBudget: Long) {
