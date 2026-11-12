@@ -128,7 +128,7 @@ internal class FatalANRTracker(
     private fun errorTypeOf(exitInfo: ApplicationExitInfo): Tracker.BTErrorType? {
         return when (exitInfo.reason) {
             ApplicationExitInfo.REASON_ANR -> Tracker.BTErrorType.FatalANR
-            ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> Tracker.BTErrorType.AccessResourceUsage
+            ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> Tracker.BTErrorType.ExcessResourceUsage
             else -> null
         }
     }
@@ -220,7 +220,7 @@ internal class FatalANRTracker(
     fun Tracker.BTErrorType.getPrefix(): String {
         return when (this) {
             Tracker.BTErrorType.FatalANR -> "Fatal ANR:"
-            Tracker.BTErrorType.AccessResourceUsage -> "Excess Resource Usage:"
+            Tracker.BTErrorType.ExcessResourceUsage -> "Excess Resource Usage:"
             else -> ""
         }
     }

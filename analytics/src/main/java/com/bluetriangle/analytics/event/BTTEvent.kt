@@ -10,11 +10,11 @@ sealed class BTTEvent(val id: Int, val defaultPageName: String): Parcelable {
     object HotLaunch: BTTEvent(3, "HotLaunchTime")
     object ANRWarning: BTTEvent(4, "ANRWarning")
     object MemoryWarning: BTTEvent(5, "MemoryWarning")
-    object Crash: BTTEvent(7, "NativeAppCrash") // 6 is for iOS crash
+    object Crash: BTTEvent(6, "NativeAppCrash") // 6 is for iOS crash // After Release 2.20.0 Made iOS and Android eventId same to 6
     object AppInstall: BTTEvent(8, "AppInstall")
     object ForceRestart: BTTEvent(15, "ForceRestart")
     object FatalANR: BTTEvent(19, "FatalANR") // 16, 17, 18 reserved for iOS metric kit errors
-    object AccessResourceUsage: BTTEvent(20, "AccessResourceUsage")
+    object ExcessResourceUsage: BTTEvent(20, "ExcessResourceUsage")
     object NetworkError: BTTEvent(22, "NetworkError")
 }
 
