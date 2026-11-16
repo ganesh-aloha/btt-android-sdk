@@ -87,6 +87,7 @@ internal class CrashRunnable(
         val tracker = Tracker.instance ?: return
 
         val timerRunnable = tracker.prepareTimerRunnable(timer, shouldSendCapturedRequests)
+        timer.nativeAppProperties.event = errorType.event
         loadTimerFields(timer)
         timerRunnable.run()
     }
