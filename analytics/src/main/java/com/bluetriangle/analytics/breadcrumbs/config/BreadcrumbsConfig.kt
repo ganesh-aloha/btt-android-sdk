@@ -2,7 +2,6 @@ package com.bluetriangle.analytics.breadcrumbs.config
 
 import com.bluetriangle.analytics.Constants.DEFAULT_BREADCRUMBS_CAPACITY
 import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_BREADCRUMBS
-import com.bluetriangle.analytics.SdkBreadcrumbsConfig
 
 internal class BreadcrumbsConfig(
     val isEnabled: Boolean,
@@ -42,14 +41,6 @@ internal class BreadcrumbsConfig(
             DEFAULT_ENABLE_BREADCRUMBS,
             DEFAULT_BREADCRUMBS_CAPACITY,
             emptyList()
-        )
-    }
-
-    fun toSdkConfig(): SdkBreadcrumbsConfig {
-        return SdkBreadcrumbsConfig(
-            isEnabled = isEnabled,
-            capacity = capacity,
-            ignoredFeatures = ignoredFeatures
         )
     }
 }

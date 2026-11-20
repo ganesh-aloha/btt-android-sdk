@@ -8,72 +8,41 @@ interface IConfigListener {
 }
 
 class SdkConfiguration(
-    val networkSampleRate: Double?,
-    val ignoreScreens: List<String>,
     val enableAllTracking: Boolean,
+    val ignoreScreens: List<String>,
     val enableScreenTracking: Boolean,
+    val networkSampleRateSDK: Double,
     val enableGrouping: Boolean,
     val groupingIdleTime: Int,
-    val enableGroupingTapDetection: Boolean,
-    val enableNetworkStateTracking: Boolean,
     val enableCrashTracking: Boolean,
     val enableANRTracking: Boolean,
     val enableMemoryWarning: Boolean,
     val enableLaunchTime: Boolean,
     val enableWebViewStitching: Boolean,
-    val checkoutConfig: SdkCheckoutConfig,
-    val breadcrumbsConfig: SdkBreadcrumbsConfig,
+    val enableNetworkStateTracking: Boolean,
+    val enableGroupingTapDetection: Boolean,
     val configKey: String,
+    val checkoutTrackingEnabled: Boolean,
+    val checkoutClassName: List<String>,
+    val checkoutURL: String,
+    val checkoutAmount: Double,
+    val checkoutCartCount: Int,
+    val checkoutCartCountCheckout: Int,
+    val checkoutOrderNumber: String,
+    val checkoutTimeValue: Int,
+    val ignoreBreadcrumbs: List<String>,
+    val enableBreadcrumbs: Boolean,
     val enableAppInstall: Boolean,
     val enableForceRestart: Boolean,
     val forceRestartDuration: Double,
     val enableScreenResponsiveness: Boolean,
-    val enableReportFatalAnr: Boolean,
     val fatalErrorSampleRate: Double?,
-    val nonFatalErrorSampleRate: Double?
-){
+    val nonFatalErrorSampleRate: Double?,
+    val shouldNetworkCapture: Boolean,
+    val shouldReportFatalErrors: Boolean,
+    val shouldReportNonFatalErrors: Boolean
+) {
     override fun toString(): String {
-        return "SdkConfiguration { networkSampleRate: $networkSampleRate, ignoreList: ${ignoreScreens}, enableAllTracking: $enableAllTracking,  enableScreenTracking: $enableScreenTracking, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableGroupingTapDetection: $enableGroupingTapDetection, enableNetworkStateTracking: $enableNetworkStateTracking, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, checkoutConfig: $checkoutConfig, breadcrumbsConfig: $breadcrumbsConfig, configKey: $configKey, enableAppInstall; $enableAppInstall, enableForceRestart: $enableForceRestart, enableScreenResponsiveness: $enableScreenResponsiveness, enableReportFatalAnr: $enableReportFatalAnr, fatalErrorSampleRate: $fatalErrorSampleRate, nonFatalErrorSampleRate: $nonFatalErrorSampleRate }"
+        return "SdkConfiguration { enableAllTracking: $enableAllTracking, ignoreScreens: $ignoreScreens, enableScreenTracking: $enableScreenTracking, networkSampleRateSDK: $networkSampleRateSDK, enableGrouping: $enableGrouping, groupingIdleTime: $groupingIdleTime, enableCrashTracking: $enableCrashTracking, enableANRTracking: $enableANRTracking, enableMemoryWarning: $enableMemoryWarning, enableLaunchTime: $enableLaunchTime, enableWebViewStitching: $enableWebViewStitching, enableNetworkStateTracking: $enableNetworkStateTracking, enableGroupingTapDetection: $enableGroupingTapDetection, configKey: $configKey, checkoutTrackingEnabled: $checkoutTrackingEnabled, checkoutClassName: $checkoutClassName, checkoutURL: $checkoutURL, checkoutAmount: $checkoutAmount, checkoutCartCount: $checkoutCartCount, checkoutCartCountCheckout: $checkoutCartCountCheckout, checkoutOrderNumber: $checkoutOrderNumber, checkoutTimeValue: $checkoutTimeValue, ignoreBreadcrumbs: $ignoreBreadcrumbs, enableBreadcrumbs: $enableBreadcrumbs, enableAppInstall: $enableAppInstall, enableForceRestart: $enableForceRestart, forceRestartDuration: $forceRestartDuration, enableScreenResponsiveness: $enableScreenResponsiveness, fatalErrorSampleRate: $fatalErrorSampleRate, nonFatalErrorSampleRate: $nonFatalErrorSampleRate, shouldNetworkCapture: $shouldNetworkCapture, shouldReportFatalErrors: $shouldReportFatalErrors, shouldReportNonFatalErrors: $shouldReportNonFatalErrors }"
     }
 }
-
-class SdkCheckoutConfig(
-    val isEnabled: Boolean,
-    val classNames: List<String>,
-    val networkUrlPattern: String?,
-    val checkoutAmount: Double,
-    val cartCount: Int,
-    val cartCountCheckout: Int,
-    val orderNumber: String?,
-    val timerValue: Int
-){
-    override fun toString(): String {
-        return """SdkCheckoutConfig(
-            |isEnabled: $isEnabled
-            |classNames: "${classNames.joinToString()}"
-            |networkUrlPattern: "$networkUrlPattern"
-            |checkoutAmount: $checkoutAmount
-            |cartCount: $cartCount
-            |cartCountCheckout: $cartCountCheckout
-            |orderNumber: "$orderNumber"
-            |timerValue: $timerValue
-            |)
-        """.trimMargin()
-    }
-}
-
-class SdkBreadcrumbsConfig(
-    val isEnabled: Boolean,
-    val capacity: Int,
-    val ignoredFeatures: List<BreadcrumbsFeature>
-){
-    override fun toString(): String {
-        return """SdkBreadcrumbsConfig(
-            |isEnabled: ${isEnabled},
-            |capacity: ${capacity},
-            |ignoredFeatures: ${ignoredFeatures.joinToString()}
-            |)
-        """.trimMargin()
-    }
-}
-

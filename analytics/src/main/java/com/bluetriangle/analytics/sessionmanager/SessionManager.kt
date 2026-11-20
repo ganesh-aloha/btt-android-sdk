@@ -68,7 +68,9 @@ internal class SessionManager(
     private fun invalidateSessionData(): Boolean {
         if (debugConfig.newSessionOnLaunch) {
             if (currentSession == null) {
-                currentSession = generateNewSession()
+                currentSession = generateNewSession().also {
+                    Tracker.notifyConfigToCrossPlatformSDK(it)
+                }
             }
             return false
         }
@@ -77,10 +79,15 @@ internal class SessionManager(
                 sessionStore.storeSessionData(this)
             }
             Tracker.instance?.configuration?.logger?.debug("Session Expired! Updating session to ${currentSession?.sessionId}")
+            currentSession?.let { Tracker.notifyConfigToCrossPlatformSDK(it) }
             return true
         }
         if (currentSession == null) {
-            currentSession = sessionStore.retrieveSessionData()
+            currentSession = sessionStore.retrieveSessionData()?.also {
+                // First load of a still-valid stored session (e.g. app restart): deliver it to the
+                // cross-platform listener since no new session or config change will trigger a notify.
+                Tracker.notifyConfigToCrossPlatformSDK(it)
+            }
         }
         return false
     }
@@ -234,6 +241,7 @@ internal class SessionManager(
                                 sessionData
                             )
                             currentSession = sessionData
+                            Tracker.notifyConfigToCrossPlatformSDK(sessionData)
                         }
                     }
                 }

@@ -1861,6 +1861,7 @@ class Tracker private constructor(
                             instance?.disable()
                             deInitializeSessionManager()
                             instance = null
+                            notifyCurrentSessionConfigToCrossPlatformSDK()
                         }
                     }
 
@@ -1870,12 +1871,14 @@ class Tracker private constructor(
                             instance?.appLaunchReporter?.reportAppInstall(installTime)
                         }
                     }
-
-                    notifyConfigToCrossPlatformSDK()
                 }
             }
 
-            notifyConfigToCrossPlatformSDK()
+            // While tracking is enabled, SessionManager notifies on its own (restored/new session or config
+            // applied). DisabledModeSessionManager never does, so deliver the disabled state here.
+            if (sessionManager is DisabledModeSessionManager) {
+                notifyCurrentSessionConfigToCrossPlatformSDK()
+            }
         }
 
         @Volatile
@@ -1888,17 +1891,39 @@ class Tracker private constructor(
         @JvmStatic
         fun setConfigurationListener(listener: IConfigListener?) {
             sharedConfigListener = listener
-            if (listener != null && ::configurationRepository.isInitialized) {
-                notifyConfigToCrossPlatformSDK()
+            if (listener != null) {
+                notifyCurrentSessionConfigToCrossPlatformSDK()
             }
         }
 
-        private fun notifyConfigToCrossPlatformSDK() {
+        /**
+         * Notifies the cross-platform config listener with the given session's configuration.
+         * Called by [SessionManager] whenever a session's configuration changes (new/expired session
+         * or remote config applied mid-session).
+         */
+        internal fun notifyConfigToCrossPlatformSDK(
+            sessionData: SessionData,
+            enableAllTracking: Boolean = true
+        ) {
+            val listener = sharedConfigListener ?: return
+            val sdkConfiguration = sessionData.toSdkConfiguration(enableAllTracking)
             postDelayedMain({
-                sharedConfigListener?.onConfigurationChanged(
-                    configurationRepository.get().toSdkConfiguration()
-                )
+                listener.onConfigurationChanged(sdkConfiguration)
             }, 50)
+        }
+
+        /**
+         * Delivers the current session's configuration. While tracking is disabled by remote config
+         * the [DisabledModeSessionManager]'s standby session is sent with `enableAllTracking = false`.
+         */
+        private fun notifyCurrentSessionConfigToCrossPlatformSDK() {
+            if (!::sessionManager.isInitialized) return
+
+            val manager = sessionManager
+            notifyConfigToCrossPlatformSDK(
+                manager.sessionData,
+                enableAllTracking = manager !is DisabledModeSessionManager
+            )
         }
 
         private fun BlueTriangleConfiguration.updateConfiguration(sessionData: SessionData) {
