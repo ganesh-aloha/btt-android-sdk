@@ -21,7 +21,7 @@ internal class MemoryMonitor(
     private val memoryWarningHolder = MemoryWarningHolder()
 
     class MemoryWarningException(val usedMemory: Long, val totalMemory: Long) :
-        RuntimeException("Critical memory usage detected. App using more than 80% of App\'s limit ${totalMemory}MB") {
+        RuntimeException("Critical memory usage detected. App using more than 80% of the available limit of ${totalMemory}MB") {
         var count: Int = 1
         var breadcrumbs: JSONArray? = null
         val timestamp: Long = System.currentTimeMillis()
