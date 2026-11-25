@@ -128,6 +128,10 @@ internal class BTTScreenLifecycleTracker(
         timers.remove(scr)
     }
 
+    fun reportJSHang(screen: Screen, durationMs: Long) {
+        Tracker.instance?.jankFrameMonitor?.recordJSHang(screen.pageName(grouped(true)), durationMs * 1_000_000)
+    }
+
     override fun generateMetaData(screen: Screen, timer: Timer) {
         val scr  = screen.toString()
         val loadStartTm = loadStartTime[scr] ?: 0L
