@@ -5,7 +5,6 @@
  */
 package com.bluetriangle.analytics.dynamicconfig.model
 
-import com.bluetriangle.analytics.SdkConfiguration
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfig
 import com.bluetriangle.analytics.checkout.config.CheckoutConfig
 
@@ -92,33 +91,5 @@ internal open class BTTRemoteConfiguration(
         result = 31 * result + fatalErrorSampleRate.hashCode()
         result = 31 * result + nonFatalErrorSampleRate.hashCode()
         return result
-    }
-
-    fun toSdkConfiguration(): SdkConfiguration {
-        return SdkConfiguration(
-            networkSampleRate = networkSampleRate,
-            ignoreScreens = ignoreScreens,
-            enableAllTracking = enableAllTracking,
-            enableScreenTracking = enableScreenTracking,
-            enableGrouping = enableGrouping,
-            groupingIdleTime = groupingIdleTime,
-            enableGroupingTapDetection = enableGroupingTapDetection,
-            enableNetworkStateTracking = enableNetworkStateTracking,
-            enableCrashTracking = enableCrashTracking,
-            enableANRTracking = enableANRTracking,
-            enableMemoryWarning = enableMemoryWarning,
-            enableLaunchTime = enableLaunchTime,
-            enableWebViewStitching = enableWebViewStitching,
-            checkoutConfig = checkoutConfig.toSdkConfig(),
-            breadcrumbsConfig = breadcrumbsConfig.toSdkConfig(),
-            configKey = configKey,
-            enableAppInstall = enableAppInstall,
-            enableForceRestart = enableForceRestart,
-            forceRestartDuration = forceRestartDuration,
-            enableScreenResponsiveness = enableScreenResponsiveness,
-            enableReportFatalAnr = enableReportFatalAnr,
-            fatalErrorSampleRate = fatalErrorSampleRate,
-            nonFatalErrorSampleRate = nonFatalErrorSampleRate
-        )
     }
 }

@@ -21,6 +21,7 @@ import com.bluetriangle.analytics.Constants.DEFAULT_ENABLE_WEB_VIEW_STITCHING
 import com.bluetriangle.analytics.Constants.DEFAULT_NETWORK_SAMPLE_RATE
 import com.bluetriangle.analytics.Constants.DEFAULT_FATAL_ERROR_SAMPLE_RATE
 import com.bluetriangle.analytics.Constants.DEFAULT_NON_FATAL_ERROR_SAMPLE_RATE
+import com.bluetriangle.analytics.SdkConfiguration
 import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfig
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfigMapper
@@ -64,6 +65,48 @@ internal data class SessionData(
     val shouldSampleFatalErrors: Boolean,
     val shouldSampleNonFatalErrors: Boolean
 ) {
+    /**
+     * Converts this session's frozen configuration (including its sampling decisions) into the
+     * [SdkConfiguration] exposed to cross-platform SDKs via [com.bluetriangle.analytics.IConfigListener].
+     */
+    fun toSdkConfiguration(enableAllTracking: Boolean = true): SdkConfiguration {
+        return SdkConfiguration(
+            enableAllTracking = enableAllTracking,
+            ignoreScreens = ignoreScreens,
+            enableScreenTracking = enableScreenTracking,
+            networkSampleRateSDK = networkSampleRate,
+            enableGrouping = enableGrouping,
+            groupingIdleTime = groupingIdleTime,
+            enableCrashTracking = enableCrashTracking,
+            enableANRTracking = enableANRTracking,
+            enableMemoryWarning = enableMemoryWarning,
+            enableLaunchTime = enableLaunchTime,
+            enableWebViewStitching = enableWebViewStitching,
+            enableNetworkStateTracking = enableNetworkStateTracking,
+            enableGroupingTapDetection = enableGroupingTapDetection,
+            configKey = configKey,
+            checkoutTrackingEnabled = checkoutConfig.isEnabled,
+            checkoutClassName = checkoutConfig.classNames,
+            checkoutURL = checkoutConfig.networkUrlPattern ?: "",
+            checkoutAmount = checkoutConfig.checkoutAmount,
+            checkoutCartCount = checkoutConfig.cartCount,
+            checkoutCartCountCheckout = checkoutConfig.cartCountCheckout,
+            checkoutOrderNumber = checkoutConfig.orderNumber ?: "",
+            checkoutTimeValue = checkoutConfig.timerValue,
+            ignoreBreadcrumbs = breadcrumbsConfig.ignoredFeatures.map { it.value },
+            enableBreadcrumbs = breadcrumbsConfig.isEnabled,
+            enableAppInstall = enableAppInstall,
+            enableForceRestart = enableForceRestart,
+            forceRestartDuration = forceRestartDuration,
+            enableScreenResponsiveness = enableScreenResponsiveness,
+            fatalErrorSampleRate = fatalErrorSampleRate,
+            nonFatalErrorSampleRate = nonFatalErrorSampleRate,
+            shouldNetworkCapture = shouldSampleNetwork,
+            shouldReportFatalErrors = shouldSampleFatalErrors,
+            shouldReportNonFatalErrors = shouldSampleNonFatalErrors
+        )
+    }
+
     companion object {
         private const val SESSION_ID = "sessionId"
         private const val EXPIRATION = "expiration"
