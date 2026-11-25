@@ -29,6 +29,7 @@ import com.bluetriangle.analytics.anrwatchdog.AnrManager
 import com.bluetriangle.analytics.applaunch.AppLaunchReporter
 import com.bluetriangle.analytics.breadcrumbs.BreadcrumbsManager
 import com.bluetriangle.analytics.breadcrumbs.config.BreadcrumbsConfig
+import com.bluetriangle.analytics.checkout.PurchaseDeduplicator
 import com.bluetriangle.analytics.checkout.config.CheckoutConfig
 import com.bluetriangle.analytics.checkout.event.CheckoutEvent
 import com.bluetriangle.analytics.checkout.event.CheckoutEventReporter
@@ -628,7 +629,9 @@ class Tracker private constructor(
         applyGlobalFields(timer)
         loadCustomVariables(timer)
         timer.nativeAppProperties.add(deviceInfoProvider.getDeviceInfo())
-        timer.setField(FIELD_SESSION_ID, sessionManager.sessionData.sessionId)
+        val sessionId = sessionManager.sessionData.sessionId
+        timer.setField(FIELD_SESSION_ID, sessionId)
+        PurchaseDeduplicator.deduplicate(timer, sessionId)
         return TimerRunnable(configuration, timer, shouldSendCapturedRequests)
     }
 
