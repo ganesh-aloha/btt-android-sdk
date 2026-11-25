@@ -129,7 +129,7 @@ internal class BTTScreenLifecycleTracker(
     }
 
     override fun reportJSHang(screen: Screen, durationMs: Long) {
-        Tracker.instance?.jankFrameMonitor?.recordJSHang(screen.pageName(grouped(true)), durationMs * 1_000_000)
+        Tracker.instance?.jankFrameMonitor?.recordJSHang(screen.toString(), durationMs * 1_000_000)
     }
 
     override fun generateMetaData(screen: Screen, timer: Timer) {
