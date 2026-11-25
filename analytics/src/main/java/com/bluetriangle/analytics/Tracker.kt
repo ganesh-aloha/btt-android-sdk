@@ -1572,7 +1572,7 @@ class Tracker private constructor(
         MemoryWarning(BTTEvent.MemoryWarning),
         ForceRestart(BTTEvent.ForceRestart),
         FatalANR(BTTEvent.FatalANR),
-        AccessResourceUsage(BTTEvent.AccessResourceUsage),
+        ExcessResourceUsage(BTTEvent.ExcessResourceUsage),
         NetworkError(BTTEvent.NetworkError),
         BTTConfigUpdateError;
 
@@ -1589,7 +1589,7 @@ class Tracker private constructor(
         internal val isFatal: Boolean?
             get() = when (this) {
                 NativeAppCrash, FatalANR -> true
-                ANRWarning, MemoryWarning, ForceRestart, AccessResourceUsage, NetworkError -> false
+                ANRWarning, MemoryWarning, ForceRestart, ExcessResourceUsage, NetworkError -> false
                 BTTConfigUpdateError -> null
             }
 
