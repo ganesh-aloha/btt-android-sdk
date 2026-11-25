@@ -128,7 +128,7 @@ internal class BTTScreenLifecycleTracker(
         timers.remove(scr)
     }
 
-    fun reportJSHang(screen: Screen, durationMs: Long) {
+    override fun reportJSHang(screen: Screen, durationMs: Long) {
         Tracker.instance?.jankFrameMonitor?.recordJSHang(screen.pageName(grouped(true)), durationMs * 1_000_000)
     }
 

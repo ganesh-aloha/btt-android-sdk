@@ -19,5 +19,7 @@ internal interface ScreenLifecycleTracker {
 
     fun setNewGroup(groupName: String)
 
+    fun reportJSHang(screen: Screen, durationMs: Long)
+
     fun destroy()
 }
