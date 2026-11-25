@@ -1457,6 +1457,10 @@ class Tracker private constructor(
         globalPropertiesStore.setCustomCategory(CustomCategory.Category5, value)
     }
 
+    fun reportJSHang(screen: String, durationMs: Long) {
+        jankFrameMonitor?.recordJSHang(screen, durationMs * 1_000_000)
+    }
+
     @JvmOverloads
     fun trackError(message: String, threadStack: String? = null) {
         trackException(message, threadStack, object : Throwable() {

@@ -76,6 +76,18 @@ internal class JankScreenAccumulator {
         }
     }
 
+    fun recordJSHang(screen:String, durationNanos: Long){
+        synchronized(lock) {
+            if (visibleScreens.isEmpty()) return
+            val hasContent = visibleScreens.values.any { it }
+            for ((key, isContent) in visibleScreens) {
+                if (isContent == hasContent) {
+                    accumulators[key]?.recordJSHang(durationNanos)
+                }
+            }
+        }
+    }
+
     /** Drops all in-flight per-screen state (e.g. when jank tracking is torn down). */
     fun clear() {
         synchronized(lock) {

@@ -86,6 +86,11 @@ internal class JankFrameMonitor(
         return screenAccumulators.onScreenHidden(screenKey)
     }
 
+    fun recordJSHang(screen:String, durationNanos: Long){
+        if (!isActive) return
+        return screenAccumulators.recordJSHang(screen, durationNanos)
+    }
+
     fun getScreenMetrics(screenKey: String): JankMetrics? {
         if (!isActive) return null
         return screenAccumulators.getScreenMetrics(screenKey)

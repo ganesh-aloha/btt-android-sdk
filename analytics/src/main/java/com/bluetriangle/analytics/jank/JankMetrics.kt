@@ -3,6 +3,7 @@ package com.bluetriangle.analytics.jank
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
+import kotlin.math.max
 
 /**
  * A snapshot of cumulative frame-health stats accumulated since the last [JankFrameAccumulator.reset].
@@ -41,6 +42,9 @@ internal data class JankMetrics(
     val hangFrameCount: Long,
     val totalHangDurationMs: Long,
     val longestHangMs: Long,
+    val jsHangCount : Long = 0,
+    val jsTotalHangDurationMs: Long = 0,
+    val jsLongestHang:Long = 0,
     val jankHistogram: String = EMPTY_JANK_HISTOGRAM,
     val jankSeverity: Double = 0.0
 ) : Parcelable{
@@ -53,6 +57,9 @@ internal data class JankMetrics(
             put("totalHangDuration", totalHangDurationMs)
             put("longestHitch", longestJankMs)
             put("longestHang", longestHangMs)
+            put("jsHangCount", jsHangCount)
+            put("jsTotalHangDuration", jsTotalHangDurationMs)
+            put("jsLongestHang", jsLongestHang)
             put("hitchesSeverity", jankSeverity)
             put("hitchHistograms", jankHistogram)
         }.toString()
@@ -64,4 +71,8 @@ internal const val EMPTY_JANK_HISTOGRAM = "[]"
 
 /** This screen's [ResponsivenessGrade] badness score, 0 (smooth) to 98 (worst reachable). */
 internal val JankMetrics.responsivenessGrade: Int
-    get() = ResponsivenessGrade.grade(jankSeverity, hangFrameCount, longestHangMs)
+    get() = ResponsivenessGrade.grade(
+        jankSeverity,
+        hangFrameCount + jsHangCount,
+        max(longestHangMs, jsLongestHang)
+    )

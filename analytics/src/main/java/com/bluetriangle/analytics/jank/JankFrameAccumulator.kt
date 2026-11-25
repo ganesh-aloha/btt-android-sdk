@@ -3,6 +3,7 @@ package com.bluetriangle.analytics.jank
 import com.bluetriangle.analytics.Constants
 import com.bluetriangle.analytics.utility.roundTo2Decimals
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.max
 
 /**
  * Accumulates per-frame data into cumulative jank/hang counters. Pure Kotlin, no Android
@@ -34,6 +35,7 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
     private val totalFrames = AtomicLong(0)
     private val jank = Bucket()
     private val hang = Bucket()
+    private val jsHang = Bucket()
 
     /**
      * Distribution of jank (hitch) frame overruns, keyed by inclusive upper bound in ms and kept in
@@ -63,6 +65,10 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
                 recordJankHistogram(durationNanos)
             }
         }
+    }
+
+    fun recordJSHang(durationNanos: Long) {
+        jsHang.record(durationNanos)
     }
 
     /**
@@ -124,6 +130,9 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
             hangFrameCount = hang.count.get(),
             totalHangDurationMs = hang.totalDurationNanos.get().nanosToMs(),
             longestHangMs = hang.longestDurationNanos.get().nanosToMs(),
+            jsHangCount = jsHang.count.get(),
+            jsTotalHangDurationMs = jsHang.totalDurationNanos.get().nanosToMs(),
+            jsLongestHang = jsHang.longestDurationNanos.get().nanosToMs(),
             jankHistogram = jankHistogramString(),
             jankSeverity = jankSeverity()
         )
@@ -133,6 +142,7 @@ internal class JankFrameAccumulator(private val nowMs: () -> Long = System::curr
         totalFrames.set(0)
         jank.reset()
         hang.reset()
+        jsHang.reset()
         jankHistogram.values.forEach { it.set(0) }
         startTimeMs = nowMs()
     }
