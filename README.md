@@ -13,7 +13,7 @@ The Blue Triangle SDK for Android enables application owners to track their user
 - Errors & Crashes
   - Application Not Responding (ANR)
   - Fatal ANR
-  - Excessive Resource Usage (AccessResourceUsage) App Exits
+  - Excessive Resource Usage (ExcessResourceUsage) App Exits
   - Network Errors (HTTP error status codes and connection failures)
   - HTTP Response Codes
   - App Crashes
@@ -534,7 +534,7 @@ configuration.isReportFatalAnrEnabled = false
 
 Android can kill an app process that uses too many system resources, for example holding wake locks for too long or
 excessive CPU usage while in the background. On Android 11 (API Level 30) and above, when the previous process exited
-with `ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE`, the SDK reports an `AccessResourceUsage` error on the
+with `ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE`, the SDK reports an `ExcessResourceUsage` error on the
 next app launch. The error title is prefixed with `Excess Resource Usage:` and includes the exit description provided
 by the system, along with the page that was visible and the breadcrumbs captured before the exit.
 
