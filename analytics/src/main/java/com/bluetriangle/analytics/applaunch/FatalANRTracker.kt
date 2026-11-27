@@ -22,6 +22,7 @@ import com.bluetriangle.analytics.anrwatchdog.AnrDetector
 import com.bluetriangle.analytics.anrwatchdog.AnrListener
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
 import com.bluetriangle.analytics.event.CrashSource
+import com.bluetriangle.analytics.model.BTTSymbolType
 import com.bluetriangle.analytics.utility.CrashTraceParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -142,7 +143,7 @@ internal class FatalANRTracker(
                     "Status: ${exitInfo.status}, Description: ${exitInfo.description}, at ${exitInfo.timestamp}"
         )
 
-        val exitInfoDetail = CrashTraceParser.parseApplicationExitInfo(exitInfo, errorType, errorType.getPrefix())
+        val exitInfoDetail = CrashTraceParser.parseApplicationExitInfo(exitInfo, errorType, errorType.getPrefix(), BTTSymbolType.AndroidNative)
 
         tracker.trackerExecutor.submit(
             CrashRunnable(

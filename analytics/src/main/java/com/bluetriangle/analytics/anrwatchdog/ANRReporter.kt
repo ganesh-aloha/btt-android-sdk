@@ -6,6 +6,7 @@ import com.bluetriangle.analytics.Tracker
 import com.bluetriangle.analytics.Utils
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
 import com.bluetriangle.analytics.event.CrashSource
+import com.bluetriangle.analytics.model.BTTSymbolType
 
 internal class ANRReporter(
     private val deviceInfoProvider: IDeviceInfoProvider
@@ -15,7 +16,7 @@ internal class ANRReporter(
         val configuration = tracker.configuration
 
         val timeStamp = anrWarningException.timestamp.toString()
-        val exceptionInfo = Utils.exceptionToStacktrace(null, anrWarningException, true)
+        val exceptionInfo = Utils.exceptionToStacktrace(null, anrWarningException, true, BTTSymbolType.AndroidNative)
 
         try {
             val thread = Thread(

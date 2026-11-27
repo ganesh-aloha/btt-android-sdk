@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import com.bluetriangle.analytics.Utils.exceptionToStacktrace
 import com.bluetriangle.analytics.deviceinfo.IDeviceInfoProvider
 import com.bluetriangle.analytics.event.CrashSource
+import com.bluetriangle.analytics.model.BTTSymbolType
 
 internal class BtCrashHandler(
     private val configuration: BlueTriangleConfiguration,
@@ -18,7 +19,7 @@ internal class BtCrashHandler(
         val mostRecentTimer = Tracker.instance?.getMostRecentTimer()
         configuration.logger?.debug("Most Recent Timer: $mostRecentTimer")
 
-        val exceptionInfo = exceptionToStacktrace(null, e)
+        val exceptionInfo = exceptionToStacktrace(null, e, false, BTTSymbolType.AndroidNative)
         try {
             sendToServer(mostRecentTimer, exceptionInfo.title, exceptionInfo.stackTrace, timeStamp)
         } catch (interruptedException: InterruptedException) {

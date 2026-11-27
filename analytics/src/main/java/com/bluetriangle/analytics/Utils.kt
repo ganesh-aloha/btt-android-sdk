@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Base64
 import androidx.core.content.pm.PackageInfoCompat
+import com.bluetriangle.analytics.model.BTTSymbolType
 import com.bluetriangle.analytics.utility.CrashTraceParser
 import org.json.JSONArray
 import org.json.JSONObject
@@ -183,7 +184,7 @@ internal object Utils {
         return Base64.encode(data.toByteArray(), Base64.DEFAULT)
     }
 
-    fun exceptionToStacktrace(message: String?, e: Throwable, hideExceptionName: Boolean = false): ExceptionInfo {
+    fun exceptionToStacktrace(message: String?, e: Throwable, hideExceptionName: Boolean = false, symbolType: BTTSymbolType = BTTSymbolType.AndroidNative): ExceptionInfo {
         val lines = e.stackTraceToString().lines()
 
         val appFrame = Tracker.instance?.getStackTracePackageFrame(lines)
@@ -194,7 +195,7 @@ internal object Utils {
             appFrame
         ).joinToString("~~")
 
-        val stacktrace = CrashTraceParser.exceptionToJson(e).toString()
+        val stacktrace = CrashTraceParser.exceptionToJson(e, symbolType = symbolType).toString()
 
         return ExceptionInfo(title, stacktrace)
     }

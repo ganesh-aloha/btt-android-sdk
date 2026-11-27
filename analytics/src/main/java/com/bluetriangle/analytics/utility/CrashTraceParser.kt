@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Looper
 import androidx.annotation.RequiresApi
 import com.bluetriangle.analytics.Tracker
+import com.bluetriangle.analytics.model.BTTSymbolType
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -18,7 +19,7 @@ object CrashTraceParser {
     private val threadHeaderRegex =
         Regex("""^"([^"]+)"\s+(?:daemon\s+)?prio=\d+\s+tid=(\d+)\s+(\S+)""")
 
-    fun exceptionToJson(throwable: Throwable, thread: Thread? = null): JSONObject {
+    fun exceptionToJson(throwable: Throwable, thread: Thread? = null, symbolType: BTTSymbolType = BTTSymbolType.AndroidNative): JSONObject {
         val threads = JSONArray()
 
         val appId = Tracker.instance?.appPackageName ?: ""
@@ -61,6 +62,7 @@ object CrashTraceParser {
 
         val meta = JSONObject().apply {
             put("fVersion", TRACE_FORMAT_VERSION)
+            put("symbolType", symbolType.value)
 //            put("appId", appId)
 //            put("version", versionName)
 //            put("platform", "Android")
@@ -77,7 +79,8 @@ object CrashTraceParser {
     fun parseApplicationExitInfo(
         exitInfo: ApplicationExitInfo,
         errorType: Tracker.BTErrorType,
-        prefix: String
+        prefix: String,
+        symbolType: BTTSymbolType = BTTSymbolType.AndroidNative
     ): AppExitError {
         if (errorType != Tracker.BTErrorType.FatalANR) {
             return AppExitError(
@@ -90,10 +93,10 @@ object CrashTraceParser {
             BufferedReader(InputStreamReader(stream)).readText()
         }.orEmpty()
 
-        return parseApplicationExitInfo(prefix, rawText)
+        return parseApplicationExitInfo(prefix, rawText, symbolType)
     }
 
-    private fun parseApplicationExitInfo(prefix: String, rawTraceText: String): AppExitError {
+    private fun parseApplicationExitInfo(prefix: String, rawTraceText: String, symbolType: BTTSymbolType = BTTSymbolType.AndroidNative): AppExitError {
         val appId = Tracker.instance?.appPackageName ?: ""
         var exitReason = ""
 
@@ -197,6 +200,7 @@ object CrashTraceParser {
 
         val meta = JSONObject().apply {
             put("fVersion", TRACE_FORMAT_VERSION)
+            put("symbolType", symbolType.value)
         }
 
         val stackData = JSONObject().apply {

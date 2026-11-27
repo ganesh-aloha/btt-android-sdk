@@ -52,6 +52,7 @@ import com.bluetriangle.analytics.jank.JankFrameMonitor
 import com.bluetriangle.analytics.launchtime.LaunchMonitor
 import com.bluetriangle.analytics.launchtime.LaunchReporter
 import com.bluetriangle.analytics.lifecycle.LifecycleRegistry
+import com.bluetriangle.analytics.model.BTTSymbolType
 import com.bluetriangle.analytics.networkcapture.CapturedRequest
 import com.bluetriangle.analytics.networkcapture.NetworkError
 import com.bluetriangle.analytics.networkcapture.NetworkErrorHolder
@@ -1462,13 +1463,13 @@ class Tracker private constructor(
     }
 
     @JvmOverloads
-    fun trackError(message: String, threadStack: String? = null) {
+    fun trackError(message: String, threadStack: String? = null, symbolType: BTTSymbolType = BTTSymbolType.AndroidNative) {
         trackException(message, threadStack, object : Throwable() {
             override fun fillInStackTrace(): Throwable {
                 stackTrace = arrayOf()
                 return this
             }
-        })
+        }, symbolType = symbolType)
     }
 
     /**
@@ -1480,22 +1481,24 @@ class Tracker private constructor(
     fun trackException(
         message: String?,
         exception: Throwable,
-        errorType: BTErrorType = BTErrorType.NativeAppCrash
+        errorType: BTErrorType = BTErrorType.NativeAppCrash,
+        symbolType: BTTSymbolType = BTTSymbolType.AndroidNative
     ) {
-        trackException(message, null, exception, errorType)
+        trackException(message, null, exception, errorType, symbolType)
     }
 
     fun trackException(
         message: String?,
         stackTrace: String?,
         exception: Throwable,
-        errorType: BTErrorType = BTErrorType.NativeAppCrash
+        errorType: BTErrorType = BTErrorType.NativeAppCrash,
+        symbolType: BTTSymbolType = BTTSymbolType.AndroidNative
     ) {
         val timeStamp = System.currentTimeMillis().toString()
         val mostRecentTimer = getMostRecentTimer()
         mostRecentTimer?.generateNativeAppProperties()
 
-        val exceptionInfo = Utils.exceptionToStacktrace(message, exception)
+        val exceptionInfo = Utils.exceptionToStacktrace(message, exception, false, symbolType)
         trackerExecutor.submit(
             CrashRunnable(
                 configuration,
