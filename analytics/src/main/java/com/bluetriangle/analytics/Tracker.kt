@@ -1463,13 +1463,13 @@ class Tracker private constructor(
     }
 
     @JvmOverloads
-    fun trackError(message: String, threadStack: String? = null, symbolType: BTTSymbolType = BTTSymbolType.AndroidNative) {
+    fun trackError(message: String, threadStack: String? = null) {
         trackException(message, threadStack, object : Throwable() {
             override fun fillInStackTrace(): Throwable {
                 stackTrace = arrayOf()
                 return this
             }
-        }, symbolType = symbolType)
+        })
     }
 
     /**
@@ -1481,24 +1481,22 @@ class Tracker private constructor(
     fun trackException(
         message: String?,
         exception: Throwable,
-        errorType: BTErrorType = BTErrorType.NativeAppCrash,
-        symbolType: BTTSymbolType = BTTSymbolType.AndroidNative
+        errorType: BTErrorType = BTErrorType.NativeAppCrash
     ) {
-        trackException(message, null, exception, errorType, symbolType)
+        trackException(message, null, exception, errorType)
     }
 
     fun trackException(
         message: String?,
         stackTrace: String?,
         exception: Throwable,
-        errorType: BTErrorType = BTErrorType.NativeAppCrash,
-        symbolType: BTTSymbolType = BTTSymbolType.AndroidNative
+        errorType: BTErrorType = BTErrorType.NativeAppCrash
     ) {
         val timeStamp = System.currentTimeMillis().toString()
         val mostRecentTimer = getMostRecentTimer()
         mostRecentTimer?.generateNativeAppProperties()
 
-        val exceptionInfo = Utils.exceptionToStacktrace(message, exception, false, symbolType)
+        val exceptionInfo = Utils.exceptionToStacktrace(message, exception, false)
         trackerExecutor.submit(
             CrashRunnable(
                 configuration,
